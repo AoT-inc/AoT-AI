@@ -1,0 +1,21 @@
+[Unit]
+Description=AoT-AI web user interface
+After=network.target
+
+[Service]
+User=root
+Group=aot-ai
+WorkingDirectory=/opt/AoT-AI/aot-ai
+ExecStart=/opt/AoT-AI/env/bin/python -m gunicorn \
+--workers 1 \
+--worker-class gthread \
+--threads 2 \
+--timeout 300 \
+--pid /var/run/aot-aiflask.pid \
+--bind unix:/usr/local/aot-aiflask.sock start_flask_ui:app
+
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+
+[Install]
+WantedBy=multi-user.target

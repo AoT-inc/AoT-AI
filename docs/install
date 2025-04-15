@@ -1,0 +1,42 @@
+#
+#  install - AoT-AI install script
+#
+#  Do not execute this script if the AoT-AI archive has been downloaded and extracted.
+#  If AoT-AI has been extracted (/opt/AoT-AI/ already exists), then execute:
+#
+#  sudo /bin/bash /opt/AoT-AI/install/setup.sh
+#
+#
+#  If AoT-AI has not yet been downloaded/extracted, execute the following to install:
+#
+#  curl -L https://kizniche.github.io/AoT-AI/install | bash
+#
+
+INSTALL_DIRECTORY=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )
+
+if [ "$EUID" -eq 0 ]; then
+    printf "Do not run as root. Run as non-root user: \"/bin/bash %s/install\"\n" "${INSTALL_DIRECTORY}"
+    exit 1
+fi
+
+if [ -d /opt/AoT-AI ]; then
+  printf "## Error: Install aborted. Cause: The /opt/AoT-AI directory already exists. The install cannot continue because a previous AoT-AI install was detected. Please either move or delete the /opt/AoT-AI directory and rerun this script to initiate the install or run /opt/AoT-AI/install/setup.sh.\n"
+  exit 1
+fi
+
+# Install dependencies
+sudo apt update
+sudo apt install -y jq dialog python3 wget
+
+# Create install directory
+sudo mkdir -p /opt/AoT-AI
+sudo chown -R ${USER}: /opt/AoT-AI
+cd /opt
+
+# Download and install
+curl -s https://api.github.com/repos/kizniche/AoT-AI/releases/latest | \
+jq -r '.tarball_url' | sudo wget -i - -O aot-ai-latest.tar.gz
+sudo tar xzf aot-ai-latest.tar.gz -C AoT-AI --strip-components=1
+sudo rm -f aot-ai-latest.tar.gz
+cd AoT-AI/install
+sudo /bin/bash ./setup.sh

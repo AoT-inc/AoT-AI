@@ -1,0 +1,770 @@
+/*!
+ * Bootswatch v4.4.1
+ * Homepage: https://bootswatch.com
+ * Copyright 2012-2019 Thomas Park
+ * Licensed under MIT
+ * Based on Bootstrap
+*//*!
+ * Bootstrap v4.4.1 (https://getbootstrap.com/)
+ * Copyright 2011-2019 The Bootstrap Authors
+ * Copyright 2011-2019 Twitter, Inc.
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
+ */@import url("https://fonts.googleapis.com/css?family=Gothic+A1:400,700|Ubuntu:400,700&display=swap");
+
+ :root {
+  --blue: #007bff;
+  --indigo: #6610f2;
+  --purple: #9B479F;
+  --pink: #e83e8c;
+  --red: #DF5353;
+  --orange: #FEA60B;
+  --yellow: #ffc107;
+  --green: #96C064;
+  --teal: #20c997;
+  --cyan: #029ACF;
+  --white: #fff;
+  --gray: #777;
+  --gray-dark: #373a3c;
+  --primary: #F2D524;
+  --secondary: #fff;
+  --success: #fff3cd;
+  --info: #029ACF;
+  --warning: #9B479F;
+  --danger: #ff0000;
+  --light: #fff;
+  --dark: #141414;
+
+  --breakpoint-xs: 0;
+  --breakpoint-sm: 576px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 992px;
+  --breakpoint-xl: 1200px;
+
+  --font-family-sans-serif: "Gothic A1", "Ubuntu", "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* 전체 요소 기본 박스 사이징 설정 */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* HTML 기본 폰트 및 설정 */
+html {
+  font-family: var(--font-family-sans-serif);
+  line-height: 1.15;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+/* 기본 블록 요소 설정 */
+article, aside, figcaption, figure, footer, header, hgroup, main, nav, section {
+  display: block;
+}
+
+/* body 기본 스타일 설정 */
+body {
+  margin: 0;
+  font-family: var(--font-family-sans-serif);
+  font-size: 0.87rem;
+  font-weight: 400;
+  line-height: 1.8;
+  color: #212529;
+  text-align: left;
+  background-color: #FCFCFC;
+}
+
+.navbar-brand {
+  font-family: 'Gothic A1', sans-serif !important;
+  font-size: 1em !important;
+  font-weight: bold !important;
+}
+/* Navbar 메인 스타일 */
+.navbar.main-navbar {
+  background-color: #F4D624;
+  border: none;
+  height: 50px !important;
+  margin-bottom: 1em;
+  padding: 0 1rem;
+  font-size: 1.1em !important;
+}
+
+.navbar.main-navbar {
+  position: fixed; /* 중요! fixed로 설정 필수 */
+  top: 0;
+  width: 100%;
+  z-index: 2000;
+  transition: top 0.3s ease-in-out;
+}
+body {
+  padding-top: calc(50px + 1em);
+}
+
+.navbar.main-navbar .nav-link {
+  position: relative;
+  color: #444 !important;
+  top: 1px;
+  transition: color 0.2s ease-in-out;
+}
+
+.navbar.main-navbar .nav-link:hover {
+  color: #000 !important; /* 호버 시 색상만 변경 */
+  text-decoration: none; /* 밑줄 제거 유지 */
+}
+
+
+/* Navbar 내부 Dropdown 메뉴 스타일 */
+.navbar.main-navbar .dropdown-menu {
+  background-color: #F4D624;
+  border: none;
+  border-radius: 0 !important;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  box-shadow: none;
+  margin: 0;
+  width: auto;
+}
+.navbar.main-navbar .dropdown-menu {
+  min-width: 180px !important; /* 필요하면 길이에 따라 이 값을 조정하세요. */
+  width: auto !important;
+}
+.navbar.main-navbar .dropdown-menu .dropdown-item {
+  font-weight: normal !important;
+  white-space: nowrap !important;
+}
+.navbar.main-navbar .dropdown-menu .dropdown-item {
+  position: relative;
+}
+.navbar.main-navbar .dropdown-menu .dropdown-item::after {
+  content: attr(data-text);
+  font-weight: bold;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  display: block;
+}
+.navbar.main-navbar .dropdown-menu .dropdown-item:hover {
+  background-color: #F4D624;
+  font-weight: bold !important;
+}
+
+.navbar.main-navbar .dropdown-menu .dropdown-item.active,
+.navbar.main-navbar .dropdown-menu .dropdown-item:active {
+  background-color: #F4D624;
+  color: #000;
+  font-weight: bold !important;
+}
+
+.navbar.main-navbar .dropdown-toggle::after {
+  display: none;
+}
+
+.navbar.main-navbar .navbar-brand img {
+  height: 20px;
+  vertical-align: middle;
+}
+
+/* 기본 폰트 설정 */
+body,
+.google-gothic-a1 {
+  font-family: 'Gothic A1', sans-serif;
+}
+
+/* 데스크탑 환경 스타일 */
+@media (min-width: 768px) {
+  .navbar.main-navbar .nav-link:not(:has(img)):not(.navbar-toggler),
+  .navbar.main-navbar .navbar-brand:not(:has(img)) {
+    display: inline-block !important;
+    transform: translateY(1px) !important;
+  }
+  .navbar.main-navbar .dropdown-toggle {
+    pointer-events: none !important;
+  }
+  .navbar.main-navbar .nav-link,
+  .navbar.main-navbar .navbar-brand {
+    font-size: 1.1em !important;
+  }
+  .navbar.main-navbar .nav-item.dropdown:hover .dropdown-menu {
+    display: block !important;
+  }
+  .navbar.main-navbar .nav-item.dropdown:hover .dropdown-menu {
+    display: block !important;
+  }
+}
+
+/* 모바일 환경 스타일 */
+@media (max-width: 767.98px) {
+  .navbar.main-navbar {
+    position: fixed !important;
+    font-size: 1em;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+  }
+
+  body {
+    padding-top: calc(50px + 1em);
+  }
+  
+  .navbar.main-navbar .dropdown-menu .dropdown-item:hover {
+    font-weight: bold !important;
+  }
+
+  .navbar.main-navbar .navbar-nav > li > a.nav-link:not(:has(img)),
+  .navbar.main-navbar .navbar-brand:not(:has(img)) {
+    display: inline-block !important;
+    transform: translateY(1px) !important;
+  }
+
+  .navbar.main-navbar .navbar-toggler {
+    color: #000 !important;
+    border-color: transparent !important;
+  }
+
+  .navbar-collapse {
+    position: absolute;
+    top: 50px;
+    left: 0;
+    width: 100%;
+    padding-bottom: 6em !important;
+    background-color: #F4D624 !important;
+    z-index: 998;
+    max-height: calc(100vh - 50px);
+    overflow-y: auto;
+  }
+
+  .navbar.main-navbar .navbar-nav > li > a.nav-link {
+    position: relative;
+    font-size: 2em !important;
+    font-weight: bold !important;
+    padding-left: 2rem !important;
+  }
+  .navbar-dashboard-config.mr-2 {
+    font-size: 1.1em !important;
+    color: #000 !important;
+    text-decoration: none !important;
+    position: relative;
+    top: 1px;
+  }
+
+  .navbar-nav .dropdown-menu .dropdown-item {
+    position: relative;
+    font-size: 1.5em !important;
+    padding-left: 4rem !important;
+  }
+  .navbar-nav .dropdown-menu.show .dropdown-item {
+    font-size: 1.5em !important; /* 이것만 추가하면 해결됨 */
+  }
+
+  .navbar-nav .dropdown-menu a::before {
+    content: '>';
+    position: absolute;
+    left: 2.2rem !important;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .navbar-nav .dropdown-menu a:hover::before,
+  .navbar-nav .dropdown-menu a:active::before {
+    opacity: 1;
+  }
+
+  .navbar-nav .dropdown-menu .dropdown-item:hover,
+  .navbar-nav .dropdown-menu .dropdown-item:active {
+    font-weight: bold !important;
+  }
+
+  .navbar.main-navbar .dropdown-toggle::after {
+    display: none;
+  }
+
+  .navbar.main-navbar .nav-link:focus,
+  .navbar.main-navbar .nav-link:focus-visible,
+  .navbar.main-navbar .nav-link:active,
+  .navbar.main-navbar .nav-link:visited,
+  .navbar.main-navbar .nav-link:focus-visible,
+  .navbar.main-navbar .navbar-nav .nav-link:focus,
+  .navbar.main-navbar .navbar-brand:focus {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* 사이드바 메뉴 스타일 */
+#sidebar-wrapper .list-group-item {
+  font-family: 'Gothic A1', sans-serif !important;
+  font-size: 1.2em !important;
+  color: #141414 !important;
+  background-color: #fff !important;
+  padding: 10px 15px !important;
+  border: none !important;
+  transition: all 0.2s ease !important;
+}
+
+#sidebar-wrapper .list-group-item:hover {
+  font-weight: bold !important;
+  text-decoration: none !important;
+}
+
+#sidebar-wrapper .list-group-item.active {
+  background-color: #F2D524 !important;
+  font-weight: bold !important;
+  color: #141414 !important;
+  border-color: transparent !important;
+}
+
+/* 버튼 기본 스타일 */
+.btn-primary {
+  font-family: 'Gothic A1', sans-serif !important;
+  font-size: 1em !important;
+  background-color: #F2D524 !important;
+  color: #141414 !important;
+  padding: 8px 14px !important;
+  border: none !important;
+  border-radius: 4px !important;
+  transition: all 0.2s ease !important;
+}
+
+/* bootstrap-select의 hover 보다 우선순위 높임 */
+.btn-primary:hover,
+.bootstrap-select .btn-primary:hover,
+.bootstrap-select.show .btn-primary.dropdown-toggle:hover {
+  background-color: #141414 !important;
+  color: #F2D524 !important;
+}
+/* 페이지 콘텐츠 영역 기본 패딩 설정 */
+#page-content-wrapper {
+  padding: 20px !important;
+}
+
+/* 드롭다운 버튼 및 항목 스타일 일원화 및 우선순위 명확히 처리 */
+.bootstrap-select .btn-primary,
+.bootstrap-select .btn-primary:hover,
+.bootstrap-select.show .btn-primary.dropdown-toggle,
+.bootstrap-select.show .btn-primary.dropdown-toggle:hover {
+  background-color: var(--primary) !important;
+  color: #141414 !important;
+  outline: none !important;
+  border: 1px solid #141414 !important;
+  box-shadow: none !important;
+}
+
+.bootstrap-select .btn-primary:hover,
+.bootstrap-select.show .btn-primary.dropdown-toggle:hover {
+  background-color: #000 !important;
+  color: #F2D524 !important;
+}
+
+/* 드롭다운 메뉴 항목 호버시 배경/글자색 변경 */
+.bootstrap-select .dropdown-menu.show .dropdown-item:hover,
+.bootstrap-select .dropdown-menu.show .dropdown-item:focus,
+.bootstrap-select .dropdown-menu.show .dropdown-item.active {
+  background-color: #000 !important;
+  color: var(--primary) !important;
+  text-align: center !important;
+}
+
+.bootstrap-select .btn-primary.active,
+.bootstrap-select.show .btn-primary.dropdown-toggle {
+  background-color: var(--primary) !important;
+  color: var(--dark) !important;
+  text-align: center !important;
+}
+
+.bootstrap-select .btn-primary,
+.bootstrap-select .btn-primary:focus,
+.bootstrap-select .btn-primary:active,
+.bootstrap-select .btn-primary.active,
+.bootstrap-select.show .btn-primary.dropdown-toggle {
+  outline: none !important; /* 브라우저 기본 포커스 테두리 제거 */
+  border: 1px solid #141414 !important; /* 테두리 명확히 설정 */
+  box-shadow: none !important; /* 그림자 제거 */
+  text-align: center !important;
+}
+
+.bootstrap-select .dropdown-toggle:focus {
+  background-color: #000 !important;
+  color: var(--primary) !important;
+  outline: none !important; /* 추가 포커스 outline 제거 */
+}
+
+/* 입력창 스타일 */
+textarea.form-control {
+  font-size: 1em !important;
+  text-align: left !important;
+}
+
+select.form-control,
+select.form-control {
+  text-align: left !important;
+  font-size: 1em !important;
+}
+
+/* col-1: 아이콘 위치 아래로 1px 이동 */
+.col-1.icon-fh {
+  position: relative;
+  top: 1px;
+}
+
+/* col-2: 아이콘 위치 아래로 3px 이동 */
+.col-2.icon-fh {
+  position: relative;
+  top: 3px;
+}
+
+input.form-control,
+input.form-control {
+  text-align: left !important;
+  font-size: 1em !important;
+}
+
+input.form-control.btn.btn-primary {
+  text-align: center;
+}
+
+.bootstrap-select .dropdown-menu.inner {
+  font-size: 1em !important;
+}
+.bootstrap-select .dropdown-item {
+  font-size: 1em !important;
+}
+.bootstrap-select .filter-option-inner-inner {
+  font-size: 1em !important;
+}
+.dropdown-menu.show {
+  font-size: 1em !important;
+}
+.dropdown-menu.show .dropdown-item {
+  font-size: 1em !important;
+}
+button.dropdown-toggle.btn.btn-primary {
+  text-align: center !important; /* 중앙 정렬 */
+}
+button.dropdown-toggle.btn.btn-primary:hover {
+  background-color: #000 !important; /* 배경색 검정 */
+  color: #F2D524 !important; /* 문자색 노란색 */
+}
+.dropdown-menu.inner.show .dropdown-item,
+.bootstrap-select .dropdown-menu.inner.show .dropdown-item:hover,
+.bootstrap-select .dropdown-menu.inner.show .dropdown-item:focus,
+.bootstrap-select .dropdown-menu.inner.show .dropdown-item.active {
+  text-align: left !important;
+}
+
+/* PID 위젯 내부 col-3, col-4의 input 요소 폰트 크기 강제 설정 */
+.col-3 input.form-control,
+.col-6 input.form-control,
+.col-4 input.form-control,
+div[id^="pid_"] input.form-control {
+  font-size: 1em !important;
+  text-align: center !important;
+}
+
+/* activate 버튼 */
+input[name="input_activate"].btn-primary,
+input[name="input_activate"].btn-primary:active,
+input[name="input_activate"].btn-primary.active,
+input[name="output_activate"].btn-primary,
+input[name="output_activate"].btn-primary:active,
+input[name="output_activate"].btn-primary.active,
+input[name="function_activate"].btn-primary,
+input[name="function_activate"].btn-primary:active,
+input[name="function_activate"].btn-primary.active {
+  background-color: var(--gray) !important;
+  color: var(--primary) !important;
+  border-color: var(--primary) !important;
+
+}
+
+input[name="function_activate"].btn-primary:hover,
+input[name="input_activate"].btn-primary:hover {
+  background-color: var(--dark) !important;
+  color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  text-align: center !important;
+}
+
+/* ON 버튼 스타일 */
+.btn.btn-success.turn_on {
+  background-color: #96C064 !important;
+  color: #fff !important;
+  border: none !important;
+  transition: all 0.2s ease;
+  text-align: center !important;
+}
+
+.btn.btn-success.turn_on:hover {
+  background-color: #141414 !important;
+  color: #F2D524 !important;
+  border: none !important;
+  text-align: center !important;
+}
+
+.btn.btn-success.turn_on:active,
+.btn.btn-success.turn_on.active {
+  background-color: #96C064 !important;
+  color: #fff !important;
+  border: 1px solid #96C064 !important;
+}
+
+/* OFF 버튼 스타일 */
+.btn.btn-danger.turn_off {
+  background-color: #DF5353 !important;
+  color: #fff !important;
+  border: none !important;
+  transition: all 0.2s ease;
+  text-align: center !important;
+}
+
+.btn.btn-danger.turn_off:hover {
+  background-color: #141414 !important;
+  color: #F2D524 !important;
+  border: none !important;
+  text-align: center !important;
+}
+
+.btn.btn-danger.turn_off:active,
+.btn.btn-danger.turn_off.active {
+  background-color: #DF5353 !important;
+  color: #fff !important;
+  border: 1px solid #DF5353 !important;
+  text-align: center !important;
+}
+.bootstrap-select .btn-primary,
+.bootstrap-select .btn-primary:hover,
+.bootstrap-select .btn-primary:focus,
+.bootstrap-select .btn-primary:active,
+.bootstrap-select .btn-primary.active,
+.bootstrap-select.show .btn-primary.dropdown-toggle {
+  outline: none !important; /* 브라우저 기본 포커스 테두리 제거 */
+  border: 1px solid #141414 !important; /* 테두리 명확히 설정 */
+  box-shadow: none !important; /* 그림자 제거 */
+  text-align: center !important;
+}
+
+.bootstrap-select .dropdown-toggle:focus {
+  outline: none !important; /* 추가 포커스 outline 제거 */
+}
+
+
+/* 배경색 */
+.pause-background {
+  background-color: #e4b082c9 !important;
+}
+.active-background {
+  background-color: #ffeba8 !important;
+}
+.inactive-background {
+  background-color: #c0c0c0 !important;
+}
+
+.bootstrap-select .dropdown-menu.inner.show .inner > li > a,
+.bootstrap-select .dropdown-menu .bs-title-option {
+  font-size: 1em !important;
+}
+input.form-control[type="text"]:disabled {
+  font-size: 1em !important;
+  text-align: center !important;
+}
+input.form-control[name="name"][type="text"] {
+  font-size: 1em !important;
+  text-align: left !important;
+}
+select.form-control.form-dropdown {
+  font-size: 1em !important;
+}
+.bootstrap-select.selectpicker,
+.bootstrap-select.selectpicker .dropdown-item,
+.bootstrap-select.selectpicker .bs-title-option {
+  font-size: 1em !important;
+}
+.dropdown-menu.inner.show .dropdown-item {
+  font-size: 1em !important;
+}
+
+main.container > p {
+  font-size: 1.2em !important;
+}
+
+.widget-drag-handle {
+  transform: translateY(-1px) !important;
+}
+.widget-cog-icon {
+  font-size: 0.8em;
+  transform: translateY(-4px) !important;
+}
+.widget-graph-controls {
+  position: absolute !important;
+  top: 4px !important; /* 위로 이동 (적절한 값으로 미세조정) */
+  right: 35px !important;
+  z-index: 999 !important;
+}
+
+.widget-graph-controls .fa-bars {
+  transform: translateY(0); /* 기존 이동 제거 */
+}
+.modal {
+  margin-top: calc(50px + 1em) !important;
+
+}
+/* 모달 내부 폼의 col-auto 요소 간격 조정 */
+.modal .col-auto {
+  margin-top: 5px;
+  margin-bottom: 10px;
+}
+
+.modal .control-label {
+  margin-bottom: 0 !important;
+  margin-top: 5px;
+}
+
+
+/* aot 위젯 최상위 컨테이너 */
+.frame-aot {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5em; /* 8px -> 0.5em (16px 기준) */
+}
+
+/* 행(row) 컨테이너 */
+.row-aot {
+  width: 100%;
+  height: 4em; /* 약 64px */
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5em; /* 약 8px */
+}
+
+/* 컬럼 설정 */
+.col-aot-1 {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  margin-right: 0.25em; /* 약 4px */
+}
+
+.col-aot-2 {
+  width: 3.5em; /* 약 56px */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 텍스트(prt-text) */
+.prt-text {
+  font-size: 0.9375em; /* 약 15px */
+  display: flex;
+  align-items: center;
+}
+
+/* 시간 입력(input-time) 컨테이너 */
+.input-time {
+  display: flex;
+  gap: 0.25em; /* 약 4px 간격 */
+}
+
+/* 시간 입력 요소 */
+.input-time-hh,
+.input-time-mm,
+.input-time-ss {
+  width: 2.375em; /* 38px */
+  height: 2em; /* 32px */
+  font-size: 0.9375em; /* 15px */
+  border-radius: 0.125em; /* 2px */
+  text-align: center;
+  border: 1px solid #ccc;
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+}
+
+/* 숫자 입력창 스핀 버튼 제거 */
+.input-time-hh::-webkit-inner-spin-button,
+.input-time-mm::-webkit-inner-spin-button,
+.input-time-ss::-webkit-inner-spin-button,
+.input-time-hh::-webkit-outer-spin-button,
+.input-time-mm::-webkit-outer-spin-button,
+.input-time-ss::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* 버튼(btn-time) 컨테이너 */
+.btn-time {
+  display: flex;
+  gap: 0.25em; /* 약 4px */
+  align-items: center;
+}
+
+/* 버튼(btn-time-item) 개별 스타일 */
+.btn-time-item {
+  width: 3.25em; /* 52px */
+  height: 2em; /* 32px */
+  font-size: 0.875em; /* 약 14px */
+  border-radius: 0.125em; /* 2px */
+  background-color: #F4D624;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-time-item:hover {
+  background-color: #929292;
+}
+
+.btn-time-item:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* 토글 버튼(btn-toggle) */
+.btn-toggle {
+  position: relative;
+  width: 3.2em;
+  height: 2em;
+}
+
+.btn-toggle-input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.btn-toggle-slider {
+  position: absolute;
+  background-color: #929292;
+  cursor: pointer;
+  border-radius: 2em;
+  transition: background-color 0.3s;
+  top: 0; left: 0; right: 0; bottom: 0;
+}
+
+.btn-toggle-thumb {
+  position: absolute;
+  height: 1.6em;
+  width: 1.6em;
+  border-radius: 50%;
+  background-color: white;
+  bottom: 0.2em;
+  left: 0.2em;
+  transition: transform 0.3s;
+}
+
+/* 토글 버튼 활성화 스타일 */
+.btn-toggle-input:checked + .btn-toggle-slider {
+  background-color: #F4D624;
+}
+
+.btn-toggle-input:checked + .btn-toggle-slider .btn-toggle-thumb {
+  transform: translateX(1.2em);
+}
+
+/* 배경색 처리 (투명 처리) */
+.row-aot, .col-1, .col-2, .prt-text, .input-time, .btn-time {
+  background-color: transparent;
+}
