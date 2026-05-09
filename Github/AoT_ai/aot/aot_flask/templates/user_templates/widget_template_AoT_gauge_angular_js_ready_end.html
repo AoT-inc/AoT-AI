@@ -1,0 +1,187 @@
+
+{%- set device_id = widget_options['measurement'].split(",")[0] -%}
+{%- set measurement_id = widget_options['measurement'].split(",")[1] -%}
+
+{% set measure = { 'measurement_id': None } %}
+  widget['{{each_widget.unique_id}}'] = new Highcharts.chart({
+    chart: {
+      renderTo: 'container-gauge-{{each_widget.unique_id}}',
+      type: 'gauge',
+      plotBackgroundColor: null,
+      plotBackgroundImage: null,
+      plotBorderWidth: 0,
+      plotShadow: false,
+      events: {
+        load: function () {
+          {% for each_input in input  if each_input.unique_id == device_id %}
+          getLastDataGaugeAngular('{{each_widget.unique_id}}', '{{device_id}}', 'input', '{{measurement_id}}', {{widget_options['max_measure_age'] if widget_options['max_measure_age'] else 120}});
+          repeatLastDataGaugeAngular('{{each_widget.unique_id}}', '{{device_id}}', 'input', '{{measurement_id}}', {{widget_options['refresh_seconds'] if widget_options['refresh_seconds'] else 30}}, {{widget_options['max_measure_age'] if widget_options['max_measure_age'] else 120}});
+          {%- endfor -%}
+          
+          {% for each_function in function if each_function.unique_id == device_id %}
+          getLastDataGaugeAngular('{{each_widget.unique_id}}', '{{device_id}}', 'function', '{{measurement_id}}', {{widget_options['max_measure_age'] if widget_options['max_measure_age'] else 120}});
+          repeatLastDataGaugeAngular('{{each_widget.unique_id}}', '{{device_id}}', 'function', '{{measurement_id}}', {{widget_options['refresh_seconds'] if widget_options['refresh_seconds'] else 30}}, {{widget_options['max_measure_age'] if widget_options['max_measure_age'] else 120}});
+          {%- endfor -%}
+
+          {%- for each_pid in pid if each_pid.unique_id == device_id %}
+          getLastDataGaugeAngular('{{each_widget.unique_id}}', '{{device_id}}', 'pid', '{{measurement_id}}', {{widget_options['max_measure_age'] if widget_options['max_measure_age'] else 120}});
+          repeatLastDataGaugeAngular('{{each_widget.unique_id}}', '{{device_id}}', 'pid', '{{measurement_id}}', {{widget_options['refresh_seconds'] if widget_options['refresh_seconds'] else 30}}, {{widget_options['max_measure_age'] if widget_options['max_measure_age'] else 120}});
+          {%- endfor -%}
+        }
+      },
+      spacingTop: 0,
+      spacingLeft: 0,
+      spacingRight: 0,
+      spacingBottom: 0
+    },
+
+    title: null,
+
+    exporting: {
+      enabled: false
+    },
+
+    pane: {
+        // Align with wind gauge layout:
+        // - Horizontal padding 12% ⇒ size ≈ 76%
+        // - Top padding ~4% ⇒ centerY ≈ 42% (since size/2 = 38%, 42-38 = 4%)
+        center: [ '50%', '42%' ],
+        size: '76%',
+        startAngle: -120,
+        endAngle: 120,
+        background: [{
+          backgroundColor: 'none',
+          borderWidth: 0,
+          outerRadius: '0%',
+          innerRadius: '0%'
+        }]
+    },
+
+    yAxis: {
+        min: {{widget_options['min']}},
+        max: {{widget_options['max']}},
+        title: {
+          text: '',
+          y: 20
+        },
+
+        minColor: "#3e3f46",
+        maxColor: "#3e3f46",
+
+        minorTickInterval: 'auto',
+        minorTickWidth: 0,
+        minorTickLength: 0,
+        minorTickPosition: 'inside',
+        minorTickColor: '#666',
+
+        tickPixelInterval: 50,
+        tickWidth: 0,
+        
+        tickPosition: 'inside',
+        tickLength: 0,
+        tickColor: '#666',
+
+        labels: {
+            step: 2,
+            rotation: 'auto'
+        },
+        plotBands: [
+          {% for n in range(widget_variables['colors_gauge_angular']|length) %}
+            {% set index = '{0:0>2}'.format(n) %}
+        {
+            from: {{widget_variables['colors_gauge_angular'][n]['low']}},
+            to: {{widget_variables['colors_gauge_angular'][n]['high']}},
+            color: '{{widget_variables['colors_gauge_angular'][n]['hex']}}'
+        },
+          {% endfor %}
+        ]
+    },
+
+    series: [{
+      name: '
+      {%- for each_input in input if each_input.unique_id == device_id -%}
+        {%- if measurement_id in device_measurements_dict -%}
+          {{each_input.name}} (
+            {%- if not device_measurements_dict[measurement_id].single_channel -%}
+              {{'CH' + (device_measurements_dict[measurement_id].channel|int)|string}}
+            {%- endif -%}
+            {%- if device_measurements_dict[measurement_id].measurement -%}
+              {{', ' + dict_measurements[device_measurements_dict[measurement_id].measurement]['name']}}
+            {%- endif -%}
+          {%- endif -%}
+      {%- endfor -%}
+      
+      {%- for each_function in function if each_function.unique_id == device_id -%}
+        {{each_function.measure|safe}}
+      {%- endfor -%}
+      
+      {%- for each_pid in pid if each_pid.unique_id == device_id -%}
+        {{each_pid.measure|safe}}
+      {%- endfor -%}
+      )',
+      data: [null],
+      dataLabels: {
+        enabled: true,
+        useHTML: true,
+        crop: false,
+        overflow: 'allow',
+        allowOverlap: true,
+        borderWidth: 0,
+        backgroundColor: 'none',
+        style: {
+          textOutline: 'none',
+          fontWeight: '{{ widget_options.get("text_font_tick", 500) }}',
+          fontSize: '{{ widget_options.get("text_font_size", 2) }}em'
+        },
+        y: {{ widget_options.get("text_y_offset", 30) }},
+        formatter: function() {
+          var dec = {{ widget_options.get("decimal_places", 1) }};
+          var val = (this.y === null) ? '' : Highcharts.numberFormat(this.y, dec);
+          var dataFontSize = {{ widget_options.get("text_font_size", 1.5) }};
+          var unitFontSize = {{ widget_options.get("unit_font_size", 0.7) }};
+          // 기존 방식으로 단위 가져오기
+          var unitLabel = {% if measurement_id in dict_measure_units and dict_measure_units[measurement_id] in dict_units and dict_units[dict_measure_units[measurement_id]]['unit'] %}
+              '{{ dict_units[dict_measure_units[measurement_id]]["unit"] }}'
+          {% else %}
+              {%- if measurement_id in device_measurements_dict -%}
+                '{{ dict_units[device_measurements_dict[measurement_id].unit]["unit"] }}'
+              {%- else -%}
+                'N/A'
+              {%- endif -%}
+          {% endif %};
+          return '<span style="font-size:' + dataFontSize + 'em;">' + val + '</span>' +
+                '<span style="font-size:' + unitFontSize + 'em; margin-left:0.2em;">' + unitLabel + '</span>';
+        }
+      },
+      yAxis: 0,
+      dial: {
+        backgroundColor: '{% if current_user.theme in dark_themes %}#e3e4f4{% else %}#3e3f46{% endif %}',
+        baseWidth: 5
+      },
+      tooltip: {
+      {%- for each_input in input if each_input.unique_id == device_id %}
+        pointFormatter: function () {
+          return this.series.name + ':<b> ' + Highcharts.numberFormat(this.y, 2) + ' {{ dict_units[device_measurements_dict[measurement_id].unit]["unit"] }}</b><br>';
+        },
+      {%- endfor -%}
+        valueSuffix: '
+      {%- for each_input in input if each_input.unique_id == device_id -%}
+        {{' ' + dict_units[device_measurements_dict[measurement_id].unit]["unit"]}}
+      {%- endfor -%}
+      
+      {%- for each_function in function if each_function.unique_id == device_id -%}
+        {{' ' + each_function.measure_units|safe}}
+      {%- endfor -%}
+      
+      {%- for each_pid in pid if each_pid.unique_id == device_id -%}
+        {{' ' + each_pid.measure_units|safe}}
+      {%- endfor -%}'
+      }
+    }],
+
+    credits: {
+      enabled: false,
+      href: "https://github.com/aot-inc/aot",
+      text: "aot"
+    }
+  });

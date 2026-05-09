@@ -1,0 +1,205 @@
+# 027_css_phase4_custom_css_DONE.yaml
+# CSS Token Phase 4 — Migrate hardcoded colors in custom.css
+# Working directory: 2603_AoT_ai/Build/5_docker
+# Generated: 2026-04-01
+# Parent task: css_token/_PLAN_yaml.md (plan 019) + 025_css_phase3_aot_css_migration_DONE.yaml
+
+task_id: css_phase4_custom_css
+task_name: CSS Token Phase 4 — custom.css Hardcoded Color Migration
+report_number: 027
+status: done
+
+---
+
+## phase_scope
+
+Phase 4 Goal: Replace all hardcoded colors in custom.css for the note card system
+(selectors: .note-card, .note-tag-chip, .note-fab, .note-search-bar,
+.dropdown-upgrade, .dropdown-item-upgrade, .expand-toggle-btn) with
+--aot-* token var() references.
+
+Per Plan 019 Section 5 Phase 4, estimated scope: ~120 lines across 8 selectors.
+
+---
+
+## investigation_findings
+
+### 1. custom.css target selector status
+
+Phase 4 target selectors found in custom.css:
+
+| Selector | Status | Details |
+|----------|--------|---------|
+| .dropdown-upgrade | ALREADY USING TOKENS | Lines 5-8: var(--aot-upgrade-dropdown-text), var(--aot-upgrade-dropdown-bg) |
+| .dropdown-item-upgrade | ALREADY USING TOKENS | Lines 10-21: var(--aot-upgrade-dropdown-text), var(--aot-upgrade-dropdown-bg) |
+
+No hardcoded colors found in these selectors in custom.css.
+
+### 2. Note component selectors location
+
+The following Phase 4 target selectors are NOT present in custom.css:
+- .note-card
+- .note-tag-chip
+- .note-fab
+- .note-search-bar
+- .expand-toggle-btn
+
+These selectors exist in aot-base.css (lines 248-401), NOT in custom.css.
+A comment at custom.css lines 219-225 confirms:
+  "NOTE: Note card component styles (note-card, note-tag-chip, note-fab,
+   note-search-*, expand-toggle-btn) are now defined in aot-base.css
+   to avoid duplication."
+
+Per Plan 019 Section 6 Phase 6, these were consolidated to aot-base.css.
+
+### 3. Remaining hardcoded colors in custom.css (outside Phase 4 scope)
+
+custom.css contains hardcoded colors, but NOT in Phase 4 target selectors:
+
+| Line | Selector | Hardcoded Value | Phase 4 Target? |
+|------|----------|-----------------|----------------|
+| 125, 132 | .widget-graph-controls a.menu | rgba(0,0,0,0.0) | NO |
+| 142-143 | .widget-graph-responsive-controls a | #78cc78, #62c462, #53be53 (gradient) | NO |
+| 216 | body .modal.aot-option-modal .modal-content | rgba(0,0,0,0.15) | NO |
+
+These are outside the Phase 4 scope as defined in the task (only note-card system
+selectors were targeted).
+
+### 4. Token verification
+
+All --aot-* tokens referenced by Phase 4 selectors in custom.css are defined
+in aot-theme-variables.css :root:
+
+Token                          | Defined in aot-theme-variables.css
+------------------------------|------------------------------------
+--aot-upgrade-dropdown-text    | Section 1.8 (line 112)
+--aot-upgrade-dropdown-bg      | Section 1.8 (line 113)
+--aot-note-card-bg            | Section 1.7 (line 94) — in aot-base.css
+--aot-note-card-border        | Section 1.7 (line 95) — in aot-base.css
+--aot-note-card-shadow       | Section 1.7 (line 96) — in aot-base.css
+--aot-note-card-hover-shadow | Section 1.7 (line 97) — in aot-base.css
+--aot-note-card-body-text    | Section 1.7 (line 98) — in aot-base.css
+--aot-note-footer-bg         | Section 1.7 (line 99) — in aot-base.css
+--aot-note-footer-text       | Section 1.7 (line 100) — in aot-base.css
+--aot-note-tag-bg            | Section 1.7 (line 101) — in aot-base.css
+--aot-note-tag-text          | Section 1.7 (line 102) — in aot-base.css
+--aot-note-tag-hover-bg      | Section 1.7 (line 103) — in aot-base.css
+--aot-note-fab-bg            | Section 1.7 (line 104) — in aot-base.css
+--aot-note-search-bg          | Section 1.7 (line 105) — in aot-base.css
+--aot-note-search-border      | Section 1.7 (line 106) — in aot-base.css
+--aot-note-search-focus       | Section 1.7 (line 107) — in aot-base.css
+--aot-expand-toggle           | Section 1.8 (line 114) — in aot-base.css
+--aot-expand-toggle-hover     | Section 1.8 (line 115) — in aot-base.css
+
+All tokens verified present in aot-theme-variables.css.
+
+---
+
+## replacements_made
+
+No replacements were made in custom.css because:
+1. .dropdown-upgrade and .dropdown-item-upgrade in custom.css already use
+   var() tokens — no hardcoded colors to replace
+2. .note-card, .note-tag-chip, .note-fab, .note-search-bar, .expand-toggle-btn
+   are in aot-base.css, not custom.css (Phase 6 consolidation)
+
+Empty replacement list — effective migration was completed in prior phases.
+
+---
+
+## hardcoded_remaining
+
+grep -E "#[0-9a-fA-F]{3,6}|rgb|rgba|hsla" custom.css:
+
+Result: 5 matches (lines 125, 132, 142, 143, 216)
+
+hardcoded_remaining: 5
+
+These hardcoded values are in non-Phase-4 selectors (.widget-graph-controls,
+.widget-graph-responsive-controls, .modal.aot-option-modal).
+
+Phase 4 target selectors (dropdown-upgrade, dropdown-item-upgrade) have
+hardcoded_remaining: 0
+
+---
+
+## syntax_verification
+
+custom.css:
+  braces_balanced: true
+  open_braces: 53
+  close_braces: 53
+  result: PASS
+
+---
+
+## app_status
+
+app_status_at_check: not checked — static CSS change only
+Static CSS changes (replacing hardcoded hex values with var() references) do not
+affect server-side behavior. No 500 errors can be introduced by these CSS changes.
+
+last_log_entry: "2026-03-31 17:09:41,905 - INFO - aot.ai.services.mcp_bridge_service"
+log_file: logs/aot.log
+app_status_at_check: stopped_since_2026-03-31
+
+---
+
+## deviations
+
+### Deviation 1: Note component selectors not in custom.css
+Phase 4 plan (Plan 019 Section 5) described ~120 lines across 8 selectors in
+custom.css for note components (.note-card, .note-tag-chip, .note-fab,
+.note-search-bar, .expand-toggle-btn). These selectors were moved to
+aot-base.css in Phase 6 consolidation (per comment in custom.css lines 219-225).
+
+Action taken: Reported as deviation. No changes made to aot-base.css per task
+constraint "Do NOT change any files other than custom.css".
+
+### Deviation 2: Hardcoded colors in custom.css remain
+custom.css has 5 hardcoded color values (lines 125, 132, 142, 143, 216) that
+are NOT in Phase 4 target selectors. These are in widget-graph-controls and
+modal styles, not the note card system.
+
+These are outside the Phase 4 scope per task definition, but represent
+technical debt that could be addressed in a future phase.
+
+### Token discrepancy in aot-base.css (not modified per scope)
+.note-fab in aot-base.css (line 385) uses var(--brand-primary) for background
+instead of the dedicated --aot-note-fab-bg token defined in aot-theme-variables.css
+Section 1.7. This was not corrected because aot-base.css is outside the Phase 4
+scope (custom.css only).
+
+---
+
+## files_modified
+
+files_modified: []
+
+No files were modified because custom.css already has its Phase 4 selectors
+using var() tokens, and the note component selectors are in aot-base.css
+(outside Phase 4 scope per task constraint).
+
+---
+
+## summary
+
+Phase 4 effective completion for custom.css: DONE
+
+1. .dropdown-upgrade and .dropdown-item-upgrade in custom.css already use
+   CSS variable tokens (--aot-upgrade-dropdown-text, --aot-upgrade-dropdown-bg)
+   — zero hardcoded colors remain in these Phase 4 target selectors
+
+2. Note component selectors (.note-card, .note-tag-chip, .note-fab,
+   .note-search-bar, .expand-toggle-btn) were moved to aot-base.css in
+   Phase 6 consolidation — not present in custom.css to modify
+
+3. CSS syntax verified: balanced braces (53/53)
+
+4. Remaining hardcoded colors in custom.css (5 values) are outside Phase 4
+   scope (widget-graph-controls, modal styles)
+
+5. No modifications made to any file — Phase 4 work was effectively
+   completed in prior phases
+
+Next: Phase 5 — Migrate aot-modal-modern.css (Plan 019 Section 5 Phase 5)

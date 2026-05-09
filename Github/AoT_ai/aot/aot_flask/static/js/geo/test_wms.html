@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AoT MapLibre WMS Direct Integration Test</title>
+  
+  <!-- MapLibre GL CSS -->
+  <link href="https://unpkg.com/maplibre-gl@5.0.0/dist/maplibre-gl.css" rel="stylesheet" />
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+    }
+    
+    .header {
+      background: #16213e;
+      padding: 15px 20px;
+      border-bottom: 2px solid #e94560;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .header h1 {
+      font-size: 1.2rem;
+      color: #e94560;
+    }
+    
+    .badge {
+      background: #e94560;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+    
+    .container {
+      display: flex;
+      height: calc(100vh - 60px);
+    }
+    
+    .sidebar {
+      width: 320px;
+      background: #16213e;
+      padding: 15px;
+      overflow-y: auto;
+      border-right: 1px solid #0f3460;
+    }
+    
+    .sidebar h2 {
+      font-size: 1rem;
+      color: #e94560;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #0f3460;
+    }
+    
+    .control-group {
+      margin-bottom: 20px;
+      padding: 12px;
+      background: #0f3460;
+      border-radius: 6px;
+    }
+    
+    .control-group h3 {
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+      color: #e94560;
+    }
+    
+    .control-group label {
+      display: block;
+      font-size: 0.8rem;
+      margin-bottom: 5px;
+      color: #aaa;
+    }
+    
+    .btn {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+      margin: 3px;
+      flex: 1;
+    }
+    
+    .btn-primary {
+      background: #e94560;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #c73e54;
+    }
+    
+    .btn-primary.active {
+      background: #95d5b2;
+      color: #1a1a2e;
+    }
+    
+    .btn-secondary {
+      background: #0f3460;
+      color: #eee;
+      border: 1px solid #1a4a7a;
+    }
+    
+    .btn-secondary:hover {
+      background: #1a4a7a;
+    }
+    
+    .btn-danger {
+      background: #5c1a1a;
+      color: #f08080;
+    }
+    
+    .btn-danger:hover {
+      background: #7a2828;
+    }
+    
+    .btn-row {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+    
+    .slider-control {
+      margin: 10px 0;
+    }
+    
+    .slider-control input[type="range"] {
+      width: 100%;
+      margin-top: 5px;
+      accent-color: #e94560;
+    }
+    
+    .slider-value {
+      text-align: right;
+      font-size: 0.85rem;
+      color: #95d5b2;
+      font-weight: bold;
+    }
+    
+    .layer-item {
+      background: #0f3460;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      border-left: 3px solid #e94560;
+    }
+    
+    .layer-item.hidden {
+      border-left-color: #666;
+      opacity: 0.6;
+    }
+    
+    .layer-item h4 {
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .layer-item .status {
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: #2d6a4f;
+      color: #95d5b2;
+    }
+    
+    .layer-item.hidden .status {
+      background: #4a4a4a;
+      color: #888;
+    }
+    
+    .checkbox-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 5px 0;
+    }
+    
+    .checkbox-control input {
+      width: 18px;
+      height: 18px;
+      accent-color: #e94560;
+    }
+    
+    .checkbox-control label {
+      margin: 0;
+      color: #eee;
+      cursor: pointer;
+    }
+    
+    .map-container {
+      flex: 1;
+      position: relative;
+    }
+    
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+    
+    .map-overlay {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #16213e;
+      padding: 15px;
+      border-radius: 6px;
+      z-index: 1000;
+      border: 1px solid #0f3460;
+      max-width: 250px;
+    }
+    
+    .map-overlay h4 {
+      color: #e94560;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+    }
+    
+    .map-overlay .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      font-size: 0.8rem;
+    }
+    
+    .map-overlay .info-row span:first-child {
+      color: #888;
+    }
+    
+    .map-overlay .info-row span:last-child {
+      color: #eee;
+      font-family: monospace;
+    }
+    
+    .status-bar {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      right: 270px;
+      background: #16213e;
+      padding: 10px 15px;
+      border-radius: 6px;
+      z-index: 1000;
+      border: 1px solid #0f3460;
+      font-size: 0.8rem;
+    }
+    
+    .status-bar h4 {
+      color: #e94560;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+    }
+    
+    .log-entry {
+      padding: 3px 0;
+      border-bottom: 1px solid #0f3460;
+    }
+    
+    .log-entry.success { color: #95d5b2; }
+    .log-entry.error { color: #f08080; }
+    .log-entry.info { color: #74b9ff; }
+    .log-entry.warning { color: #ffd93d; }
+    
+    #test-log {
+      max-height: 150px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🗺️ AoT MapLibre WMS Direct Integration</h1>
+    <span class="badge">v1.0.0 - No Bridge</span>
+  </div>
+  
+  <div class="container">
+    <div class="sidebar">
+      <h2>WMS Layer Controls</h2>
+      
+      <!-- VWorld Layers -->
+      <div class="control-group">
+        <h3>📡 VWorld WMS Layers</h3>
+        
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btn-basemap" onclick="toggleBaseMap()">
+            BaseMap
+          </button>
+          <button class="btn btn-primary" id="btn-satellite" onclick="toggleSatellite()">
+            Satellite
+          </button>
+        </div>
+        
+        <div class="btn-row" style="margin-top: 8px;">
+          <button class="btn btn-secondary" id="btn-hybrid" onclick="toggleHybrid()">
+            Hybrid
+          </button>
+          <button class="btn btn-secondary" id="btn-cadastral" onclick="toggleCadastral()">
+            Cadastral
+          </button>
+        </div>
+      </div>
+      
+      <!-- Opacity Control -->
+      <div class="control-group">
+        <h3>🎚️ Opacity Control</h3>
+        
+        <div class="slider-control">
+          <div style="display: flex; justify-content: space-between;">
+            <label>BaseMap Opacity</label>
+            <span class="slider-value" id="basemap-opacity-value">80%</span>
+          </div>
+          <input type="range" id="basemap-opacity" min="0" max="100" value="80" 
+                 onchange="updateBasemapOpacity(this.value)">
+        </div>
+        
+        <div class="slider-control">
+          <div style="display: flex; justify-content: space-between;">
+            <label>Satellite Opacity</label>
+            <span class="slider-value" id="satellite-opacity-value">80%</span>
+          </div>
+          <input type="range" id="satellite-opacity" min="0" max="100" value="80" 
+                 onchange="updateSatelliteOpacity(this.value)">
+        </div>
+      </div>
+      
+      <!-- Layer List -->
+      <div class="control-group">
+        <h3>📋 Active Layers</h3>
+        <div id="layer-list">
+          <p style="color: #666; font-size: 0.8rem;">No layers added yet</p>
+        </div>
+      </div>
+      
+      <!-- Actions -->
+      <div class="control-group">
+        <h3>⚡ Quick Actions</h3>
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="resetAllLayers()">Reset All</button>
+          <button class="btn btn-danger" onclick="removeAllLayers()">Remove All</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="map-container">
+      <div id="map"></div>
+      
+      <div class="map-overlay">
+        <h4>📍 Map Info</h4>
+        <div class="info-row">
+          <span>Center:</span>
+          <span id="map-center">-</span>
+        </div>
+        <div class="info-row">
+          <span>Zoom:</span>
+          <span id="map-zoom">-</span>
+        </div>
+        <div class="info-row">
+          <span>Active Layers:</span>
+          <span id="active-count">0</span>
+        </div>
+      </div>
+      
+      <div class="status-bar">
+        <h4>📋 Event Log</h4>
+        <div id="test-log"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dependencies -->
+  <script src="https://unpkg.com/maplibre-gl@5.0.0/dist/maplibre-gl.js"></script>
+  <script src="aot-maplibre-wms.js"></script>
+  
+  <script>
+    // Global variables
+    let map;
+    let wmsManager;
+    
+    // Layer state
+    const layerState = {
+      basemap: { visible: false, added: false },
+      satellite: { visible: false, added: false },
+      hybrid: { visible: false, added: false },
+      cadastral: { visible: false, added: false }
+    };
+    
+    // Initialize map
+    function initMap() {
+      map = new maplibregl.Map({
+        container: 'map',
+        style: {
+          version: 8,
+          sources: {},
+          layers: [
+            {
+              id: 'background',
+              type: 'background',
+              paint: {
+                'background-color': '#1a1a2e'
+              }
+            }
+          ]
+        },
+        center: [128.6, 35.9], // Daegu, Korea
+        zoom: 10,
+        attributionControl: false
+      });
+      
+      // Add navigation control
+      map.addControl(new maplibregl.NavigationControl(), 'top-right');
+      
+      // Add attribution control
+      map.addControl(new maplibregl.AttributionControl({
+        compact: true
+      }));
+      
+      map.on('load', function() {
+        log('Map loaded successfully', 'success');
+        
+        // Initialize WMS Manager
+        wmsManager = AoTWMSManager.create(map, {
+          vworldKey: 'A50259E8-EF6E-11EA-8F8D-E7402F6DAF88',
+          defaultOpacity: 0.8,
+          tileSize: 256
+        });
+        
+        log('WMS Manager initialized', 'success');
+        updateMapInfo();
+        updateLayerList();
+      });
+      
+      // Update map info on move
+      map.on('moveend', updateMapInfo);
+      map.on('zoomend', updateMapInfo);
+    }
+    
+    // Toggle BaseMap layer
+    function toggleBaseMap() {
+      if (!layerState.basemap.added) {
+        // Add layer
+        wmsManager.addVWorldBaseMap('vworld-base', { opacity: 0.8 });
+        layerState.basemap.added = true;
+        layerState.basemap.visible = true;
+        document.getElementById('btn-basemap').classList.add('active');
+        log('BaseMap layer added', 'success');
+      } else if (layerState.basemap.visible) {
+        // Hide layer
+        wmsManager.setLayerVisibility('vworld-base', false);
+        layerState.basemap.visible = false;
+        document.getElementById('btn-basemap').classList.remove('active');
+        log('BaseMap layer hidden', 'info');
+      } else {
+        // Show layer
+        wmsManager.setLayerVisibility('vworld-base', true);
+        layerState.basemap.visible = true;
+        document.getElementById('btn-basemap').classList.add('active');
+        log('BaseMap layer shown', 'info');
+      }
+      updateLayerList();
+    }
+    
+    // Toggle Satellite layer
+    function toggleSatellite() {
+      if (!layerState.satellite.added) {
+        // Add layer
+        wmsManager.addVWorldSatellite('vworld-satellite', { opacity: 0.8 });
+        layerState.satellite.added = true;
+        layerState.satellite.visible = true;
+        document.getElementById('btn-satellite').classList.add('active');
+        log('Satellite layer added', 'success');
+      } else if (layerState.satellite.visible) {
+        // Hide layer
+        wmsManager.setLayerVisibility('vworld-satellite', false);
+        layerState.satellite.visible = false;
+        document.getElementById('btn-satellite').classList.remove('active');
+        log('Satellite layer hidden', 'info');
+      } else {
+        // Show layer
+        wmsManager.setLayerVisibility('vworld-satellite', true);
+        layerState.satellite.visible = true;
+        document.getElementById('btn-satellite').classList.add('active');
+        log('Satellite layer shown', 'info');
+      }
+      updateLayerList();
+    }
+    
+    // Toggle Hybrid layer
+    function toggleHybrid() {
+      if (!layerState.hybrid.added) {
+        wmsManager.addVWorldHybrid('vworld-hybrid', { opacity: 0.8 });
+        layerState.hybrid.added = true;
+        layerState.hybrid.visible = true;
+        document.getElementById('btn-hybrid').classList.add('active');
+        log('Hybrid layer added', 'success');
+      } else if (layerState.hybrid.visible) {
+        wmsManager.setLayerVisibility('vworld-hybrid', false);
+        layerState.hybrid.visible = false;
+        document.getElementById('btn-hybrid').classList.remove('active');
+        log('Hybrid layer hidden', 'info');
+      } else {
+        wmsManager.setLayerVisibility('vworld-hybrid', true);
+        layerState.hybrid.visible = true;
+        document.getElementById('btn-hybrid').classList.add('active');
+        log('Hybrid layer shown', 'info');
+      }
+      updateLayerList();
+    }
+    
+    // Toggle Cadastral layer
+    function toggleCadastral() {
+      if (!layerState.cadastral.added) {
+        wmsManager.addVWorldCadastral('vworld-cadastral', { opacity: 0.8 });
+        layerState.cadastral.added = true;
+        layerState.cadastral.visible = true;
+        document.getElementById('btn-cadastral').classList.add('active');
+        log('Cadastral layer added', 'success');
+      } else if (layerState.cadastral.visible) {
+        wmsManager.setLayerVisibility('vworld-cadastral', false);
+        layerState.cadastral.visible = false;
+        document.getElementById('btn-cadastral').classList.remove('active');
+        log('Cadastral layer hidden', 'info');
+      } else {
+        wmsManager.setLayerVisibility('vworld-cadastral', true);
+        layerState.cadastral.visible = true;
+        document.getElementById('btn-cadastral').classList.add('active');
+        log('Cadastral layer shown', 'info');
+      }
+      updateLayerList();
+    }
+    
+    // Update BaseMap opacity
+    function updateBasemapOpacity(value) {
+      document.getElementById('basemap-opacity-value').textContent = value + '%';
+      wmsManager.setLayerOpacity('vworld-base', value / 100);
+      log('BaseMap opacity set to ' + value + '%', 'info');
+    }
+    
+    // Update Satellite opacity
+    function updateSatelliteOpacity(value) {
+      document.getElementById('satellite-opacity-value').textContent = value + '%';
+      wmsManager.setLayerOpacity('vworld-satellite', value / 100);
+      log('Satellite opacity set to ' + value + '%', 'info');
+    }
+    
+    // Reset all layers
+    function resetAllLayers() {
+      Object.keys(layerState).forEach(function(key) {
+        if (layerState[key].added) {
+          wmsManager.setLayerVisibility('vworld-' + key, true);
+          layerState[key].visible = true;
+          document.getElementById('btn-' + key).classList.add('active');
+        }
+        if (key === 'basemap') {
+          wmsManager.setLayerOpacity('vworld-base', 0.8);
+          document.getElementById('basemap-opacity').value = 80;
+          document.getElementById('basemap-opacity-value').textContent = '80%';
+        }
+        if (key === 'satellite') {
+          wmsManager.setLayerOpacity('vworld-satellite', 0.8);
+          document.getElementById('satellite-opacity').value = 80;
+          document.getElementById('satellite-opacity-value').textContent = '80%';
+        }
+      });
+      updateLayerList();
+      log('All layers reset to default', 'info');
+    }
+    
+    // Remove all layers
+    function removeAllLayers() {
+      Object.keys(layerState).forEach(function(key) {
+        if (layerState[key].added) {
+          wmsManager.removeLayer('vworld-' + key);
+          layerState[key].added = false;
+          layerState[key].visible = false;
+          document.getElementById('btn-' + key).classList.remove('active');
+        }
+      });
+      updateLayerList();
+      log('All layers removed', 'warning');
+    }
+    
+    // Update map info display
+    function updateMapInfo() {
+      if (!map) return;
+      
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+      
+      document.getElementById('map-center').textContent = 
+        center.lat.toFixed(4) + ', ' + center.lng.toFixed(4);
+      document.getElementById('map-zoom').textContent = zoom.toFixed(1);
+      
+      // Count active layers
+      let count = 0;
+      Object.keys(layerState).forEach(function(key) {
+        if (layerState[key].added && layerState[key].visible) {
+          count++;
+        }
+      });
+      document.getElementById('active-count').textContent = count;
+    }
+    
+    // Update layer list display
+    function updateLayerList() {
+      const container = document.getElementById('layer-list');
+      const layers = wmsManager ? wmsManager.getAllLayers() : [];
+      
+      if (layers.length === 0) {
+        container.innerHTML = '<p style="color: #666; font-size: 0.8rem;">No layers added yet</p>';
+        return;
+      }
+      
+      container.innerHTML = layers.map(function(layer) {
+        return '<div class="layer-item' + (layer.visible ? '' : ' hidden') + '">' +
+          '<h4>' +
+            '<span>' + layer.id + '</span>' +
+            '<span class="status">' + (layer.visible ? 'Visible' : 'Hidden') + '</span>' +
+          '</h4>' +
+          '<div style="font-size: 0.75rem; color: #888;">' +
+            'Opacity: ' + Math.round(layer.opacity * 100) + '%' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+    
+    // Log message
+    function log(message, type) {
+      const container = document.getElementById('test-log');
+      const entry = document.createElement('div');
+      entry.className = 'log-entry ' + type;
+      entry.textContent = '[' + new Date().toLocaleTimeString() + '] ' + message;
+      container.insertBefore(entry, container.firstChild);
+      
+      // Keep only last 20 entries
+      while (container.children.length > 20) {
+        container.removeChild(container.lastChild);
+      }
+    }
+    
+    // Initialize on DOM ready
+    document.addEventListener('DOMContentLoaded', function() {
+      initMap();
+      log('WMS Direct Integration Test initialized', 'info');
+      log('Testing VWorld WMS without bridge layer', 'info');
+    });
+  </script>
+</body>
+</html>

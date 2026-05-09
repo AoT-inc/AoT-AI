@@ -1,0 +1,145 @@
+
+function togglePID_AoT(wid) {
+  let toggleInput = document.getElementById("toggle_input_" + wid);
+  let actBtn      = document.getElementById("hidden_pid_activate_" + wid);
+  let deactBtn    = document.getElementById("hidden_pid_deactivate_" + wid);
+
+  if(toggleInput.checked) {
+    if(actBtn) actBtn.click();
+  } else {
+    if(deactBtn) deactBtn.click();
+  }
+}
+
+function setSetpointAoT(wid) {
+  let btn_set = document.getElementById("btn_pid_set_" + wid);
+  let sp_id   = btn_set.name.split('/')[0]; 
+  let sp_val  = document.getElementById("pid_setpoint_" + sp_id).value;
+  if(sp_val) {
+    let cmd = btn_set.name + sp_val;
+    sendPIDCommandAoT(cmd);
+  }
+}
+
+function sendPIDCommandAoT(cmd) {
+  if (!cmd || cmd.startsWith("None/")) {
+    console.error("No PID selected");
+    return;
+  }
+  $.ajax({
+    type: 'GET',
+    url: '/pid_mod_unique_id/' + cmd,
+    success: function(res) {
+      console.log("Server response:", res);
+      // 추가 UI 업데이트가 필요하면 여기서 처리합니다.
+    },
+    error: function(err) {
+      console.error("Error:", err);
+    }
+  });
+}
+
+function printPidValueAoT(data, nm, wid, decs) {
+  if(data[nm] && data[nm][1] != null) {
+    let val = parseFloat(data[nm][1]).toFixed(decs);
+    $("#"+nm+"-"+wid).text(val);
+  } else {
+    $("#"+nm+"-"+wid).text("N/A");
+  }
+  // 타임스탬프 표시 여부 (enable_timestamp)
+  if(data[nm] && data[nm][0]) {
+    if(document.getElementById(nm + "-" + wid + "-timestamp")) {
+      document.getElementById(nm + "-" + wid + "-timestamp").innerHTML = epoch_to_timestamp(data[nm][0]*1000);
+    }
+  }
+}
+
+function printPidErrorAoT(wid) {
+  $("#actual-"+wid).text("ERR");
+  $("#duration_time-"+wid).text("ERR");
+  if(document.getElementById("duration_time-"+wid+"-timestamp")) {
+    document.getElementById("duration_time-"+wid+"-timestamp").innerHTML = "";
+  }
+  $("#pid_p_value-"+wid).text("ERR");
+  $("#pid_i_value-"+wid).text("ERR");
+  $("#pid_d_value-"+wid).text("ERR");
+  $("#pid_pid_value-"+wid).text("ERR");
+
+  let container = document.getElementById("pid_container_"+wid);
+  container.classList.remove("pause-background","active-background","inactive-background");
+  container.classList.add("inactive-background");
+}
+
+function getPidDataAoT(wid, pidid, max_age, decs) {
+  if(!pidid || pidid==='None'){
+    printPidErrorAoT(wid);
+    window.showToast("No PID selected", "error");
+    return;
+  }
+  $.ajax("/last_pid/"+pidid+"/"+max_age, {
+    success:function(data, txtStatus, jqXHR){
+      if(jqXHR.status===204) {
+        printPidErrorAoT(wid);
+        window.showToast("No PID found or no measurement", "error");
+        return;
+      }
+      if(data.actual){
+        printPidValueAoT(data, "actual", wid, decs);
+      }
+      if(data.duration_time){
+        printPidValueAoT(data, "duration_time", wid, decs);
+      }
+      if(data.pid_p_value && data.pid_i_value && data.pid_d_value && data.pid_pid_value) {
+        printPidValueAoT(data, "pid_p_value", wid, 1);
+        printPidValueAoT(data, "pid_i_value", wid, 1);
+        printPidValueAoT(data, "pid_d_value", wid, 1);
+        printPidValueAoT(data, "pid_pid_value", wid, 1);
+      }
+
+      let toggleInput = document.getElementById("toggle_input_"+wid);
+      toggleInput.checked = false; // default off
+
+      let btnPause  = document.getElementById("btn_pid_pause_"+wid);
+      let btnHold   = document.getElementById("btn_pid_hold_"+wid);
+      let btnResume = document.getElementById("btn_pid_resume_"+wid);
+      btnResume.style.display = "none";
+
+      let container = document.getElementById("pid_container_"+wid);
+      container.classList.remove("pause-background","active-background","inactive-background");
+
+      if(data.activated) {
+        toggleInput.checked = true;
+        if(data.paused) {
+          container.classList.add("pause-background");
+          btnResume.style.display="inline-block";
+          btnPause.style.display ="none";
+          btnHold.style.display  ="none";
+        } else if(data.held) {
+          container.classList.add("pause-background");
+          btnResume.style.display="inline-block";
+          btnPause.style.display ="none";
+          btnHold.style.display  ="none";
+        } else {
+          container.classList.add("active-background");
+          btnPause.style.display ="inline-block";
+          btnHold.style.display  ="inline-block";
+        }
+      } else {
+        container.classList.add("inactive-background");
+        btnPause.style.display ="inline-block";
+        btnHold.style.display  ="inline-block";
+      }
+    },
+    error:function(err){
+      printPidErrorAoT(wid);
+      window.showToast("Error: " + JSON.stringify(err), "error");
+    }
+  });
+}
+
+
+function repeatPidDataAoT(wid, pidid, refsec, max_age, decs) {
+  setInterval(function(){
+    getPidDataAoT(wid, pidid, max_age, decs);
+  }, refsec*1000);
+}

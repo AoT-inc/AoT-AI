@@ -1,0 +1,18 @@
+
+            {% for n in range(widget_variables['colors_gauge_solid_form']|length) %}
+              {% set index = '{0:0>2}'.format(n) %}
+        <div class="form-row">
+          <div class="col-auto">
+            <label class="control-label" for="color_stop_number{{index}}">[{{n}}] Stop</label>
+            <div>
+              <input class="form-control" id="color_stop_number{{index}}" name="color_stop_number{{index}}" type="text" value="{{widget_variables['colors_gauge_solid_form'][n]['stop']}}">
+            </div>
+          </div>
+          <div class="col-auto">
+            <label class="control-label" for="color_hex_number{{index}}">[{{n}}] Color</label>
+            <div>
+              <input id="color_hex_number{{index}}" name="color_hex_number{{index}}" placeholder="#000000" type="color" value="{{widget_variables['colors_gauge_solid_form'][n]['hex']}}">
+            </div>
+          </div>
+        </div>
+            {% endfor %}

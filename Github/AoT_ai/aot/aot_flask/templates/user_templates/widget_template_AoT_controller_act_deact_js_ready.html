@@ -1,0 +1,19 @@
+
+$(document).ready(function() {
+  $('.controller-toggle-input').off('change.controller').on('change.controller', function(){
+    const btn = $(this);
+    const dev_id = btn.attr('name');
+    const wid = btn.attr('id').replace('aot_controller_toggle_', '');
+    const isOn = btn.is(':checked');
+
+    console.log("Toggle changed:", { wid, dev_id, isOn });
+
+    if (!dev_id) {
+      console.error("No Controller ID found for widget:", wid);
+      return;
+    }
+
+    const action = isOn ? 'activate' : 'deactivate';
+    setControllerStateAoT(dev_id, action, wid);
+  });
+});

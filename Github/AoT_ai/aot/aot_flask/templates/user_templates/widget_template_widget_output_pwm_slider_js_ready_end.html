@@ -1,0 +1,11 @@
+
+{%- set device_id = widget_options['output'].split(",")[0] -%}
+{%- set measurement_id = widget_options['output'].split(",")[1] -%}
+{%- set channel_id = widget_options['output'].split(",")[2] -%}
+
+{% for each_output in output if each_output.unique_id == device_id %}
+  getLastDataPWMSlider('{{each_widget.unique_id}}', '{{device_id}}', 'output', '{{measurement_id}}', {{widget_options['max_measure_age']}}, {% if widget_options['invert_status'] %}true{% else %}false{% endif %}, {{widget_options['decimal_places']}});
+  repeatLastDataPWMSlider('{{each_widget.unique_id}}', '{{device_id}}', 'output', '{{measurement_id}}', {{widget_options['refresh_seconds']}}, {{widget_options['max_measure_age']}}, {% if widget_options['invert_status'] %}true{% else %}false{% endif %}, {{widget_options['decimal_places']}});
+{% endfor %}
+  getGPIOStatePWMSlider('{{each_widget.unique_id}}', '{{device_id}}', '{{channel_id}}', {% if widget_options['invert_status'] %}true{% else %}false{% endif %}, {{widget_options['decimal_places']}});
+  repeatGPIOStatePWMSlider('{{each_widget.unique_id}}', '{{device_id}}', '{{channel_id}}', {{widget_options['refresh_seconds']}}, {% if widget_options['invert_status'] %}true{% else %}false{% endif %}, {{widget_options['decimal_places']}});

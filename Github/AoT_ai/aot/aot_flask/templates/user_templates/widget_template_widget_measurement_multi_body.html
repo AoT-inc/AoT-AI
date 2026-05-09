@@ -1,0 +1,85 @@
+
+  {%- set device_id_1 = widget_options['measurement_1'].split(",")[0] -%}
+  {%- set measurement_id_1 = widget_options['measurement_1'].split(",")[1] -%}
+  {%- set device_id_2 = widget_options['measurement_2'].split(",")[0] -%}
+  {%- set measurement_id_2 = widget_options['measurement_2'].split(",")[1] -%}
+
+  <div style="text-align: center">
+
+  <!-- Measurement 1 -->
+  <div>
+  {%- for each_input in input if each_input.unique_id == device_id_1 and measurement_id_1 in device_measurements_dict -%}
+    <span class="widget-measurement-value" style="font-size: {{widget_options['font_em_value']}}em" id="1-value-{{each_widget.unique_id}}"></span><span class="widget-measurement-unit" style="font-size: {{widget_options['font_em_unit']}}em">
+        {%- if dict_measure_units[measurement_id_1] in dict_units and
+               dict_units[dict_measure_units[measurement_id_1]]['unit'] and
+               widget_options['enable_unit'] -%}
+          {{' ' + dict_units[dict_measure_units[measurement_id_1]]['unit']}}
+        {%- endif -%}
+    </span>
+    <br/>
+    {%- if widget_options['enable_name'] -%}
+      {{each_input.name + ' '}}
+    {%- endif -%}
+    {%- if widget_options['enable_channel'] or widget_options['enable_measurement'] -%}
+      {{'('}}
+    {%- endif -%}
+    {%- if not device_measurements_dict[measurement_id_1].single_channel and widget_options['enable_channel'] -%}
+      {{'CH' + (device_measurements_dict[measurement_id_1].channel|int)|string}}
+    {%- endif -%}
+    {%- if widget_options['enable_channel'] and widget_options['enable_measurement'] -%}
+      {{', '}}
+    {%- endif -%}
+    {%- if widget_options['enable_measurement'] and device_measurements_dict[measurement_id_1].measurement -%}
+      {{dict_measurements[device_measurements_dict[measurement_id_1].measurement]['name']}}
+    {%- endif -%}
+    {%- if widget_options['enable_channel'] or widget_options['enable_measurement'] -%}
+      {{')'}}
+    {%- endif -%}
+  {%- endfor -%}
+  </div>
+
+  <!-- Measurement 2 -->
+  <div>
+  {%- for each_input in input if each_input.unique_id == device_id_2 and measurement_id_2 in device_measurements_dict -%}
+    <span class="widget-measurement-value" style="font-size: {{widget_options['font_em_value']}}em" id="2-value-{{each_widget.unique_id}}"></span><span class="widget-measurement-unit" style="font-size: {{widget_options['font_em_unit']}}em">
+        {%- if dict_measure_units[measurement_id_2] in dict_units and
+               dict_units[dict_measure_units[measurement_id_2]]['unit'] and
+               widget_options['enable_unit'] -%}
+          {{' ' + dict_units[dict_measure_units[measurement_id_2]]['unit']}}
+        {%- endif -%}
+    </span>
+    <br/>
+    {%- if widget_options['enable_name'] -%}
+      {{each_input.name + ' '}}
+    {%- endif -%}
+    {%- if widget_options['enable_channel'] or widget_options['enable_measurement'] -%}
+      {{'('}}
+    {%- endif -%}
+    {%- if not device_measurements_dict[measurement_id_2].single_channel and widget_options['enable_channel'] -%}
+      {{'CH' + (device_measurements_dict[measurement_id_2].channel|int)|string}}
+    {%- endif -%}
+    {%- if widget_options['enable_channel'] and widget_options['enable_measurement'] -%}
+      {{', '}}
+    {%- endif -%}
+    {%- if widget_options['enable_measurement'] and device_measurements_dict[measurement_id_2].measurement -%}
+      {{dict_measurements[device_measurements_dict[measurement_id_2].measurement]['name']}}
+    {%- endif -%}
+    {%- if widget_options['enable_channel'] or widget_options['enable_measurement'] -%}
+      {{')'}}
+    {%- endif -%}
+  {%- endfor -%}
+  </div>
+
+  <div>
+    {%- if widget_options['enable_timestamp'] and measurement_id_1 in last_measure_dict -%}
+      <span style="font-size: {{widget_options['font_em_timestamp']}}em" id="1-timestamp-{{each_widget.unique_id}}">{{last_measure_dict[measurement_id_1].timestamp.strftime('%Y-%m-%d %H:%M:%S')}}</span>
+    {%- endif -%}
+  </div>
+  <div>
+    {%- if widget_options['enable_timestamp'] and measurement_id_2 in last_measure_dict -%}
+      <span style="font-size: {{widget_options['font_em_timestamp']}}em" id="2-timestamp-{{each_widget.unique_id}}">{{last_measure_dict[measurement_id_2].timestamp.strftime('%Y-%m-%d %H:%M:%S')}}</span>
+    {%- endif -%}
+  </div>
+
+  </div>
+  

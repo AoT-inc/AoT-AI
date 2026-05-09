@@ -1,0 +1,118 @@
+# GIS Integration Test Specification v1.0
+# Phase: Integration Testing for MapLibre-based GIS System
+# Created: 2026-04-30
+
+test_metadata:
+  name: "GIS Vector Integration Test"
+  version: "1.0.0"
+  phase: "phase_4_integration"
+  prerequisites:
+    - "gis-maplibre-compat-layer-v1"
+    - "gis-maplibre-draw-tools-v1"
+    - "gis-design-migration-v1"
+  working_directory: "/Users/gwansuk/Library/CloudStorage/SynologyDrive-dev/2603_AoT_ai/Build/5_docker"
+
+test_suite:
+  core_modules:
+    - module: "aot-leaflet-compat.js"
+      description: "Leaflet API compatibility layer with MapLibre backend"
+      checks:
+        - name: "L namespace initialization"
+          type: "assertion"
+          test: "typeof L !== 'undefined'"
+        - name: "L.Map class exists"
+          type: "assertion"
+          test: "typeof L.Map !== 'undefined'"
+        - name: "L.Layer class exists"
+          type: "assertion"
+          test: "typeof L.Layer !== 'undefined'"
+        - name: "L.geoJSON function exists"
+          type: "assertion"
+          test: "typeof L.geoJSON === 'function'"
+        - name: "L.marker function exists"
+          type: "assertion"
+          test: "typeof L.marker === 'function'"
+        - name: "L.LatLng class exists"
+          type: "assertion"
+          test: "typeof L.LatLng === 'function'"
+
+    - module: "AoTMapLibreCompat.js"
+      description: "MapLibre compatibility layer for GeoJSON layers"
+      checks:
+        - name: "AoTMapLibreCompat class exists"
+          type: "assertion"
+          test: "typeof AoTMapLibreCompat !== 'undefined'"
+        - name: "addTo method exists"
+          type: "assertion"
+          test: "typeof AoTMapLibreCompat.prototype.addTo === 'function'"
+
+    - module: "maplibre-draw.js"
+      description: "MapLibre drawing tools"
+      checks:
+        - name: "MapLibreDraw class exists"
+          type: "assertion"
+          test: "typeof MapLibreDraw !== 'undefined'"
+        - name: "setMode method exists"
+          type: "assertion"
+          test: "typeof MapLibreDraw.prototype.setMode === 'function'"
+
+    - module: "aot-maplibre-draw.js"
+      description: "MapLibre-Geoman compatible drawing manager"
+      checks:
+        - name: "AoTDrawManager namespace exists"
+          type: "assertion"
+          test: "typeof AoTDrawManager !== 'undefined'"
+
+    - module: "aot-maplibre-raster-bridge.js"
+      description: "Leaflet-MapLibre bridge"
+      checks:
+        - name: "AoTMapBridge namespace exists"
+          type: "assertion"
+          test: "typeof AoTMapBridge !== 'undefined'"
+        - name: "epsg5179To3857 method exists"
+          type: "assertion"
+          test: "typeof AoTMapBridge.epsg5179To3857 === 'function'"
+
+    - module: "aot-map-utils.js"
+      description: "Geometric utilities"
+      checks:
+        - name: "AoTMapUtils namespace exists"
+          type: "assertion"
+          test: "typeof AoTMapUtils !== 'undefined'"
+        - name: "trimLine method exists"
+          type: "assertion"
+          test: "typeof AoTMapUtils.trimLine === 'function'"
+
+    - module: "aot-map-loader.js"
+      description: "Map initialization"
+      checks:
+        - name: "AoTMapLoader namespace exists"
+          type: "assertion"
+          test: "typeof AoTMapLoader !== 'undefined'"
+        - name: "initMap method exists"
+          type: "assertion"
+          test: "typeof AoTMapLoader.initMap === 'function'"
+
+bug_fixes_required:
+  - id: "GisBug001"
+    severity: "critical"
+    description: "L.Layer duplicate definition - second L_Layer overwrites first"
+    location: "aot-leaflet-compat.js lines 234-263 and 264-356"
+    expected_fix: "Remove duplicate L_Layer definition or merge both definitions"
+    status: "identified"
+  - id: "GisBug002"
+    severity: "high"
+    description: "L.FeatureGroup duplicate definition"
+    location: "aot-leaflet-compat.js lines 723-813 and 819-901"
+    expected_fix: "Remove duplicate L_LayerGroup definition"
+    status: "identified"
+  - id: "GisBug003"
+    severity: "medium"
+    description: "L_GeoJSON duplicate definition"
+    location: "aot-leaflet-compat.js lines 917-943 and 1657-1872"
+    expected_fix: "Remove duplicate L_GeoJSON definition"
+    status: "identified"
+
+notes: |
+  This test specification covers Phase 4 of the GIS MapLibre migration project.
+  All identified bugs are due to duplicate class definitions.

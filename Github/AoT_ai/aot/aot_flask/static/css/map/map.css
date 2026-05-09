@@ -1,0 +1,1417 @@
+/* MapLibre GL Styles - Leaflet dependencies removed */
+/* [GIS Pure MapLibre v4.0] Pure MapLibre GL - Leaflet complete removal */
+
+/* ==========================================================================
+   Z-Index Hierarchy (canonical scale for map UI)
+   --------------------------------------------------------------------------
+   Rule: 도구 버튼/출력 > 지도 패널/오버레이 > 지도 위 라벨
+     1   map labels base (site/zone/memo/length/device)
+     5   map labels on hover (still below all tool surfaces)
+    10   attribution / legend / measurement panel
+    15   AI advice panel
+    20   tool buttons (map-tools-left/right, search overlay, draw toolbar,
+         site-list control container)
+    40   tool-generated outputs (search results, site list overlay, dropdowns)
+    60   bootstrap tooltips (for tool buttons)
+   20000 modal / pseudo-fullscreen
+   50000 fullscreen parent
+   ========================================================================== */
+
+.aot-map {
+  min-height: 420px;
+  width: 100%;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+/* MapLibre container styles */
+.maplibregl-container {
+  width: 100%;
+  height: 100%;
+}
+
+.maplibregl-canvas {
+  outline: none;
+}
+
+.maplibregl-ctrl-group {
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px rgba(0,0,0,.1);
+}
+
+.maplibregl-ctrl-group button {
+  width: 29px !important;
+  height: 29px !important;
+}
+
+.maplibregl-ctrl-attrib {
+  font-size: 0.7rem;
+}
+
+/* Vector layer controls */
+.maplibregl-ctrl-top-right {
+  top: 10px;
+  right: 10px;
+}
+
+/* MapLibre compatible styles (replaced Leaflet pseudo fullscreen fallback) */
+.aot-map-pseudo-fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 20000 !important; /* Above Navbar (12500) and same as Modals (20000) */
+  height: 100dvh !important;
+  width: 100vw !important;
+  background: #fff;
+}
+
+/* Fullscreen active state for body */
+body.aot-map-fullscreen-active {
+    overflow: hidden !important;
+}
+
+body.aot-map-fullscreen-active #dash-sticky,
+body.aot-map-fullscreen-active .navbar.main-navbar {
+    display: none !important;
+}
+
+/* Stacking context fix for parents (grid-stack) */
+body.aot-map-fullscreen-active .grid-stack-item:not(.aot-fs-parent) {
+    display: none !important;
+}
+
+.aot-fs-parent {
+    z-index: 50000 !important;
+    transform: none !important;
+    transition: none !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: #fff !important;
+}
+
+.aot-map-pseudo-fullscreen-body {
+  overflow: hidden !important;
+}
+
+.aot-map-wrap {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.aot-map-attribution,
+.aot-map-attribution-placeholder,
+.aot-map-attribution-inline {
+  display: block;
+  margin-top: 6px;
+  width: 100%;
+  text-align: right;
+  font-size: 0.75rem;
+  color: #666;
+  white-space: nowrap !important; /* [Fix] V7: Force single line */
+  max-width: none !important; /* [Fix] V8: Prevent wrapping */
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+}
+
+/* MapLibre Popup Styles */
+.maplibregl-popup {
+  max-width: 280px;
+  font-size: 12px;
+  z-index: 20 !important;
+}
+
+.maplibregl-popup-content {
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.maplibregl-popup-close-button {
+  font-size: 18px;
+  padding: 4px 8px;
+}
+
+/* Attribution styles */
+.aot-map-attribution,
+.aot-map-attribution-placeholder,
+.aot-map-attribution-inline {
+  display: inline-block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  white-space: nowrap !important;
+  float: none !important;
+  vertical-align: middle !important;
+}
+
+.aot-map-attribution img,
+.maplibregl-ctrl-attrib img {
+  display: inline-block !important;
+  vertical-align: middle !important;
+  margin: 0 4px !important; /* Proper spacing for copyright logo */
+}
+
+/* Explicit bottom-center override for inline attribution */
+.aot-map-attribution-inline {
+  position: absolute !important;
+  bottom: 0 !important;
+  top: auto !important;
+  right: auto !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: auto !important;
+  margin: 0 !important;
+  padding: 0 5px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 4px 4px 0 0;
+  z-index: 10;
+  text-align: center;
+  pointer-events: auto;
+}
+
+.aot-map-attribution a,
+.aot-map-attribution-placeholder a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.section-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.section-stack .section-box {
+  margin-bottom: 0;
+}
+
+/* Attribution (MapLibre native) */
+
+
+
+#map-tabs {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+#map-tabs .map-tab {
+  flex: 1 1 0;
+}
+
+#map-tabs .btn-map-tab {
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Design Tabs Overrides */
+#designTabs .nav-link {
+  font-size: 1em;
+  color: #495057;
+  background-color: #f1f3f5;
+  /* Inactive Gray */
+  border-color: #dee2e6 #dee2e6 #ddd;
+}
+
+#designTabs .nav-link.active {
+  color: #007bff;
+  /* Active Blue */
+  background-color: #fff;
+  border-color: #dee2e6 #dee2e6 #fff;
+  font-weight: 600;
+}
+
+.btn-fixed-40 {
+  width: 40px !important;
+}
+
+.section-box {
+  padding: 0;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  background: #fff;
+  margin-bottom: 25px;
+}
+
+.section-box h5 {
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.map-container {
+  width: 100%;
+  height: 450px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #ddd;
+  margin-top: 15px;
+}
+
+.color-dot {
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  border-radius: 50%;
+  cursor: pointer;
+  margin-right: 5px;
+  border: 1px solid #ddd;
+}
+
+/* Collision Animation */
+.aot-map-text-marker {
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.2s ease-in-out;
+}
+
+
+/* Tool Group Button Styles (MapTiler style) — canonical rule, no !important needed */
+.tool-group .btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+  border: none;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+.tool-group .btn svg {
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+
+.map-marker-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-marker-glyph {
+  color: #fff;
+  font-weight: bold;
+  line-height: 1;
+  text-align: center;
+  display: block;
+}
+
+.map-marker-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: invert(1);
+  opacity: 0.9;
+}
+
+:root {
+  --aot-surface: transparent;
+}
+
+/* --- New Utility Classes --- */
+/* aot-map-container-fluid inherits standard container-fluid padding */
+
+
+
+.aot-map-tabs-wrapper {
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 6px;
+  margin: 0 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.aot-gap-sm {
+  gap: 0.35em;
+}
+
+.aot-gap-md {
+  gap: 0.5em;
+}
+
+.aot-mt-lg {
+  margin-top: 1.6em;
+}
+
+.aot-entry-break {
+  width: 100%;
+}
+
+.aot-map-search-btn {
+  min-width: 60px;
+}
+
+.aot-map-search-results {
+  z-index: 40;
+  display: none;
+  margin-top: 2px;
+  width: calc(100% - 70px);
+}
+
+.aot-color-input-sm {
+  width: 48px;
+  padding: 0;
+}
+
+.aot-color-input-custom {
+  max-width: 120px;
+}
+
+.aot-color-dot-btn {
+  padding: 0;
+  border: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.aot-device-list-box {
+  max-height: 180px;
+  overflow: auto;
+  margin-top: 10px;
+}
+
+.aot-device-section-row {
+  margin-top: 10px;
+}
+
+.aot-map-option-controls-row {
+  padding: 0.5em 0;
+  margin-left: 0;
+  flex-wrap: wrap;
+  gap: 0.35em;
+}
+
+.aot-col-min-150 {
+  min-width: 150px;
+}
+
+.aot-col-min-90 {
+  min-width: 90px;
+}
+
+.aot-max-w-200 {
+  max-width: 200px;
+}
+
+/* Text Marker Styles */
+.aot-map-text-marker {
+  background: transparent;
+  border: none;
+  /* transform: translate(-50%, -50%); removed to prevent conflict with Leaflet */
+}
+
+.site-label,
+.zone-label {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px; /* Rounded Rectangle */
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s;
+  transform: translate(-50%, -50%);
+}
+
+.aot-map-text-marker:hover .marker-pill {
+  transform: translate(-50%, -50%) scale(1.1);
+  /* Preserve centering on hover */
+  z-index: 5; /* Below tool buttons (20) — labels must not cover tools */
+}
+
+/* ==========================================================================
+   Map Controller Styles (Standardized from geo/design)
+   ========================================================================== */
+
+/* Map Tools Positioning inside Map Container */
+.map-tools-left,
+.map-tools-right {
+  position: absolute;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* Tool Group (Vertical Button Stack) — MapTiler style */
+.tool-group {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 0 0 2px rgba(0,0,0,.1);
+}
+
+.tool-group .btn {
+  border: none;
+  border-bottom: 1px solid rgba(0,0,0,.08);
+  border-radius: 0;
+  width: 29px;
+  height: 29px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background-color: transparent;
+  color: #333;
+  font-size: 13px;
+  transition: background-color 0.1s;
+}
+
+.tool-group .btn:hover {
+  background-color: rgba(0,0,0,.05);
+}
+
+.tool-group .btn:last-child {
+  border-bottom: none;
+}
+
+/* Native MapLibre compass container injected into .tool-group */
+.tool-group .maplibregl-ctrl-group {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+.tool-group .maplibregl-ctrl-group .maplibregl-ctrl-compass {
+  width: 29px !important;
+  height: 29px !important;
+  border-top: 1px solid rgba(0,0,0,.08) !important;
+  border-radius: 0 !important;
+}
+.tool-group .maplibregl-ctrl-group .maplibregl-ctrl-compass:hover {
+  background-color: rgba(0,0,0,.05) !important;
+}
+
+/* Standalone Floating Button — MapTiler style (square, not circle) */
+.btn-circle {
+  width: 29px;
+  height: 29px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  box-shadow: 0 0 0 2px rgba(0,0,0,.1);
+  background: #fff !important;
+  color: #333;
+  font-size: 13px;
+  transition: background-color 0.1s;
+}
+
+.btn-circle:hover {
+  background-color: rgba(0,0,0,.05) !important;
+}
+
+/* Tool Alignment Override */
+.map-tools-left {
+  align-items: flex-start;
+}
+
+.map-tools-right {
+  align-items: flex-end;
+}
+
+/* Mobile Responsive Adjustments (Standard) */
+@media (max-width: 768px) {
+  .map-tools-left {
+    left: 10px !important;
+  }
+
+  .map-tools-right {
+    right: 10px !important;
+    /* [Fix] Adjust top position if needed, but 70px is fine relative to layer control */
+  }
+
+  /* [New] Mobile Margins for External Layer Control */
+  #external-layer-control {
+    top: 10px !important;
+    right: 10px !important;
+  }
+
+  /* MapLibre compatible legend container */
+}
+
+
+/* [Fix] Map Search Overlay Layout - Centered with margins to clear side controls */
+.map-search-overlay {
+  position: absolute;
+  top: 20px; /* Increased from 15px for better top spacing */
+  left: 60px; /* Space for Left Tools */
+  right: 60px; /* Space for Right Tools */
+  width: calc(100% - 120px); /* Fill remaining space */
+  z-index: 20;
+  background: transparent;
+  box-shadow: none;
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  overflow: visible;
+}
+
+@media (max-width: 768px) {
+    .map-search-overlay {
+        /* Controller: left 10px + width 36px + gap 8px = 54px */
+        left: 54px;
+        right: 54px;
+        width: calc(100% - 108px);
+    }
+}
+
+.map-search-overlay>* {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 600px;
+  /* Removed background/box-shadow overrides to allow component's native style (white pill) */
+  margin: 0 auto; /* Ensure centering works even if flex acts up */
+}
+
+/* [New] Standardized Legend Styles */
+.aot-legend-container {
+  background-color: var(--panel-bg-rgba, rgba(255, 255, 255, 0.9)) !important;
+  padding: 10px 12px !important;
+  border: none !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  min-width: 200px;
+  max-width: 260px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* Sit above measurement panel: panel bottom(32) + panel height(80) + gap(8) = 120px */
+  bottom: 120px !important;
+  margin-bottom: 0 !important;
+  /* Height grows with content; capped so it doesn't overflow the map */
+  max-height: 50vh !important;
+  z-index: 10 !important;
+  overflow-y: auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0;
+  scrollbar-width: thin;
+}
+
+/* No measurement panel: legend sits at panel-bottom level (32px) */
+.aot-legend-no-panel {
+  bottom: 32px !important;
+}
+@media (max-width: 768px) {
+  .aot-legend-no-panel {
+    bottom: 32px !important;
+  }
+}
+
+/* Title unit span — hidden everywhere (unit already shown in value box) */
+.aot-legend-title-unit {
+  display: none;
+}
+
+/* data-only 모드: map 외부에 position:relative로 배치되므로 bottom 오프셋 불필요 */
+.aot-legend-standalone {
+  bottom: auto !important;
+  position: relative !important;
+  margin: 8px !important;
+  align-self: flex-start !important;
+}
+
+.aot-legend-item-wrapper {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 0 !important;
+}
+
+.aot-legend-item-wrapper:not(:first-child) {
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+}
+
+.aot-legend-title {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+  letter-spacing: -0.01em;
+}
+
+.aot-legend-bar {
+  height: 12px;
+  width: 100%;
+  border-radius: 6px;
+  /* Rounded pill shape */
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  /* Subtle border */
+  margin-bottom: 4px;
+}
+
+.aot-legend-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* [New] Legend Flex Layout (Value Display) */
+.aot-legend-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 60px;
+  box-sizing: border-box;
+}
+
+.aot-legend-content {
+  flex: 1;
+  /* Takes remaining space */
+}
+
+/* Right side value box */
+.aot-legend-value-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  padding-left: 12px;
+  border-left: 1px solid #e0e0e0;
+  text-align: center;
+}
+
+.aot-legend-value-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  line-height: 1;
+}
+
+.aot-legend-value-unit {
+  font-size: 10px;
+  color: #888;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+/* [New] Mobile: Compact layout — title + value only, no bar/labels */
+@media (max-width: 768px) {
+  .aot-legend-container {
+    min-height: auto !important;
+    min-width: auto !important;
+    padding: 5px 8px !important;
+    max-width: 140px !important;
+    /* panel bottom(32) + mobile panel height(60) + gap(8) = 100px */
+    bottom: 100px !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Hide bar and min/max labels only — keep .aot-legend-content visible so title shows */
+  .aot-legend-bar,
+  .aot-legend-labels {
+    display: none !important;
+  }
+
+  /* Compact wrapper row: reduce min-height, tighten gap */
+  .aot-legend-wrapper {
+    min-height: 28px !important;
+    gap: 6px !important;
+  }
+
+  /* .aot-legend-content stays visible but takes minimal space */
+  .aot-legend-content {
+    flex: 1 !important;
+    min-width: 0;
+  }
+
+  /* Title: small but legible, truncate if too long */
+  .aot-legend-title {
+    display: block !important;
+    font-size: 9px !important;
+    font-weight: 600 !important;
+    margin-bottom: 0 !important;
+    letter-spacing: 0 !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+  }
+
+  .aot-legend-item-wrapper:not(:first-child) {
+    padding-top: 5px;
+    margin-top: 5px;
+  }
+
+  /* Value box: inline (value + unit side by side), no left border */
+  .aot-legend-value-box {
+    border-left: none !important;
+    padding-left: 0 !important;
+    min-width: auto !important;
+    flex-direction: row !important;
+    align-items: baseline !important;
+    gap: 2px;
+  }
+
+  .aot-legend-value-text {
+    font-size: 13px !important;
+  }
+
+  .aot-legend-value-unit {
+    font-size: 8px !important;
+    margin-top: 0 !important;
+  }
+}
+
+/* ==========================================================================
+   Widget & Label Styles (Consolidated from AoT_map.py)
+   ========================================================================== */
+
+.aot-map-widget-wrapper {
+  position: relative !important;
+  width: 100%;
+  height: 100%;
+  overflow: hidden !important;
+  background: #f8f9fa;
+}
+
+/* Hidden UI State - MapLibre compatible */
+
+/* Device Label Styles - Reverse effect for ON state */
+.device-label {
+  background: white !important; /* Ensure background is white */
+  color: black !important;
+  border: 1px solid #ccc !important;
+  border-radius: 12px !important; /* Pill shape */
+  padding: 1px 6px !important; /* Slightly more side padding for pill look */
+  font-size: 11px;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  pointer-events: none;
+  /* Let clicks pass to map */
+}
+
+/* --- New Overlay & Popup Styles (Migrated from JS) --- */
+/* [Fix] Targeted ID override for Site List Overlay Z-Index */
+#site-list-popover.aot-map-site-list-overlay,
+.aot-map-site-list-overlay {
+  display: none;
+  position: absolute;
+  left: 40px;
+  background: white;
+  z-index: 30 !important;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 8px;
+  min-width: 180px;
+  max-height: 300px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+  max-height: 400px;
+  scrollbar-width: thin;
+  pointer-events: auto !important;
+}
+
+.aot-map-site-list-overlay.active {
+  display: block !important;
+}
+
+.aot-map-site-list-control-container {
+    position: relative;
+    overflow: visible !important;
+    z-index: 20 !important;
+}
+
+.site-item {
+  padding: 5px 8px;
+  cursor: pointer;
+  font-size: 13px;
+  border-radius: 4px;
+}
+
+.site-item:hover {
+  background: #f0f0f0;
+}
+
+/* Memo Label Content */
+.memo-label-content {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 4px 8px;
+  border: 1px solid #3498db;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Common Map Button Icon */
+.aot-map-btn-icon {
+  color: #464646;
+  font-size: 14px;
+}
+
+/* Disabled State for Controls - MapLibre compatible */
+
+/* Margins for Custom Controls */
+.aot-ml-10 {
+  margin-left: 10px !important;
+}
+
+.aot-mr-10 {
+  margin-right: 10px !important;
+}
+
+.aot-overflow-visible {
+  overflow: visible !important;
+}
+
+.device-label.device-on {
+  background-color: var(--device-label-color, #32c85a) !important;
+  border-color: var(--device-label-color, #32c85a) !important;
+  color: white !important;
+  font-weight: bold;
+}
+
+/* Site/Zone Labels - Hierarchy */
+
+.tooltip {
+  z-index: 60 !important;
+}
+.site-label {
+  font-weight: bold;
+  font-size: 14px;
+  text-shadow: 0 0 3px white;
+}
+
+.zone-label {
+  font-weight: 600;
+  font-size: 12px;
+  color: #444;
+}
+
+.length-label {
+  font-size: 10px;
+  color: #888;
+}
+
+/* Memo Label Styling */
+.memo-label div {
+  transition: transform 0.2s ease;
+}
+
+.memo-label:hover div {
+  transform: scale(1.05);
+  z-index: 5; /* Below tool buttons (20) — labels must not cover tools */
+}
+
+/* Custom Map Controls - MapLibre compatible */
+
+/* ==========================================================================
+   Measurement Panel Styles
+   ========================================================================== */
+/* Measurement Panel (Bottom Center) */
+.aot-measurement-panel {
+    position: absolute;
+    bottom: 32px !important; /* [Fix] 32px for desktop to avoid attribution */
+    left: 50% !important; /* Default: Centered */
+    right: auto !important;
+    margin: 0; /* Reset margin - transform handles centering */
+    transform: translateX(-50%) !important; /* Default: Centered */
+    width: auto;
+    max-width: calc(100% - 20px);
+    height: 80px;
+    box-sizing: border-box;
+    user-select: none; /* [New] Prevent text selection during drag-scroll */
+    -webkit-user-select: none;
+    
+    /* Theme aware background */
+    background-color: var(--panel-bg-rgba, rgba(255, 255, 255, 0.9));
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    padding: 0; /* Padding moved to Pages */
+    z-index: 10;
+    
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start; /* Pages align start */
+    gap: 0; 
+    
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid var(--panel-border, rgba(0,0,0,0.05));
+    color: var(--panel-text, #333);
+
+    /* Horizontal Scroll for overflowing Pages */
+    overflow-x: auto;
+    white-space: nowrap;
+    
+    /* Animation */
+    animation: slideUp 0.3s ease-out;
+    scrollbar-width: none !important; /* [Fix] Hide scrollbar */
+    -ms-overflow-style: none !important;
+
+    /* [Fix] Removed scroll-snap for fluid scrolling */
+    scroll-snap-type: none !important;
+    scroll-behavior: smooth;
+    
+    /* [New] Consistent Height */
+    height: 80px !important; 
+    box-sizing: border-box;
+    padding: 0; /* Padding moved to Pages */
+
+    transition: left 0.3s ease, transform 0.3s ease, max-width 0.3s ease;
+}
+
+/* [New] Left-Alignment Class for Side-by-Side (Legend) */
+.aot-measurement-panel.left-aligned {
+    left: 10px !important;
+    transform: none !important;
+}
+/* Mobile Override for panel */
+@media (max-width: 768px) {
+    .aot-measurement-panel {
+        bottom: 32px !important; /* Match desktop 32px */
+        left: 50% !important; /* Mobile Default: Centered */
+        transform: translateX(-50%) !important;
+        right: auto !important;
+        width: auto;
+        max-width: calc(100% - 20px); /* Allow JS or default override */
+        height: 60px !important; /* [New] Reduced mobile height */
+    }
+    .aot-measurement-panel.left-aligned {
+        left: 10px !important;
+        transform: none !important;
+    }
+}
+/* [New] Page Container for Sliding */
+.aot-meas-page {
+    min-width: fit-content; /* [Fix] Allow page to be wider than container */
+    width: auto;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    scroll-snap-align: none !important;
+    padding: 0 5px; /* [Fix] Reduced to 5px to balance inner spacing */
+    box-sizing: border-box;
+}
+
+/* Ensure items don't shrink, triggering scroll */
+.aot-measurement-panel .aot-measurement-item,
+.aot-measurement-panel .aot-meas-separator {
+    flex-shrink: 0 !important;
+}
+
+/* Hide scrollbar for Chrome/Safari/Opera */
+.aot-measurement-panel::-webkit-scrollbar {
+    display: none;
+}
+
+/* ==========================================================================
+   AI Advice Panel Styles (Positioned above Measurement Panel)
+   ========================================================================== */
+/* Rule: NO HARDCODING — all dimensions derived from mcp_config.UI_MAP_ADVICE_PANEL */
+/* via CSS variables set on .aot-map-container in template */
+.aot-map-advice-panel {
+    position: absolute;
+    bottom: var(--advice-panel-bottom-desktop, 116px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - (var(--advice-panel-horizontal-margin, 10px) * 2));
+    max-width: var(--advice-panel-max-width, 680px);
+    z-index: var(--advice-panel-z-index, 15);
+
+    /* Visual styling — matches measurement panel language */
+    background: var(--panel-bg-rgba, rgba(255, 255, 255, 0.92));
+    border: 1px solid var(--panel-border, rgba(0, 0, 0, 0.06));
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+
+    /* Typography */
+    font-family: inherit;
+    font-size: 0.9em;
+    color: var(--panel-text, #333);
+
+    /* Layout */
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+
+    /* Animation — reuse existing map animation */
+    animation: slideUp 0.3s ease-out;
+
+    /* Pointer events: allow interaction (panel is interactive) */
+    pointer-events: auto;
+}
+
+/* Mobile responsive: adjust positioning and margins */
+@media (max-width: 768px) {
+    .aot-map-advice-panel {
+        bottom: var(--advice-panel-bottom-mobile, 96px);
+        width: calc(100% - (var(--advice-panel-horizontal-margin-mobile, 8px) * 2));
+    }
+}
+
+.aot-measurement-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* scroll-snap-align: start;  Moved to Page */
+    flex: 1; /* Uniform width within page */
+    min-width: 0; 
+    padding: 0 2px; /* Slight padding */
+    box-sizing: border-box;
+    min-width: 90px; /* [Fix] Enforce minimum width for auto-sizing panel */
+}
+
+/* Desktop Constraint: Cap item width and center */
+@media (min-width: 769px) {
+    .aot-measurement-item {
+        max-width: 110px;
+    }
+}
+
+.aot-meas-value {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 1.8em;
+    font-weight: 700;
+    color: #333;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    
+    /* Truncation just in case */
+    max-width: 100%;
+    overflow: hidden;
+    /* text-overflow: ellipsis; Removed to allow font-resizing to take precedence */
+}
+
+.aot-meas-unit {
+    font-size: 0.5em;
+    font-weight: normal;
+    margin-left: 4px;
+    color: #555; /* Neutral color similar to name/legacy */
+}
+
+.aot-meas-unit-row {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.aot-meas-name {
+    font-size: 0.75rem;
+    color: #888;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.aot-meas-unit {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 600;
+}
+
+.aot-meas-separator {
+    height: 30px;
+    width: 1px;
+    background-color: #e0e0e0;
+    margin: 0 5px;
+    flex-shrink: 0;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+    .aot-measurement-panel {
+        bottom: 50px; /* Slightly lower on mobile but still above controls if stacked */
+        padding: 0 10px; /* Adjust padding for fixed height alignment */
+        justify-content: flex-start; /* Allow scroll from start */
+        /* Height remains 85px from main rule */
+    }
+    
+    /* [Mobile] Make measurement name more visible */
+    .aot-meas-name {
+        font-size: 0.85rem;  /* Increased from 0.75rem */
+        color: #555;         /* Darker from #888 */
+        font-weight: 600;    /* Bolder from 500 */
+        margin-top: 4px;     /* Add spacing from value */
+    }
+    
+}
+
+/* --- Geo Design Print Styles --- */
+@media print {
+    /* Hide Sidebars, Navbars, Floating Tools */
+    .sidebar, .navbar, .aot-footer, .map-tools-left, .map-tools-right, .mode-panel, #nav-mode-panel, .nav-v-panel, .aot-map-controls-container, .maplibregl-ctrl-zoom, .maplibregl-ctrl-group {
+        display: none !important;
+    }
+
+    /* Expand Content to Full Width/Height */
+    body, html, .main-panel, .content, .container-fluid {
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+
+    /* Specific Design Info Panel Styling */
+    #design-info-container {
+        position: static !important;
+        width: 100% !important;
+        max-height: none !important;
+        overflow: visible !important;
+        border: none !important;
+    }
+
+    /* Force Table Expansion (No Scrolling) */
+    .table-responsive {
+        overflow: visible !important;
+        display: block !important;
+        max-height: none !important;
+    }
+
+    /* Table Styling for Print */
+    table {
+        page-break-inside: auto;
+        width: 100% !important;
+    }
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+    thead {
+        display: table-header-group;
+    }
+    tfoot {
+        display: table-footer-group;
+    }
+
+    /* Hide Site Selector and Helper Buttons */
+    #site-selector, .bootstrap-select, #btn-site-filter, .close-panel-btn {
+        display: none !important;
+    }
+
+    /* Hide Top Action Buttons (Edit/Delete/Save) */
+    #btn-edit-map-name, #btn-delete-map, #btn-save-global {
+        display: none !important;
+    }
+
+    /* Hide Data Processing Section (CSV/PDF Buttons) */
+    #section-data-processing {
+        display: none !important;
+    }
+
+    /* Show Print Footer */
+    .print-footer {
+        display: block !important;
+        page-break-before: avoid;
+        margin-top: 50px !important;
+        border-top: 1px solid #ddd;
+    }
+
+    /* Reset Panel Backgrounds */
+    .card, .card-body {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Adjust Font Sizes for Paper */
+    body {
+        font-size: 10pt;
+    }
+}
+/* ===== MapLibre Draw Toolbar Styles ===== */
+.aot-maplibre-draw-toolbar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 20;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+}
+
+.aot-maplibre-draw-toolbar .draw-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  transition: all 0.2s ease;
+}
+
+.aot-maplibre-draw-toolbar .draw-btn:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.aot-maplibre-draw-toolbar .draw-btn.active {
+  background: #3bb2d0;
+  color: white;
+  border-color: #3bb2d0;
+}
+
+/* Draw point marker */
+.aot-draw-point-marker {
+  transition: transform 0.2s ease;
+}
+
+.aot-draw-point-marker:hover {
+  transform: scale(1.2);
+}
+
+/* ============================================
+   AoT Layer Control - 레이어 토글 컨트롤
+   ============================================ */
+
+/* 메인 컨테이너 */
+.aot-layer-ctrl {
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    min-width: 200px;
+    max-width: 280px;
+    overflow: hidden;
+    font-size: 13px;
+}
+
+/* 토글 버튼 */
+.aot-layer-toggle-btn {
+    padding: 10px 14px;
+    background: linear-gradient(135deg, #4a90d9, #357abd);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s ease;
+    font-weight: 500;
+}
+
+.aot-layer-toggle-btn:hover {
+    background: linear-gradient(135deg, #357abd, #2a6aa8);
+}
+
+.aot-layer-toggle-btn i {
+    font-size: 16px;
+}
+
+/* 레이어 목록 */
+.aot-layer-list {
+    border-top: 1px solid #e0e0e0;
+    max-height: 350px;
+    overflow-y: auto;
+    background: #fafafa;
+}
+
+/* 레이어 그룹 */
+.aot-layer-group {
+    padding: 6px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.aot-layer-group:last-child {
+    border-bottom: none;
+}
+
+.aot-layer-group-title {
+    font-weight: 600;
+    padding: 4px 12px;
+    color: #333;
+    background: #f5f5f5;
+    border-bottom: 1px solid #e8e8e8;
+    margin-bottom: 4px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* 개별 레이어 항목 */
+.aot-layer-item {
+    padding: 4px 12px;
+    transition: background 0.15s ease;
+}
+
+.aot-layer-item:hover {
+    background: #f0f0f0;
+}
+
+.aot-layer-item label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #444;
+}
+
+.aot-layer-item input[type="checkbox"] {
+    margin: 0;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #4a90d9;
+}
+
+.aot-layer-item input[type="checkbox"]:checked + span,
+.aot-layer-item input[type="checkbox"]:checked + * {
+    color: #2a6aa8;
+    font-weight: 500;
+}
+
+/* 스크롤바 스타일 */
+.aot-layer-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.aot-layer-list::-webkit-scrollbar-track {
+    background: #f0f0f0;
+}
+
+.aot-layer-list::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}
+
+.aot-layer-list::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+}

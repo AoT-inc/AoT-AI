@@ -1,0 +1,88 @@
+{% if each_output.output_type == 'output_spacer' %}
+{% include 'pages/output_spacer.html' %}
+{% else %}
+
+<form method="post" action="/output">
+  {{form_mod_output.csrf_token}}
+  {{form_mod_output.output_id(class_='form-control', value=each_output.unique_id)}}
+  {{form_mod_output.output_pin(class_='form-control', value=each_output.pin)}}
+
+  {% set form = form_mod_output %}
+  {% set dict_options = dict_outputs[each_output.output_type] %}
+  {% set each_device = each_output %}
+  {% set unique_id = each_output.unique_id %}
+  {% set custom_options_values = custom_options_values_outputs %}
+
+  <div class="grid-stack-item-content">
+
+    <div class="row small-gutters aot-entry-item-header">
+      <div class="aot-entry-drag-handle">
+        <i class="fa fa-grip-lines"></i>
+      </div>
+
+      <div class="aot-entry-content-item aot-output-col-4">
+        <div id="output_name_{{each_output.unique_id}}" class="form-control aot-entry-name-input" title="{{each_output.name}}">{{each_output.name}}</div>
+      </div>
+      <div class="aot-entry-content-item aot-output-col-6">
+        <input class="form-control aot-entry-uuid-btn aot-entry-btn-base aot-output-uuid-btn" type="button"
+          onclick="setClipboard('{{each_output.unique_id}}')"
+          title="UUID: {{each_output.unique_id}}, {{dict_translation['copy_to_clipboard']['phrase']}}"
+          value="{% if each_output.interface %}[{{each_output.interface}}] {% endif %}{{dict_outputs[each_output.output_type]['output_name']}}{% if dict_outputs[each_output.output_type]['output_library'] %} ({{dict_outputs[each_output.output_type]['output_library']}}){% endif %}">
+      </div>
+      <div class="aot-entry-settings">
+        <a class="btn p-0" data-toggle="modal" data-target="#modal_config_{{each_output.unique_id}}">
+          <i class="fas fa-cog"></i>
+        </a>
+      </div>
+    </div>
+
+    {% for each_output_channel in dict_outputs[each_output.output_type]['channels_dict'] %}
+    <div class="item_channel row small-gutters aot-entry-item-channel {% if output_states and output_states[each_output_channel|string] == 'on' %}active-background{% else %}inactive-background{% endif %}"
+      id="{{each_output.unique_id}}-{{each_output_channel}}-output-state">
+      <div class="aot-output-spacer-40"></div>
+      <div class="aot-entry-content-item aot-output-col-4">
+        <div class="form-control aot-entry-name-input">CH{{each_output_channel}}
+      {%- if 'name' in custom_options_values_output_channels[each_output.unique_id][each_output_channel] and
+             custom_options_values_output_channels[each_output.unique_id][each_output_channel]['name'] -%}
+        {{': ' + custom_options_values_output_channels[each_output.unique_id][each_output_channel]['name']}}
+      {%- elif 'name' in dict_outputs[each_output.output_type]['channels_dict'][each_output_channel] -%}
+        {{': ' + dict_outputs[each_output.output_type]['channels_dict'][each_output_channel]['name']}}
+      {%- endif -%}
+        </div>
+      </div>
+      <div class="aot-entry-actions aot-output-col-6 aot-entry-button-group">
+        {% if 'button_on' in dict_options['options_enabled'] -%}
+        <input onclick="return $(this).turn_on(this, '{{each_output.unique_id}}', '{{each_output_channel}}');"
+          class="form-control btn aot-btn-on aot-entry-btn-base"
+          name="{{each_output.unique_id}}/{{each_output_channel}}/on/sec/0" type="button" value="On">
+        {%- endif %}
+        <input onclick="return $(this).turn_off(this, '{{each_output.unique_id}}', '{{each_output_channel}}');"
+          class="form-control btn aot-btn-off aot-entry-btn-base"
+          name="{{each_output.unique_id}}/{{each_output_channel}}/off/sec/0" type="button" value="Off">
+      </div>
+      <div class="aot-entry-settings">
+        <!-- 설정 버튼을 위한 뒷공간 40px 고정 (헤더와 일치) -->
+      </div>
+    </div>
+    {% endfor %}
+
+  </div> <!-- grid-stack-item-content -->
+
+</form>
+
+<div class="modal fade aot-option-modal" id="modal_config_{{each_output.unique_id}}" tabindex="-1" role="dialog"
+  aria-labelledby="ModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl aot-modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{_('Output Settings')}}{% if each_output.output_type in dict_outputs %}:
+          {{dict_outputs[each_output.output_type]['output_name']}}{% endif %}</h5>
+      </div>
+      <div class="modal-body">
+        {% include 'pages/output_options.html' %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endif %}

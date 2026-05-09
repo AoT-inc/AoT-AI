@@ -1,0 +1,27 @@
+
+    const widgetId = '{{each_widget.id}}';
+    const cameraId = '{{widget_options["camera_id"]}}';
+    const mode = '{{widget_options["display_mode"]}}';
+    const refresh = {{widget_options["refresh_rate"]}} * 1000;
+    
+    function updateCameraWidget() {
+        const img = document.getElementById(widgetId + '-video');
+        const status = document.getElementById(widgetId + '-status');
+        
+        if (mode === 'live') {
+            img.src = '/api/camera/stream/' + cameraId + '?t=' + new Date().getTime();
+            status.innerText = 'LIVE';
+        } else if (mode === 'snapshot') {
+            // Placeholder for snapshot endpoint
+            img.src = '/api/camera/snapshot/' + cameraId + '?t=' + new Date().getTime();
+            status.innerText = 'SNAPSHOT';
+        }
+    }
+    
+    $(document).ready(function() {
+        updateCameraWidget();
+        if (mode !== 'live') {
+            setInterval(updateCameraWidget, refresh);
+        }
+    });
+    

@@ -1,0 +1,62 @@
+# 002_gemini_function_calling_engine_DONE.yaml
+# Completion report for gemini_function_calling_engine
+# Written: 2026-04-02
+
+document_type: completion_report
+task_id: gemini_function_calling_engine
+task_ref: _queue/tmp/2603_AoT_ai/gemini_function_calling_engine.yaml
+status: DONE
+
+changes:
+  - file: aot/ai/agents/gemini.py
+    actions:
+      - added: "import json" (was used but not imported)
+      - added: "_build_tools_schema(self, context)" method
+        description: >
+          Reads context.get('capabilities', {}), iterates system_tools and mcp_tools,
+          skips read_manual and get_detailed_manifest, returns Gemini function_declarations
+          format. Returns [] when no capabilities (backward compat).
+      - replaced: "run_reasoning()" with multi-turn Function Calling loop
+        description: >
+          - Builds payload with tools[] if tools_schema non-empty; omits tools key if empty
+          - POST to Gemini generateContent
+          - If response has functionCall parts AND fc_turn < 3:
+            * Extracts tool_name and args from fc.get('args', {})
+            * Executes via AIRoutingService._validate_and_normalize_action() +
+              AIActionService.execute_action()
+            * Appends model turn + functionResponse parts to payload contents
+            * fc_turn += 1, loops
+          - If response has text: returns _safe_api_result(raw_text, 'GeminiAI')
+          - If no text at MAX_FC_TURNS: injects final-answer prompt, loops once
+          - 429 retry with exponential backoff preserved from original
+
+  - file: aot/ai/services/ai_agent_service.py
+    actions:
+      - replaced: DATA_AUTORUN block (lines 2597-2646) with simple fallback hint
+        description: >
+          Gemini Function Calling handles tool execution natively.
+          DATA_AUTORUN was a text-mode workaround that auto-ran search_devices +
+          get_sensor_detail. Reverted to a simple system hint that instructs the
+          LLM to call get_sensor_detail with loc_id from system_state.device_list.
+
+acceptance_criteria:
+  - python3 -m py_compile aot/ai/agents/gemini.py: PASS
+  - python3 -m py_compile aot/ai/services/ai_agent_service.py: PASS
+  - context.capabilities has tools: payload has tools[] key: YES
+    (payload["tools"] = [{"function_declarations": tools_schema}] when non-empty)
+  - context has no capabilities: no tools key in payload: YES
+    (tools_schema returns [], payload omits tools key entirely)
+  - _safe_api_result() contract preserved: YES
+    (returns dict with insight key; Function Calling text response goes through same
+     _safe_api_result() call path)
+  - Docker container restart: PASS
+    (docker restart 5_docker-aot-app-1 completed successfully)
+
+verification_notes:
+  - Added import json at top of gemini.py (was used but not imported in __init__)
+  - AIRoutingService and AIActionService imported inside run_reasoning() at runtime
+    (same pattern used throughout codebase)
+  - DATA_AUTORUN revert removes auto-execution of search_devices + get_sensor_detail;
+    these are now handled natively via Gemini Function Calling protocol
+  - max_fc_turns = 3 (allow up to 3 tool-call turns before forcing final answer)
+  - retry loop (429 exponential backoff) preserved at outer level of multi-turn loop

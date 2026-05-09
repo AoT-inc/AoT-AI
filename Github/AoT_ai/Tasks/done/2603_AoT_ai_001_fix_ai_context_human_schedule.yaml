@@ -1,0 +1,86 @@
+task_id: 2603_AoT_ai_001_fix_ai_context_human_schedule
+project_id: 2603_AoT_ai
+task_name: fix_ai_context_human_schedule
+description: 'Add human schedule entries (SchedulerJobMeta action_type=human) to the
+  AI context injection so the AI can see and reference human schedules when generating
+  proposals and responses.
+
+  '
+target_path: 2603_AoT_ai/Build/5_docker
+destination: 2603_AoT_ai/Build/5_docker/Tasks/done/
+state: pending
+created_at: '2026-03-28T00:00:00+09:00'
+depends_on:
+- 2603_AoT_ai_003_fix_add_schedule_tool
+prompt: "# Foreman Task — fix_ai_context_human_schedule\n#\n# Working directory (cwd):\
+  \ 2603_AoT_ai/Build/5_docker  (resolved from SYNODRIVE_ROOT)\n# Rules: read CLAUDE.md\
+  \ in the working directory before any action.\n# Language: English only in all generated\
+  \ documents.\n# -------------------------------------------------------------------\n\
+  \n## Context\nTask 003 fixed add_schedule_tool to save human schedules into SchedulerJobMeta\n\
+  (action_type='human') instead of Notes. However, the AI context injection\nservice\
+  \ (ai_context_service.py) only queries the AITask model in\nget_upcoming_tasks()\
+  \ (line ~662). Human schedules therefore never appear\nin the context that the LLM\
+  \ receives, defeating the purpose of storing them\nas schedules.\n\nThis task adds\
+  \ human schedule retrieval to the AI context pipeline so the\nLLM can see upcoming\
+  \ human work entries when generating proposals.\n\n## Design intent (confirmed by\
+  \ product owner)\n- AI manages most schedules and must be aware of all schedule\
+  \ types.\n- Human schedules are calendar entries; the AI should reference them when\n\
+  \  proposing device actions or environmental adjustments.\n- Example: if a human\
+  \ has a 3-hour work session registered at a site,\n  the AI should factor that in\
+  \ when suggesting device on/off schedules.\n\n---\n\n## Steps\n\n### 1. Understand\
+  \ the current context pipeline\n1. Read `aot/ai/services/ai_context_service.py`\
+  \ around line 662.\n   - Find get_upcoming_tasks() (or equivalent context-building\
+  \ function).\n   - Note what data it returns and how it formats the output for the\
+  \ LLM.\n   - Note the time window used (e.g., next 24h, next 7 days).\n2. Read `aot/ai/services/ai_scheduler_service.py`\
+  \ — find any existing\n   query helpers that retrieve SchedulerJobMeta by action_type\
+  \ or state.\n3. Read `aot/databases/models/scheduler.py` — confirm the fields available\n\
+  \   on SchedulerJobMeta (action_type, state, schedule_time, job_name, user_id, etc.).\n\
+  \n### 2. Add a human schedule query helper\nIn `aot/ai/services/ai_scheduler_service.py`,\
+  \ add a new method to\nAISchedulerService (or as a module-level function if the\
+  \ class is not used):\n\n```python\ndef get_pending_human_schedules(hours_ahead:\
+  \ int = 48) -> list[dict]:\n    \"\"\"\n    Return upcoming human schedule entries\
+  \ for AI context injection.\n    Queries SchedulerJobMeta where:\n      - action_type\
+  \ = 'human'\n      - state in ('PENDING', 'APPROVED')\n      - schedule_time between\
+  \ now_utc() and now_utc() + hours_ahead\n    Returns a list of dicts with keys:\n\
+  \      job_id, job_name, schedule_time (ISO 8601 UTC), user_id\n    \"\"\"\n```\n\
+  \n- Use `now_utc()` from `aot/utils/tz_utils.py` for the time window.\n- Return\
+  \ an empty list (not None) if no rows are found.\n- Do NOT raise exceptions for\
+  \ empty results.\n\n### 3. Inject human schedules into the AI context\nIn `aot/ai/services/ai_context_service.py`:\n\
+  \na. Import get_pending_human_schedules from ai_scheduler_service.\nb. Inside the\
+  \ function that assembles the context block (get_upcoming_tasks\n   or the parent\
+  \ assembler that calls it), call get_pending_human_schedules().\nc. Format the result\
+  \ for the LLM. Use a format consistent with how AITask\n   entries are currently\
+  \ presented. Example:\n\n     [Human Schedules - next 48h]\n     - 가 대지 site work\
+  \  |  2026-04-12 09:00 ~ 12:00  |  user_id: 1\n     - ...\n     (none scheduled)\
+  \  ← if list is empty\n\nd. Append this block to the existing context output.\n\
+  \   Do NOT replace or restructure existing AITask context — only append.\n\n###\
+  \ 4. Verify the context format\n- Confirm the added block does not exceed a reasonable\
+  \ token budget.\n  If SchedulerJobMeta could have many rows, add a LIMIT (max 10\
+  \ entries).\n- Confirm the format is consistent with adjacent context sections\n\
+  \  (check indentation, section headers, date format).\n\n### 5. System prompt comment\
+  \ (minor cleanup)\nIn `aot/ai/services/ai_agent_service.py` near line 998:\n- Find\
+  \ the comment / system prompt text that says human schedules \"go to Notes\".\n\
+  - Update it to say they are stored in SchedulerJobMeta (action_type=human)\n  and\
+  \ are included in the upcoming schedule context.\n\n### 6. Verify\n- Import check:\n\
+  \    python -c \"from aot.ai.services.ai_scheduler_service import get_pending_human_schedules\"\
+  \n- Syntax check for all modified files via ast.parse().\n- Confirm get_pending_human_schedules()\
+  \ returns [] (not an exception) when\n  no human schedule rows exist (test with\
+  \ an in-memory SQLite or mock).\n\n---\n\n## Acceptance criteria\n- get_pending_human_schedules()\
+  \ is implemented and importable.\n- AI context assembler includes a human schedule\
+  \ block sourced from\n  SchedulerJobMeta (not from Notes or AITask).\n- Empty result\
+  \ produces a \"(none scheduled)\" placeholder, not an error.\n- Existing AITask\
+  \ context is unchanged.\n- No import or syntax errors in any modified file.\n\n\
+  ---\n\n## Out of scope\n- Changing the time window beyond the 48h default.\n- Adding\
+  \ human schedules to non-context surfaces (e.g., dashboard API).\n- Retroactively\
+  \ migrating old Notes(category='schedule') rows.\n\n---\n\n## Output\nWrite completion\
+  \ report to:\n  2603_AoT_ai/Build/5_docker/Tasks/done/fix_ai_context_human_schedule_COMPLETION.yaml\n\
+  \nReport format:\n  task_id:                \"2603_AoT_ai_005_fix_ai_context_human_schedule\"\
+  \n  status:                 done | failed | partial\n  summary:                \"\
+  \"\n  files_modified:         []\n  files_created:          []\n  context_block_format:\
+  \   \"\"    # short example of the injected text block\n  token_limit_applied: \
+  \   true | false\n  system_prompt_updated:  true | false\n  notes:             \
+  \     \"\"\n\n# -------------------------------------------------------------------\n\
+  # MANDATORY COMPLETION STEPS:\n# 1. Verify imports and ast.parse for all modified\
+  \ files.\n# 2. Confirm empty-result path does not raise.\n# 3. Write the completion\
+  \ report above before exiting.\n# 4. task 003 (fix_add_schedule_tool) must be completed\
+  \ before this task.\n"

@@ -1,0 +1,398 @@
+{% extends "layout.html" %}
+{% from 'macros/tabs.html' import render_tabs %}
+{% set active_page = "output" %}
+{% set help_page = ["https://aot-inc.github.io/AoT/Outputs/", dict_translation['output']['title']] %}
+
+{% block title %} - {{dict_translation['output']['title']}}{% endblock %}
+
+{% block head %}
+<style>
+  /* Force 100% width on mobile immediately to prevent jagged reflow */
+  @media (max-width: 768px) {
+    .grid-stack-item {
+      width: 100% !important;
+      left: 0 !important;
+    }
+  }
+  .grid-stack-item-content {
+    transition: none !important;
+  }
+</style>
+<link rel="stylesheet" href="/static/css/gridstack.css" />
+<link rel="stylesheet" href="/static/css/gridstack-custom.css" />
+<link rel="stylesheet" href="/static/css/aot-entry-ui.css?v=phase9.1" />
+<script src="/static/js/gridstack-all.js"></script>
+
+
+<script>
+  $(document).ready(function () {
+    function getAjax(endpoint) {
+      $.ajax({
+        type: 'GET',
+        url: '/output_mod/' + endpoint,
+    success: function(data) {
+      if (data.startsWith("SUCCESS")) window.showToast("Output " + endpoint.split("/")[0] + ": " + data, 'success');
+      else window.showToast("Output " + endpoint.split("/")[0] + ": " + data, 'error');
+    },
+    error: function(data) {
+      window.showToast("Output " + endpoint.split("/")[0] + ": " + data, 'error');
+    }
+  });
+}
+
+  // Output On Button
+  jQuery.fn.turn_on = function (button, output_id, channel_id) {
+    getAjax(output_id + '/' + channel_id + '/on/sec/0');
+  }
+
+  // Output Off Button
+  jQuery.fn.turn_off = function (button, output_id, channel_id) {
+    getAjax(output_id + '/' + channel_id + '/off/sec/0');
+  }
+
+  // Output Send Amount Input/Button
+  jQuery.fn.output_on_amt = function (button, output_id, channel_id, out_type) {
+    let result = {};
+    $.each($(button).parents('form').serializeArray(), function () {
+      result[this.name] = this.value;
+    });
+    if (out_type === 'seconds' && 'on_seconds_' + output_id + '_' + channel_id in result) {
+      getAjax(output_id + '/' + channel_id + '/on/sec/' + result['on_seconds_' + output_id + '_' + channel_id]);
+    }
+    else if (out_type === 'value' && 'on_value_' + output_id + '_' + channel_id in result) {
+      getAjax(output_id + '/' + channel_id + '/on/value/' + result['on_value_' + output_id + '_' + channel_id]);
+    }
+    else if (out_type === 'volume' && 'on_volume_' + output_id + '_' + channel_id in result) {
+      getAjax(output_id + '/' + channel_id + '/on/vol/' + result['on_volume_' + output_id + '_' + channel_id]);
+    }
+    else if (out_type === 'pwm' && 'on_duty_cycle_' + output_id + '_' + channel_id in result) {
+      getAjax(output_id + '/' + channel_id + '/on/pwm/' + result['on_duty_cycle_' + output_id + '_' + channel_id]);
+    }
+  }
+
+  function gpioState() {
+    const url = '/outputstate';
+    $.getJSON(url,
+      function (data, responseText, jqXHR) {
+        if (jqXHR.status !== 204) {
+          $.each(data,
+            function (output_id, states) {
+              for (let i = 0; i < Object.keys(states).length; i++) {
+                if (states[i] !== null && document.getElementById(output_id + "-" + i + "-output-state") != null) {
+                  // Element IDs 
+                  const rowId = output_id + "-" + i + "-output-state";
+                  const inputId = output_id + "-" + i + "-input-output-state";
+                  const toggleId = output_id + "-" + i + "-toggle";
+
+                  // Force Row to stay clean (fix layout breakage)
+                  document.getElementById(rowId).className = "item_channel row small-gutters aot-entry-item-channel";
+
+                  if (states[i] !== 'off') {
+                    // State: ON 
+                    // Use default btn-primary (Yellow) by removing active-background which was white / gray 
+                    if (document.getElementById(inputId)) {
+                      document.getElementById(inputId).className = 'form-control btn btn-primary btn-sm btn-block';
+                      if (states[i] === 'on') {
+                        document.getElementById(inputId).value = '{{_('Active')}}';
+                      } else {
+                        document.getElementById(inputId).value = '{{_('Active')}}, ' + states[i].toFixed(1);
+                      }
+                    }
+                    // Apply active background to the row
+                    if (document.getElementById(rowId)) {
+                        document.getElementById(rowId).className = "item_channel row small-gutters active-background aot-entry-item-channel";
+                    }
+                    if (document.getElementById(toggleId)) document.getElementById(toggleId).checked = true;
+                  } else {
+                    // State: OFF
+                    if (document.getElementById(inputId)) {
+                      document.getElementById(inputId).className = 'form-control btn btn-primary btn-sm btn-block inactive-background';
+                      document.getElementById(inputId).value = '{{_('Inactive')}}';
+                    }
+                    // Apply inactive background to the row 
+                    if (document.getElementById(rowId)) {
+                        document.getElementById(rowId).className = "item_channel row small-gutters inactive-background aot-entry-item-channel";
+                    }
+                    if (document.getElementById(toggleId)) document.getElementById(toggleId).checked = false;
+                  }
+                }
+              }
+            });
+        } else {
+          {% for each_output in output %}
+          {% for each_output_channel in dict_outputs[each_output.output_type]['channels_dict'] %}
+          document.getElementById("{{each_output.unique_id}}-{{each_output_channel}}-input-output-state").className = 'form-control btn btn-primary btn-sm btn-block pause-background';
+          document.getElementById("{{each_output.unique_id}}-{{each_output_channel}}-input-output-state").value = '{{_('No Connection')}}';
+          // Force Row to stay clean and apply pause background
+          document.getElementById("{{each_output.unique_id}}-{{each_output_channel}}-output-state").className = "item_channel row small-gutters pause-background aot-entry-item-channel";
+
+          // Default toggle to false or unchecked if unknown
+          if (document.getElementById("{{each_output.unique_id}}-{{each_output_channel}}-toggle")) {
+            document.getElementById("{{each_output.unique_id}}-{{each_output_channel}}-toggle").checked = false;
+          }
+          {% endfor %}
+          {% endfor %}
+        }
+      });
+  } $(function () {
+    gpioState(); // Update when page first loads // Refresh every 5 seconds
+    setInterval(function () { gpioState(); }, 5000);
+  }); }); </script>
+{% include 'pages/map/map_assets.html' %}
+{% endblock %}
+
+
+{% block body %}
+<!-- Route: /output -->
+  <!-- Sticky Tab Bar -->
+  <div id="output-tabs-sticky" class="container-fluid px-0 aot-sticky-tabs">
+    <!-- Tab System -->
+    {{ render_tabs(
+        items=tabs,
+        current_id=current_tab.unique_id,
+        link_endpoint='routes_output.page_output',
+        save_order_endpoint='/tab/save_order',
+        container_id='output-tabs',
+        param_name='tab_id',
+        use_query_string=True,
+        page_type='output'
+    ) }}
+  </div>
+
+<main role="main" class="container">
+  {% include 'flash_messages.html' %}
+
+  <div style="clear: both; padding: 0.5em 0;"></div>
+
+  <form id="new_output_form" method="post" action="/output" style="padding-bottom: 0.5em">
+    {{form_add_output.hidden_tag()}}
+    <div class="row aot-main-selection-row">
+      <div class="col-auto">
+        {{form_add_output.output_type(class_='selectpicker aot-standard-select', **{'data-style': 'btn btn-primary aot-roundbox',
+        'data-live-search':
+        'true', 'title': _('Output') + ': ' + _('Select')}) }}
+      </div>
+      <div class="col-auto">
+        <input onclick="return $(this).processRequest(this, 'output_add');" name="output_add" value="{{_('Add')}}"
+          class="btn btn-primary" type="button" />
+      </div>
+    </div>
+  </form>
+
+  <div style="clear: both; padding: 1em 0;"></div>
+
+  <div class="grid-stack aot-entry-container">
+    {% for each_output in output -%}
+    <div id="gridstack_output_{{each_output.unique_id}}" class="grid-stack-item" gs-id="{{each_output.unique_id}}"
+      gs-x="0" gs-y="{{each_output.position_y}}" gs-w="24" gs-h="{{each_output.size_y}}" data-gs-no-resize="true">
+      {% include 'pages/output_entry.html' %}
+    </div> <!-- grid-stack-item -->
+    {%- endfor -%}
+  </div> <!-- grid-stack -->
+
+</main>
+
+<div style="clear: both; padding: 0.5em 0;"></div>
+
+{% include 'admin/dependencies_install.html' %}
+
+<script>
+  function initGrid() {
+    let targetColumn = (window.innerWidth <= 768) ? 1 : 24;
+    
+    // Performance: Only update if column count has changed or grid is not initialized
+    if (window.grid) {
+      if (window.grid.getColumn() === targetColumn) return;
+      
+      window.grid.batchUpdate(true);
+      window.grid.column(targetColumn, 'list');
+      
+      if (targetColumn === 24) {
+        window.grid.engine.nodes.forEach(node => {
+          window.grid.update(node.el, { w: 24, x: 0 });
+        });
+      }
+      
+      window.grid.batchUpdate(false);
+    } else {
+      // Updated to 52: Fixed cellHeight to prevent multiplying gaps in multi-channel items
+      window.grid = GridStack.init({
+        animate: true,
+        cellHeight: 52,
+        column: targetColumn,
+        margin: 2, // Int integer for 2px all-around margin 
+        handle: '.aot-entry-drag-handle',
+        resizable: false,
+        float: false,
+        disableOneColumnMode: true,
+        alwaysShowResizeHandle: false
+      });
+    }
+
+    window.grid.off('change');
+    window.grid.on('change', function (event, items) {
+      if (window.grid.getColumn() === 1) return;
+
+      let serializedFull = window.grid.save(false);
+      $.ajax({
+        type: "POST",
+        url: "/save_output_layout",
+        headers: { "X-CSRFToken": "{{form_mod_output.csrf_token._value()}}" },
+        data: JSON.stringify(serializedFull, null, '  '),
+        contentType: "application/json; charset=utf-8",
+        success: function (data) { }
+      });
+    });
+  }
+
+  $(document).ready(initGrid);
+  $(window).on('load', initGrid);
+  let resizeTimer;
+  $(window).on('resize', function() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      initGrid();
+      if (window.grid && typeof window.grid.onParentResize === 'function') window.grid.onParentResize(); // Force immediate calculation
+    }, 50);
+  });
+
+  function popup_response(data) {
+    if (data && data.data && data.data.messages) {
+      const msgs = data.data.messages;
+      if (msgs.error && msgs.error.length) window.showToast('Error: ' + msgs.error.join(", "), 'error');
+      if (msgs.warning && msgs.warning.length) window.showToast('Warning: ' + msgs.warning.join(", "), 'warning');
+      if (msgs.info && msgs.info.length) window.showToast('Info: ' + msgs.info.join(", "), 'info');
+      if (msgs.success && msgs.success.length) window.showToast('Success: ' + msgs.success.join(", "), 'success');
+    }
+  }
+
+  jQuery.fn.processRequest = function (button, action) {
+    console.log("Action: ", action)
+    var formId = $(button).data('form-id');
+    var $form;
+
+    if (formId) {
+      var formEl = document.getElementById(formId);
+      $form = formEl ? $(formEl) : $();
+    } else {
+      $form = $(button).closest('form');
+      if (!$form.length) {
+        $form = $(button).parents('form');
+      }
+    }
+
+    if (!$form.length) {
+      window.showToast('Error: form not found for action ' + action, 'error');
+      return false;
+    }
+
+    if (action === 'output_add' ||
+      action === 'output_mod' ||
+      action === 'output_delete' ||
+      action.startsWith('custom_button_')) {
+      window.showToast('Command sent. Please wait...', 'info');
+      
+      // Get current tab_id from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabId = urlParams.get('tab_id');
+      const submitUrl = tabId ? `/output_submit?tab_id=${tabId}` : '/output_submit';
+      
+      $.ajax({
+        type: "POST",
+        url: submitUrl,
+        headers: { "X-CSRFToken": "{{form_mod_output.csrf_token._value()}}" },
+        data: $form.serialize() + '&' + action + '=1',
+        success: function (data) {
+          if (action === 'output_add' && 'output_id' in data.data) {
+            if ('dep_unmet' in data.data && data.data.dep_unmet.length > 0) {
+              $(".dependencies_device_name").text(data.data.dep_name);
+              $(".dependencies_device").text(data.data.dep_unmet);
+              $(".dependencies_unmet").text(data.data.dep_list.join(", "));
+              document.getElementById("dependency_unmet").value = data.data.dep_unmet;
+              if (data.data.dep_message.length > 0) {
+                document.getElementById("dependencies_message").innerHTML = "<p>Message about dependencies: " + data.data.dep_message + "</p>";
+              }
+              $('#modal_config_dependency_install').modal('show');
+              popup_response(data);
+            } else {
+              $.ajax({
+                type: "GET",
+                url: '/output?output_type=entry&output_id=' + data.data.output_id,
+                success: function (new_entry) {
+                  if (data.data.messages.success.length !== 0) {
+                    let h_val = data.data.size_y || 1;
+                    window.grid.addWidget('<div class="grid-stack-item" id="gridstack_output_' + data.data.output_id + '" gs-id="' + data.data.output_id + '">' + new_entry + '</div>', {
+                      w: 24,
+                      h: h_val
+                    });
+                    /* Tooltip handled by global delegation in layout.html */
+                    // [Fix] Initialize map for new widget (Auto-Init)
+                    if (window.AoTMapModalController) {
+                      setTimeout(function() { AoTMapModalController.initAll(); }, 100);
+                    }
+                  }
+                  popup_response(data);
+                },
+                error: function () {
+                  window.showToast('Error: Could not get new output entry', 'error');
+                }
+              });
+            }
+            return;
+          }
+          if (data.data.messages.error.length === 0) {
+            if (action === 'output_mod' && 'output_id' in data.data) {
+              if ('return_text' in data.data.messages &&
+                data.data.messages.return_text.length > 0 &&
+                document.getElementById("return_text_" + data.data.output_id)) {
+                document.getElementById("return_text_" + data.data.output_id).innerHTML = data.data.messages.return_text.join("<br/><br/>");
+              }
+              if ('name' in data.data.messages &&
+                document.getElementById("output_name_" + data.data.output_id)) {
+                if (document.getElementById("output_name_" + data.data.output_id).tagName === "DIV") {
+                  document.getElementById("output_name_" + data.data.output_id).innerHTML = data.data.messages.name;
+                } else if (document.getElementById("output_name_" + data.data.output_id).tagName === "INPUT") {
+                  document.getElementById("output_name_" + data.data.output_id).value = data.data.messages.name;
+                }
+              }
+            }
+            else if (action === 'output_delete' && 'output_id' in data.data) {
+              $('#modal_config_' + data.data.output_id).modal('hide');
+              $('.modal-backdrop').remove();
+              $(document.body).removeClass("modal-open");
+              window.grid.removeWidget('#gridstack_output_' + data.data.output_id);
+            }
+            if ('page_refresh' in data.data && data.data.page_refresh) {
+              $.ajax({
+                type: "GET",
+                url: '/output?output_type=options&output_id=' + data.data.output_id,
+                success: function (new_options) {
+                  $('#mod_output_' + data.data.output_id).html(new_options);
+                  popup_response(data);
+                },
+                error: function () {
+                  window.showToast('Error: Could not get new output options', 'error');
+                }
+              });
+            } else {
+              popup_response(data);
+            }
+          } else {
+            popup_response(data);
+          }
+        },
+        error: function () {
+          window.showToast('Error: Could not communicate with server', 'error');
+        }
+      });
+    }
+  }
+</script>
+
+<!-- Tab Management JavaScript -->
+<script src="{{ url_for('static', filename='js/tab_management.js') }}"></script>
+
+<!-- Tab Settings Modal -->
+{% include 'modals/tab_settings.html' %}
+
+{% endblock %}

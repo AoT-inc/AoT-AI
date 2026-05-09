@@ -1,0 +1,65 @@
+
+  // Modify Controller
+  function adctivate_deactivate_controller(btn_val) {
+    const widget_id = btn_val.split('/')[0];
+    const controller_id = btn_val.split('/')[1];
+    const controller_state = btn_val.split('/')[2];
+    $.ajax({
+      type: 'GET',
+      url: '/widget_cad_activate_deactivate/' + controller_id + '/' + controller_state,
+    {% if not misc.hide_alert_success %}
+      success: function(data) {
+        toastr['success'](data);
+        getControllerState(widget_id, controller_id);
+      },
+    {% endif %}
+    {% if not misc.hide_alert_warning %}
+      error: function(xhr, status, error) {
+        console.error("Controller toggle failed:", status, error);
+        alert("컨트롤러 변경 실패: " + xhr.responseText);
+      }
+    {% endif %}
+    });
+  }
+
+  function print_controller_error(widget_id) {
+    document.getElementById('container-controller-' + widget_id).className = "pause-background";
+  }
+
+  // Retrieve the controller state
+  function getControllerState(widget_id, dev_id) {
+    const url = '/widget_cad_controller_state/' + dev_id;
+    $.ajax(url, {
+      success: function(data, responseText, jqXHR) {
+        if (jqXHR.status === 204) {
+          print_controller_error(widget_id);
+        }
+        else {
+          if (data['status'] == "Error") {
+            print_controller_error(widget_id);
+          }
+          else if (data['state']) {
+            document.getElementById('text-controller-state-' + widget_id).innerHTML = '({{_('Active')}})';
+            document.getElementById('container-controller-' + widget_id).className = "active-background";
+            document.getElementById('button-activate-' + widget_id).style.display = "none";
+            document.getElementById('button-deactivate-' + widget_id).style.display = "block";
+          } else {
+            document.getElementById('text-controller-state-' + widget_id).innerHTML = '({{_('Inactive')}})';
+            document.getElementById('container-controller-' + widget_id).className = "inactive-background";
+            document.getElementById('button-activate-' + widget_id).style.display = "block";
+            document.getElementById('button-deactivate-' + widget_id).style.display = "none";
+          }
+        }
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        print_controller_error(widget_id);
+      }
+    });
+  }
+
+  // Repeat function for getControllerState()
+  function repeatControllerState(widget_id, dev_id, period_sec) {
+    setInterval(function () {
+      getControllerState(widget_id, dev_id)
+    }, period_sec * 1000);
+  }

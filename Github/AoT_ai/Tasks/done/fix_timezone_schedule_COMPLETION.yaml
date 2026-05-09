@@ -1,0 +1,37 @@
+task_id: "2603_AoT_ai_004_fix_timezone_schedule"
+status: done
+summary: >
+  Implemented a single authoritative timezone utility (tz_utils.py) using the
+  project-standard pytz library.  Fixed schedule_device_control_tool to use
+  UTC-aware datetimes throughout and replaced the silent now+10s rescue block
+  with an explicit past-time error returned to the LLM.  Replaced the lone
+  local pytz import in ai_scheduler_service.py with stdlib timezone.utc.
+  Updated routes_scheduler._serialize_job to convert all datetime fields
+  through serialize_ts() (UTC→user_tz) before serialising to JSON.
+
+files_modified:
+  - "aot/ai/services/aot_data_tool_service.py"
+  - "aot/ai/services/ai_scheduler_service.py"
+  - "aot/aot_flask/routes_scheduler.py"
+
+files_created:
+  - "aot/utils/tz_utils.py"
+
+naive_datetime_removed: 1   # get_local_now() at line 716 replaced by now_utc()
+
+ui_display_fixed: true
+
+notes: |
+  - tz_utils.py delegates to the existing time_utils.py (get_timezone_name,
+    utc_now, to_local) so there is no duplication of DB-read logic.
+  - get_user_tz() returns a pytz.BaseTzInfo object (project standard).
+  - to_utc() raises ValueError on naive datetimes — callers must handle this;
+    schedule_device_control_tool now returns an error dict on ValueError.
+  - ai_scheduler_service.py line 935: replaced `import pytz; replace(tzinfo=pytz.utc)`
+    with `replace(tzinfo=timezone.utc)` (stdlib, already imported on line 10).
+  - routes_scheduler._serialize_job: all four datetime fields now use
+    serialize_ts() which calls to_local() → isoformat(), giving the user-tz
+    ISO 8601 string (e.g. 2026-03-28T18:00:00+09:00 for Asia/Seoul).
+  - Syntax verified via ast.parse() — all four files pass.
+  - No datetime.now() without tzinfo and no utcnow() remain in the
+    three schedule-related source files.

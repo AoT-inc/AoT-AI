@@ -1,0 +1,78 @@
+name: aot_local
+
+services:
+  aot-app:
+    image: aot_ai
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: python aot/start_flask_ui.py -s -p 80
+    ports:
+      - "8084:80"
+    volumes:
+      - ../:/app
+      - ../logs:/var/log/aot
+      - ../aot/databases:/app/aot/databases
+    environment:
+      - FLASK_ENV=development
+      - PYTHONPATH=/app
+      - DOCKER_CONTAINER=TRUE
+      - HARDWARE_PROFILE=LOW
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    depends_on:
+      - aot_daemon
+      - influxdb
+    restart: always
+
+  aot_daemon:
+    image: aot_ai
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: python aot/aot_daemon.py
+    volumes:
+      - ../:/app
+      - ../logs:/var/log/aot
+      - ../aot/databases:/app/aot/databases
+    environment:
+      - PYTHONPATH=/app
+      - DOCKER_CONTAINER=TRUE
+      - HARDWARE_PROFILE=LOW
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+    depends_on:
+      - influxdb
+    restart: always
+
+  influxdb:
+    image: influxdb:2.7
+    ports:
+      - "8087:8086"
+    volumes:
+      - ../influxdb_data:/var/lib/influxdb2
+      - ../influxdb_config:/etc/influxdb2
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=aot
+      - DOCKER_INFLUXDB_INIT_PASSWORD=mmdu77sj3nIoiajjs
+      - DOCKER_INFLUXDB_INIT_ORG=aot
+      - DOCKER_INFLUXDB_INIT_BUCKET=aot_db
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=mmdu77sj3nIoiajjs
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    restart: always
+

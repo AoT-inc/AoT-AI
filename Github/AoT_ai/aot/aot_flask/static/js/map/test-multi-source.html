@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AoT Multi-Source Manager Test</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 20px; }
+        #map { width: 100%; height: 500px; border: 2px solid #ccc; border-radius: 8px; }
+        .controls { margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 8px; }
+        .controls h3 { margin-top: 0; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+        button { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; background: #2196F3; color: white; }
+        button:hover { background: #1976D2; }
+        button.active { background: #4CAF50; }
+        .status { margin-top: 15px; padding: 10px; background: #e8f5e9; border-radius: 4px; }
+        .provider-group { margin: 15px 0; }
+        .provider-label { font-weight: bold; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <h1>AoT Multi-Source Manager Test</h1>
+    
+    <div id="map"></div>
+    
+    <div class="controls">
+        <h3>베이스맵 전환 테스트</h3>
+        
+        <div class="provider-group">
+            <div class="provider-label">VWorld</div>
+            <div class="btn-group" id="vworld-buttons"></div>
+        </div>
+        
+        <div class="provider-group">
+            <div class="provider-label">MapTiler</div>
+            <div class="btn-group" id="maptiler-buttons"></div>
+        </div>
+        
+        <div class="provider-group">
+            <div class="provider-label">OpenStreetMap</div>
+            <div class="btn-group" id="osm-buttons"></div>
+        </div>
+        
+        <div class="provider-group">
+            <div class="provider-label">Google</div>
+            <div class="btn-group" id="google-buttons"></div>
+        </div>
+        
+        <div class="status">
+            <strong>현재 소스:</strong> <span id="current-source">-</span><br>
+            <strong>소스 타입:</strong> <span id="source-type">-</span><br>
+            <strong>상태:</strong> <span id="source-status">-</span>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Multi-Source Manager -->
+    <script src="aot-multi-source-manager.js"></script>
+    
+    <script>
+        // Initialize map
+        var map = L.map('map').setView([37.5665, 126.9780], 12);
+        
+        // Initialize multi-source manager
+        var manager = Object.create(AoTMultiSourceManager);
+        manager.init(map);
+        
+        // Set up UI buttons
+        var providers = {
+            'vworld': document.getElementById('vworld-buttons'),
+            'maptiler': document.getElementById('maptiler-buttons'),
+            'osm': document.getElementById('osm-buttons'),
+            'google': document.getElementById('google-buttons')
+        };
+        
+        var allSources = manager.getAllSources();
+        
+        // Create buttons for each source
+        Object.keys(allSources).forEach(function(sourceId) {
+            var source = allSources[sourceId];
+            var container = providers[source.provider];
+            
+            if (!container) return;
+            
+            var btn = document.createElement('button');
+            btn.textContent = source.name;
+            btn.dataset.sourceId = sourceId;
+            btn.onclick = function() {
+                switchToSource(sourceId);
+            };
+            container.appendChild(btn);
+        });
+        
+        // Switch source function
+        function switchToSource(sourceId) {
+            // Update button states
+            document.querySelectorAll('.btn-group button').forEach(function(btn) {
+                btn.classList.remove('active');
+                if (btn.dataset.sourceId === sourceId) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Switch source
+            manager.switchSource(sourceId, {
+                animate: true,
+                onComplete: function(source) {
+                    updateStatus(source);
+                }
+            });
+        }
+        
+        // Update status display
+        function updateStatus(source) {
+            document.getElementById('current-source').textContent = source ? source.name : '-';
+            document.getElementById('source-type').textContent = source ? source.type : '-';
+            document.getElementById('source-status').textContent = source ? source.status : '-';
+        }
+        
+        // Listen for events
+        manager.on('sourcechange', function(data) {
+            console.log('Source changed:', data);
+            var source = manager.getActiveSource();
+            updateStatus(source);
+        });
+        
+        manager.on('sourceerror', function(data) {
+            console.error('Source error:', data);
+        });
+        
+        // Start with OSM
+        switchToSource('osm_standard');
+        
+        console.log('AoT Multi-Source Manager Test Ready');
+        console.log('Available sources:', Object.keys(allSources).length);
+    </script>
+</body>
+</html>

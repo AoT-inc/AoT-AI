@@ -1,0 +1,26 @@
+
+  function getPythonCodeResponse(widget_id) {
+    const url = '/widget_execute/' + widget_id;
+    $.ajax(url, {
+      success: function (response, responseText, jqXHR) {
+        if (jqXHR.status !== 204) {
+          if (response !== null) {
+            document.getElementById("text-python-code-" + widget_id).innerHTML = response;
+          } else {
+            document.getElementById("text-python-code-" + widget_id).innerHTML = '{{_('NO DATA ERROR')}}';
+          }
+        } else {
+          document.getElementById("text-python-code-" + widget_id).innerHTML = '{{_('CONNECTION ERROR')}}';
+        }
+      },
+      error: function (jqXHR, textStatus, errorThrown) {
+        document.getElementById("text-python-code-" + widget_id).innerHTML = '{{_('CONNECTION ERROR')}}';
+      }
+    });
+  }
+
+  function repeatPythonCodeResponse(widget_id, refresh_duration) {
+    setInterval(function () {
+      getPythonCodeResponse(widget_id);
+    }, refresh_duration * 1000);  // Refresh duration in milliseconds
+  }

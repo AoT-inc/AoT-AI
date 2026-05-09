@@ -1,0 +1,249 @@
+
+    <link rel="stylesheet" href="/static/css/components/aot-toggle.css">
+    <style>
+        /* widget_sequence.css embedded */
+        /* --- Layout Containers --- */
+        .seq-widget-container {
+            padding: 10px 12px;
+            color: var(--aot-text-main, #333);
+            font-family: inherit; /* Ensure default font */
+            font-size: 1em;       /* Default base size */
+        }
+
+        /* --- Section 1: Header (Timer + Toggle) --- */
+        .seq-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .seq-main-timer {
+            font-size: 1.2em;
+            color: var(--aot-text-title, #222);
+        }
+
+        /* --- Section 2: Info Grid --- */
+        .seq-info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px; /* Gap between cards */
+            margin-bottom: 15px;
+        }
+
+        .seq-info-card {
+            background-color: var(--aot-bg-sub, #f8f9fa);
+            border: 1px solid var(--aot-border-light, #eee);
+            border-radius: 8px;
+            padding: 8px 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .seq-info-label {
+            font-size: 0.75em;
+            color: var(--gray-dark, #888);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .seq-info-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: var(--aot-text-main, #444);
+        }
+
+        /* --- Section 2.5: Expand/Collapse Button --- */
+        .seq-expand-btn-container {
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .seq-expand-btn {
+            width: 100%;
+            height: 32px;
+            border-radius: 16px; /* Pill shape */
+            background-color: transparent;
+            border: 1px solid var(--aot-border-light, #ddd);
+            color: var(--gray-dark, #666);
+            font-size: 1em; /* Reset to 1em */
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .seq-expand-btn:hover {
+            background-color: var(--aot-bg-hover, #f0f0f0);
+            border-color: var(--gray-dark, #ccc);
+            color: var(--aot-text-main, #333);
+        }
+
+        .seq-expand-btn:active {
+            transform: scale(0.99);
+        }
+
+        .seq-expand-icon {
+            font-size: 0.8em;
+            margin-left: 6px;
+            transition: transform 0.3s ease;
+        }
+
+        .seq-expand-btn.expanded .seq-expand-icon {
+            transform: rotate(180deg);
+        }
+
+        /* --- Section 3: Action List --- */
+        .seq-details-container {
+            display: none; /* Hidden by default, controlled by inline style */
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .seq-details-container.expanded {
+            display: block;
+        }
+
+        /* List Header */
+        .seq-list-header {
+            display: flex;
+            align-items: center;
+            padding: 8px 10px;
+            background-color: var(--aot-bg-sub, #f9f9f9);
+            border-bottom: 1px solid var(--aot-border-light, #eee);
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            font-size: 0.75em;
+            color: var(--gray-dark, #777);
+            font-weight: 600;
+        }
+
+        /* Columns - Adjusted for new order: Enable | Name | Type | Time */
+        .seq-col-enable { 
+            width: 40px; 
+            text-align: center; 
+            flex-shrink: 0;
+        }
+        .seq-col-name { 
+            flex-grow: 1; 
+            padding-left: 10px; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            white-space: nowrap; 
+        }
+        .seq-col-type { 
+            width: 80px; 
+            text-align: left; 
+            flex-shrink: 0; 
+        }
+        .seq-col-time { 
+            width: 80px; 
+            text-align: left; 
+            padding-right: 5px; 
+            flex-shrink: 0; 
+        }
+
+        /* List Body */
+        .seq-list-body {
+            border: 1px solid var(--aot-border-light, #eee);
+            border-top: none;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            background: #fff;
+            max-height: 330px;
+            overflow-y: auto;
+        }
+
+        .seq-list-item {
+            display: flex;
+            align-items: center;
+            padding: 0 10px; /* Vertical padding handled by height/align-items */
+            border-bottom: 1px solid var(--aot-border-light, #f0f0f0);
+            color: var(--aot-text-main, #444);
+            font-size: 1em; /* Reset to 1em */
+            height: 40px;
+            box-sizing: border-box;
+            white-space: nowrap;
+            flex-wrap: nowrap;
+        }
+
+        .seq-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .seq-list-item.active {
+            background-color: rgba(40, 167, 69, 0.1); /* Green hint */
+            border-left: 3px solid #28a745;
+            padding-left: 7px;
+        }
+
+        .seq-list-item.disabled {
+            opacity: 0.6;
+            background-color: #fafafa;
+        }
+
+        /* Square Toggle Button Style */
+        .seq-square-toggle {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid #28a745; /* Green border by default */
+            border-radius: 2px; /* Slightly rounded square */
+            background-color: transparent;
+            cursor: pointer;
+            position: relative;
+            vertical-align: middle;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .seq-square-toggle:checked {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+
+        /* Optional checkmark for better visibility */
+        .seq-square-toggle:checked::after {
+            content: '';
+            position: absolute;
+            top: 1px;
+            left: 4px;
+            width: 5px;
+            height: 9px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .seq-square-toggle:hover {
+            border-color: #218838;
+        }
+
+        /* Text styles */
+        .seq-text-name {
+            font-weight: 500;
+        }
+        .seq-text-type {
+            font-size: 0.85em;
+            color: var(--gray-dark, #888);
+            text-transform: uppercase;
+        }
+        .seq-text-time {
+            font-weight: 600;
+            color: var(--aot-text-main, #555);
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            .seq-col-type { width: 60px; }
+            .seq-col-time { width: 60px; }
+        }
+    </style>
+    

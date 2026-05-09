@@ -1,0 +1,62 @@
+
+  // Retrieve the latest/last measurement for Measurement widget
+  function getLastDataMeasurement(widget_id,
+                       unique_id,
+                       measure_type,
+                       measurement_id,
+                       max_measure_age_sec,
+                       decimal_places) {
+    if (decimal_places === null) {
+      decimal_places = 1;
+    }
+
+    const url = '/last/' + unique_id + '/' + measure_type + '/' + measurement_id + '/' + max_measure_age_sec.toString();
+    $.ajax(url, {
+      success: function(data, responseText, jqXHR) {
+        if (jqXHR.status === 204) {
+          if (document.getElementById('value-' + widget_id)) {
+            document.getElementById('value-' + widget_id).innerHTML = 'NO DATA';
+          }
+          if (document.getElementById('timestamp-' + widget_id)) {
+            document.getElementById('timestamp-' + widget_id).innerHTML = 'MAX AGE EXCEEDED';
+          }
+        }
+        else {
+          const formattedTime = epoch_to_timestamp(data[0] * 1000);
+          const measurement = data[1];
+          if (document.getElementById('value-' + widget_id)) {
+            document.getElementById('value-' + widget_id).innerHTML = measurement.toFixed(decimal_places);
+          }
+          if (document.getElementById('timestamp-' + widget_id)) {
+            document.getElementById('timestamp-' + widget_id).innerHTML = formattedTime;
+          }
+        }
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        if (document.getElementById('value-' + widget_id)) {
+          document.getElementById('value-' + widget_id).innerHTML = 'NO DATA';
+        }
+        if (document.getElementById('timestamp-' + widget_id)) {
+          document.getElementById('timestamp-' + widget_id).innerHTML = '{{_('Error')}}';
+        }
+      }
+    });
+  }
+
+  // Repeat function for getLastData()
+  function repeatLastDataMeasurement(widget_id,
+                          dev_id,
+                          measure_type,
+                          measurement_id,
+                          period_sec,
+                          max_measure_age_sec,
+                          decimal_places) {
+    setInterval(function () {
+      getLastDataMeasurement(widget_id,
+                  dev_id,
+                  measure_type,
+                  measurement_id,
+                  max_measure_age_sec,
+                  decimal_places)
+    }, period_sec * 1000);
+  }

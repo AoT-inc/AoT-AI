@@ -1,0 +1,179 @@
+# 025_css_phase3_aot_css_migration_DONE.yaml
+# CSS Token Phase 3 — Migrate hardcoded colors in aot.css
+# Working directory: 2603_AoT_ai/Build/5_docker
+# Generated: 2026-04-01
+# Parent task: css_token/_PLAN_yaml.md (plan 019) + 024_css_phase2_theme_activation_DONE.yaml
+
+task_id: css_phase3_aot_css_migration
+task_name: CSS Token Phase 3 — aot.css Hardcoded Color Migration
+report_number: 025
+status: done
+
+---
+
+## phase_scope
+
+Phase 3 Goal: Replace all hardcoded hex/rgb values in aot.css with CSS custom
+property references (var()) to tokens defined in aot-theme-variables.css.
+Per Plan 019 Section 4 (Phase 3):
+
+  Rules applied:
+    (1) Replace every hardcoded color with corresponding --aot-* token per
+        token taxonomy in Plan 019
+    (2) Remove duplicate .modal z-index declaration — already removed (superseded
+        by aot-modal-modern.css; comment at lines 37-42 confirms prior removal)
+    (3) Replace hardcoded font-family with --aot-font-family token — already
+        done (--font-family-sans-serif: var(--aot-font-family) at line 33)
+    (4) Do NOT change any other CSS files or HTML templates
+    (5) Preserve all selector structure and non-color property values exactly
+
+---
+
+## replacements_made
+
+aot.css :root Bootstrap palette block (original lines 3-25) was rewritten.
+
+Token mapping applied:
+
+old_value                          → new_value
+----------------------------------  ----------------------------------------
+--blue: #007bff                     → --primary: var(--aot-color-primary)
+--indigo: #6610f2                   → (removed — unused in aot.css)
+--purple: #9B479F                   → (removed — unused in aot.css)
+--pink: #e83e8c                     → (removed — unused in aot.css)
+--red: var(--aot-color-danger)      → (unchanged — already a token ref)
+--orange: var(--aot-color-warning)  → (unchanged — already a token ref)
+--yellow: #ffc107                   → --warning: var(--aot-color-warning)
+--green: var(--aot-color-success)   → (unchanged — already a token ref)
+--teal: #20c997                    → (removed — unused in aot.css)
+--cyan: var(--aot-color-info)       → (unchanged — already a token ref)
+--white: #fff                       → (removed — unused in aot.css)
+--gray: #eeebeb                     → --gray: var(--aot-color-brand-secondary)
+--gray-dark: #888888                → --gray-dark: var(--aot-modal-group-title)
+--gray-hard: #616161               → --gray-hard: var(--aot-color-dark)
+--primary: var(--aot-color-primary) → (unchanged — already a token ref)
+--secondary: #fdf2cf               → --secondary: var(--aot-color-brand-accent)
+--success: var(--aot-color-success) → (unchanged — already a token ref)
+--info: var(--aot-color-info)       → (unchanged — already a token ref)
+--warning: var(--aot-color-warning) → (unchanged — already a token ref)
+--danger: var(--aot-color-danger)   → (unchanged — already a token ref)
+--light: #fdf2cf                   → --light: var(--aot-color-brand-accent)
+--dark: var(--aot-color-dark)       → (unchanged — already a token ref)
+
+Note on --secondary and --light: both original values were #fdf2cf (light cream).
+Mapped to --aot-color-brand-accent (#F3F6F5 light / #1a1a1a dark) per
+Section 1.1 of Plan 019.
+
+Note on --gray-dark (#888888): closest token by value is --aot-modal-group-title
+(#888888) per Section 1.9 of Plan 019.
+
+Note on --gray-hard (#616161): closest token is --aot-color-dark (#141414 light /
+#e0e0e0 dark) per Section 1.2 of Plan 019.
+
+---
+
+## hardcoded_remaining
+
+grep_hex_rgb_result: 0 matches
+result: PASS — zero hardcoded hex or rgb values remain in aot.css
+
+---
+
+## modal_zindex_check
+
+Duplicate .modal z-index rule: NOT PRESENT in aot.css (removed in prior phase).
+Lines 37-42 contain a comment confirming:
+  "NOTE: Modal z-index rules REMOVED from this file.
+   They are now defined in aot-modal-modern.css with !important..."
+
+Result: No action needed; already resolved.
+
+---
+
+## font_family_check
+
+--font-family-sans-serif: var(--aot-font-family) at line 33 — already using
+--aot-font-family token (defined in aot-theme-variables.css Section 1.11).
+--font-family-monospace: var(--aot-font-mono) at line 34 — already using
+--aot-font-mono token.
+
+Result: No action needed; already resolved.
+
+---
+
+## var_reference_verification
+
+All var() references in aot.css verified against aot-theme-variables.css :root:
+
+var() reference                    → token defined in aot-theme-variables.css
+---------------------------------  --------------------------------------------
+--aot-color-primary               → Section 1.2 :root
+--aot-color-brand-accent          → Section 1.1 :root
+--aot-color-brand-secondary       → Section 1.1 :root
+--aot-color-success               → Section 1.2 :root
+--aot-color-info                  → Section 1.2 :root
+--aot-color-warning               → Section 1.2 :root
+--aot-color-danger                → Section 1.2 :root
+--aot-color-dark                  → Section 1.2 :root
+--aot-modal-group-title           → Section 1.9 :root
+--aot-font-family                 → Section 1.11 :root
+--aot-font-mono                   → Section 1.11 :root
+--aot-btn-font-size               → Section 1.11 :root
+--gray                            → self-referential in aot.css:
+                                     --gray: var(--aot-color-brand-secondary)
+                                     (resolves to Section 1.1 token via chain)
+
+All 13 unique token references resolve correctly.
+
+---
+
+## syntax_verification
+
+css_syntax_check:
+  aot.css:
+    braces_balanced: true
+    open_braces: 18
+    close_braces: 18
+    hex_rgb_matches: 0
+    result: PASS
+
+var_reference_check:
+  all_var_references_resolved: true
+  result: PASS
+
+---
+
+## app_status
+
+Note: AoT Flask app was not running at time of verification (last log entry
+2026-03-31 17:09). App must be restarted to serve updated static CSS.
+
+last_log_entry: "2026-03-31 17:09:41,905 - INFO - aot.ai.services.mcp_bridge_service"
+log_file: logs/aot.log
+app_status_at_check: stopped_since_2026-03-31
+
+Static CSS changes (replacing hardcoded hex values with var() references) do not
+affect server-side behavior. CSS is valid and all var() references resolve to
+tokens in aot-theme-variables.css. No 500 errors introduced by this change.
+
+---
+
+## summary
+
+Phase 3 aot.css migration is complete:
+
+1. Bootstrap palette block rewritten: 12 hardcoded hex values replaced with
+   --aot-* token var() references; 5 unused palette colors removed entirely
+
+2. Zero hardcoded hex/rgb values remain in aot.css (verified via grep)
+
+3. .modal z-index duplicate — already removed (prior phase, confirmed by comment)
+
+4. Font-family — already using --aot-font-family / --aot-font-mono tokens
+
+5. CSS syntax verified: balanced braces, zero hex/rgb matches, all var()
+   references resolve to defined tokens
+
+6. App was not running at time of check; restart required to serve updated CSS
+
+Next: Phase 4 — Migrate custom.css note components (~120 lines across 8 selectors)

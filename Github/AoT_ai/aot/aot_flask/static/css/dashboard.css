@@ -1,0 +1,179 @@
+/* optional explicit handle class used by some widgets */
+.widget-drag-handle { cursor: move; }
+.panel-heading, .card-header, .widget-drag-handle { cursor: move; }
+/* make tabs clearly draggable and prevent accidental text selection */
+#dash-tabs { -webkit-user-select: none; -moz-user-select: none; user-select: none; }
+.dash-tab[draggable="true"] { cursor: grab; }
+.dash-tab[draggable="true"]:active { cursor: grabbing; }
+
+/* drag feedback for tabs */
+.dash-tab.dragging { opacity: 0.6; transform: scale(0.98); }
+.dash-tab.drop-target { position: relative; }
+.dash-tab.drop-target::after {
+  content: "";
+  position: absolute;
+  left: -4px; top: 10%; bottom: 10%; width: 2px;
+  background: currentColor; opacity: 0.35;
+}
+
+/* fixed-size buttons for + and settings gear */
+.btn-fixed-40 {
+  width: 40px !important;
+  height: 40px !important;
+  flex: 0 0 40px !important; /* prevent flex grow/shrink */
+}
+
+/* Widget header gear (settings) button: align flush to the right edge so it does
+   not visually overlap .widget-graph-controls (which sits at right: 35px). */
+.grid-stack-item .widget-settings {
+  right: 0 !important;
+  top: 0.75em !important;
+  padding: 0 0.5em;
+  line-height: 1;
+}
+.grid-stack-item .widget-settings a.btn {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  line-height: 1;
+}
+
+/* z-index for .modal and .modal-backdrop defined in aot.css */
+/* When a modal is open, block pointer events on underlying interactive layers */
+body.modal-open .grid-stack,
+body.modal-open #dash-tabs {
+  pointer-events: none;
+}
+body.modal-open .modal { pointer-events: auto; }
+
+/* Mobile: show at most 3 numbered tabs at once; overflow to scroll for more, enable scroll snap */
+/* Mobile: show at most 3 numbered tabs at once; overflow to scroll for more, enable scroll snap */
+/* REMOVED LEGACY BLOCK - Logic migrated to aot-base-ui.css and new media query below */
+
+/* Sticky tabbar surface color (synced to page background via JS) */
+:root { --aot-surface: transparent; }
+#dash-sticky { background-color: var(--aot-surface, #fff); }
+/* Ensure main navbar always stacks above the dashboard tab bar */
+.navbar.main-navbar { z-index: 12500 !important; }
+/* Tabbar vertical spacing: compact by default, roomy only when stuck to top */
+#dash-sticky {
+  padding: 0 !important;
+  margin: 0 !important;
+  height: 40px !important;
+}
+
+
+/* Extended background upwards to cover transparency/gaps */
+#dash-sticky::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0;
+  bottom: 100%; /* Sit on top of the element */
+  height: 60px; /* Navbar height approximate */
+  background-color: inherit; /* Match the sticky bar background */
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Hide scrollbar for dash-tabs */
+#dash-tabs {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+#dash-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+/* Mobile Tab Width Logic: 3 tabs exactly */
+@media (max-width: 991px) {
+    #dash-tabs .dummy-spacer {
+        display: none !important;
+    }
+    #dash-tabs .aot-tab-item {
+        /* Exact fit: 3 items = 100% */
+        width: calc(100% / 3) !important;
+        flex-shrink: 0 !important;
+    }
+}
+
+/* 위젯 추가 버튼이 상단 내비/탭에 가리지 않도록 고정 */
+.widget-add-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1041;
+  background-color: var(--aot-surface, #fff);
+  padding: 0.5rem 0;
+}
+body.aot-nav-hidden .widget-add-bar {
+  top: 70px;
+}
+.widget-add-bar .dropdown-menu {
+  z-index: 1042;
+  position: absolute;
+}
+/* Hide default triangular resize art but keep hit-area */
+.grid-stack-item .ui-resizable-se {
+  width: 18px;
+  height: 18px;
+  right: 4px;
+  bottom: 4px;
+  background: transparent !important;
+  border: none !important;
+  opacity: 0.7;
+  touch-action: none;
+}
+.grid-stack-item .ui-resizable-handle::after {
+  content: '';
+}
+
+/* Dash Table Sidebar */
+
+/* Tabs container overlaps buttons to create the "under-slide" effect */
+#dash-tabs {
+    /* Set flush to adjacent fixed buttons */
+    margin-left: 0px; 
+    margin-right: 0px;
+    
+    position: relative;
+    z-index: 10;
+}
+
+/* --- Mobile UI Optimizations --- */
+@media (max-width: 768px) {
+    /* Reduce dashboard container padding */
+    .container-fluid {
+        padding-left: 0.25em !important;
+        padding-right: 0.25em !important;
+    }
+
+    /* Compact Widget Header */
+    .grid-stack-item .panel-heading,
+    .grid-stack-item .card-header {
+        padding: 6px 10px !important;
+        font-size: 0.9rem !important;
+    }
+
+    /* Reduce widget content padding for small screens */
+    .grid-stack-item .panel-body,
+    .grid-stack-item .card-body {
+        padding: 8px !important;
+    }
+
+    /* [Fix] Prevent object-fit distortion on map tiles and canvas */
+    .grid-stack-item .leaflet-tile,
+    .grid-stack-item .leaflet-container canvas {
+        object-fit: unset !important;
+        image-rendering: auto;
+    }
+
+    /* Adjust Tab Bar for mobile */
+    #dash-sticky {
+        padding: 0px !important;
+        height: 40px !important;
+    }
+
+    /* [Mobile] Hide Tab Bar when Navbar is hidden (Scrolled down) */
+    body.aot-nav-hidden #dash-sticky {
+        top: -70px !important;
+    }
+}

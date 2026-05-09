@@ -1,0 +1,71 @@
+task_id: 2603_AoT_ai_001_inspect_schedule_feature
+project_id: 2603_AoT_ai
+task_name: inspect_schedule_feature
+description: Inspect why AI (both chat and background) fails to register schedules;
+  check multi-user/device readiness
+target_path: 2603_AoT_ai/Build/5_docker
+destination: 2603_AoT_ai/Build/5_docker/Tasks/AI/2026-03-27_SCHEDULE_FEATURE_INSPECTION/
+state: pending
+created_at: '2026-03-27T00:00:00+09:00'
+prompt: "# Foreman Task — inspect_schedule_feature\n#\n# Working directory (cwd):\
+  \ 2603_AoT_ai/Build/5_docker  (resolved from SYNODRIVE_ROOT)\n# Rules: read CLAUDE.md\
+  \ in the working directory before any action.\n# Language: English only in all generated\
+  \ documents.\n# -------------------------------------------------------------------\n\
+  \n## Background\nBoth the conversational AI and the background AI (whose implementation\
+  \ is\nnear-complete) are failing to register schedules. The root cause is unknown.\n\
+  Additionally, the system must be assessed for readiness to serve multiple\nusers\
+  \ and external devices.\n\nThis is an INSPECTION task — do not fix or modify code.\
+  \ Diagnose and document.\n\n---\n\n## Part 1 — Understand the current architecture\n\
+  \n1. Read CLAUDE.md (or Agent_Rules/ equivalent) in the working directory.\n2. Identify\
+  \ and read the files that define:\n   a. Schedule-related data models / schemas\
+  \ (e.g., Schedule, Task, Reminder).\n   b. Schedule creation API endpoints (routes,\
+  \ handlers).\n   c. Schedule service / business logic layer.\n   d. How the conversational\
+  \ AI triggers schedule creation\n      (intent parsing → tool call → API or direct\
+  \ DB write).\n   e. How the background AI triggers schedule creation\n      (event\
+  \ loop, task runner, or direct service call).\n3. Note the Docker service topology\
+  \ (docker-compose or equivalent):\n   which containers exist, which ports are exposed,\
+  \ how services communicate.\n\n---\n\n## Part 2 — Diagnose schedule registration\
+  \ failure\n\nFor each of the two AI paths (conversational, background), answer:\n\
+  \nA. Intent / trigger detection\n   - How does the AI recognize a schedule-registration\
+  \ request?\n   - Is the intent parsed correctly? (Check prompts, tool definitions,\
+  \ or\n     classifier configs.)\n   - Are there any recent changes to the prompt\
+  \ / tool schema that could\n     have broken recognition?\n\nB. Data flow from AI\
+  \ to storage\n   - What is the exact call chain from AI output → DB insert?\n  \
+  \ - At which step does the failure occur (or where is the first gap)?\n   - Are\
+  \ there validation errors, missing required fields, or wrong data types?\n\nC. Error\
+  \ signals\n   - Check available log files or logging calls for schedule-related\
+  \ errors.\n   - Note any exception messages, HTTP 4xx/5xx responses, or silent failures.\n\
+  \nD. Background AI — current implementation state\n   - Describe what is already\
+  \ implemented vs. what is still missing.\n   - Identify the specific gap that prevents\
+  \ schedule registration.\n\n---\n\n## Part 3 — Multi-user and multi-device readiness\n\
+  \nEvaluate the following and record findings (ready / partial / not ready):\n\n\
+  1. Authentication & authorization\n   - Are API endpoints protected (token, session,\
+  \ or API key)?\n   - Is per-user data isolation enforced (schedule owned by user_id)?\n\
+  \n2. External access\n   - Are any endpoints or ports exposed for external clients?\n\
+  \   - Is HTTPS/TLS configured or planned?\n\n3. Concurrent access\n   - Does the\
+  \ schedule service handle concurrent writes safely?\n   - Any obvious race conditions\
+  \ or missing locks?\n\n4. Configuration\n   - Are environment-specific settings\
+  \ (DB URL, secrets, allowed hosts)\n     managed via env vars / secrets — not hardcoded?\n\
+  \n5. API contract\n   - Is there an API spec (OpenAPI / REST doc) that external\
+  \ clients can use?\n\n---\n\n## Acceptance criteria\n- Every question in Part 2\
+  \ (A–D) has a concrete answer or \"unknown — needs\n  more information\" with a\
+  \ pointer to where to look.\n- Part 3 has a readiness rating for each of the 5 items.\n\
+  - The completion report contains a prioritized list of issues found.\n\n---\n\n\
+  ## Output\nWrite the completion report to:\n  2603_AoT_ai/Build/5_docker/Tasks/done/inspect_schedule_feature_COMPLETION.yaml\n\
+  \nReport format:\n  task_id:      \"2603_AoT_ai_001_inspect_schedule_feature\"\n\
+  \  status:       done | failed | partial\n  summary:      \"one-line result\"\n\n\
+  \  schedule_failure:\n    conversational_ai:\n      failure_point: \"\"       #\
+  \ where in the call chain it breaks\n      root_cause:    \"\"       # diagnosis\n\
+  \      evidence:      \"\"       # log lines, error messages, file:line refs\n \
+  \   background_ai:\n      implementation_state: \"\"   # what is done vs. missing\n\
+  \      failure_point: \"\"\n      root_cause:    \"\"\n      evidence:      \"\"\
+  \n\n  multi_device_readiness:\n    authentication:       { status: \"\", notes:\
+  \ \"\" }\n    external_access:      { status: \"\", notes: \"\" }\n    concurrent_access:\
+  \    { status: \"\", notes: \"\" }\n    configuration:        { status: \"\", notes:\
+  \ \"\" }\n    api_contract:         { status: \"\", notes: \"\" }\n\n  priority_issues:\n\
+  \    - priority: P1\n      issue:    \"\"\n      location: \"\"\n    # add more\
+  \ as needed\n\n  notes: \"\"\n\n# -------------------------------------------------------------------\n\
+  # MANDATORY COMPLETION STEPS:\n# 1. Do NOT modify any source files — this is inspection\
+  \ only.\n# 2. Write the completion report above before exiting.\n# 3. If any finding\
+  \ is ambiguous, record it as \"uncertain\" with a\n#    pointer to the relevant\
+  \ file and line range.\n"

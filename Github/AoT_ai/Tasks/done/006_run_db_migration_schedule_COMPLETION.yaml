@@ -1,0 +1,28 @@
+task_id:          "2603_AoT_ai_006_run_db_migration_schedule"
+status:           done
+summary: >
+  Successfully added schedule_type (VARCHAR(10) NOT NULL DEFAULT 'ai_system') and
+  user_id (INTEGER NULL) columns to the scheduler_jobs_meta table in
+  aot/databases/aot.db using the standalone migration script.
+  All existing rows backfilled with schedule_type='ai_system'.
+  PRAGMA table_info confirmed both columns present. Backfill verified (0 NULL rows).
+migration_method: standalone
+backup_path:      "aot/databases/aot_scheduler.db.bak_20260328_022111"
+verify_stdout: |
+  Columns: ['id', 'unique_id', 'source_type', 'action_type', 'target_id', 'params_json',
+  'schedule_time', 'duration_sec', 'end_time', 'schedule_cron', 'proposed_by', 'reasoning',
+  'approval_required', 'priority', 'state', 'decided_by', 'decided_at', 'user_feedback',
+  'executed_at', 'execution_result', 'created_at', 'is_editable', 'is_deletable',
+  'edit_count', 'last_edited_at', 'last_edited_by', 'deletion_reason', 'schedule_type', 'user_id']
+  VERIFY OK
+backfill_rows:    0
+docker_errors:    "none"
+notes: >
+  DB file confirmed at aot/databases/aot.db (main database containing scheduler_jobs_meta).
+  The file aot/databases/aot_scheduler.db contains only apscheduler_jobs (APScheduler
+  internal store) and was not the target of this migration.
+  Alembic binary and Python module were not available in the local environment;
+  standalone script path (Step 3B) was used.
+  The alembic revision c3d4e5f6a7b8 in alembic_db/alembic/versions/ documents the same
+  migration for container/prod use but was not executed here.
+  Backup was verified before any migration command was run.

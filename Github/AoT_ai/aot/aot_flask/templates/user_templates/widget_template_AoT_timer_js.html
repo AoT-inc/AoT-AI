@@ -1,0 +1,810 @@
+
+    // TIME DISPLAY RULES (2025-10 rev):
+    // ---- Central time helpers (single source of truth) ----
+    function tm_nowMs(){ return Date.now(); } // System/browser clock
+    function tm_toDate(ms){ return new Date(ms); }
+    // Read numeric UTC offset (hours) from data-offset; fallback 9.0
+    function tm_getOffsetHours(widget_id){
+      try{
+        const $frame = $('#aot_tm_'+widget_id);
+        const raw = ($frame.attr('data-offset') || '').trim();
+        // Accept comma decimal or weird spacing
+        const norm = raw.replace(',', '.');
+        let v = parseFloat(norm);
+        if (!Number.isFinite(v)) throw new Error('NaN');
+        // Clamp to sane range [-12, 14]
+        if (v < -12) v = -12;
+        if (v > 14) v = 14;
+        return v;
+      }catch(e){
+        return 9.0;
+      }
+    }
+    // ---- Server clock offset (server_now_ms - client_now_ms) ----
+    let tm_serverNowOffsetMs = 0;
+    function tm_updateServerNowOffsetFromResponse(res)
+    {
+      try{
+        const dateHdr = res.headers.get('date');
+        if(!dateHdr) return;
+        const srvMs = Date.parse(dateHdr);
+        if(!isNaN(srvMs)){
+          const off = srvMs - Date.now();
+          // Only accept small drift (±120s); ignore absurd offsets (e.g., server sends local time as GMT)
+          if (Math.abs(off) <= 120000) {
+            tm_serverNowOffsetMs = off;
+            if(window.AoT_DEBUG_TIMER){ console.debug('AoT Timer: server-now offset(ms)=', tm_serverNowOffsetMs); }
+          } else {
+            // ignore
+            if(window.AoT_DEBUG_TIMER){ console.warn('AoT Timer: ignoring absurd server offset(ms)=', off); }
+            tm_serverNowOffsetMs = 0;
+          }
+        }
+      }catch(e){}
+    }
+    // ---- Safe server-now helpers (guard against misconfigured Date header) ----
+    function tm_safeOffsetMs(){
+      const off = tm_serverNowOffsetMs || 0;
+      // clamp to ±120s; if outside, treat as 0 to avoid +9h jumps
+      return (Math.abs(off) <= 120000) ? off : 0;
+    }
+    function tm_nowServerMs(){
+      return tm_nowMs() + tm_safeOffsetMs();
+    }
+
+    // ---- Stable text setter to prevent flicker ----
+    const EPOCH_2000_MS = 946684800000; // guard for invalid 1970 timestamps
+    let tm_lastRenderedText = {}; // wid -> last text
+    function tm_setTextStable(widget_id, text){
+      const $el = $('#tm_timestamp_'+widget_id);
+      if (!$el.length) return;
+      const t = String(text);
+      if (tm_lastRenderedText[widget_id] === t) return; // no repaint
+      tm_lastRenderedText[widget_id] = t;
+      $el.text(t);
+    }
+    // 1) No input-duration caching (localStorage) — removed.
+    // 2) Timestamps are rendered in browser-local time via JS Date (no server TZ conversion).
+    // 3) Elapsed time increases only while server-reported state is ON and a valid server start-time exists.
+    // 4) OFF state shows "00:00:00" (no ticking). All other server fetches (e.g., start-time) run only on refresh_seconds cadence.
+    function modOutputOutput_tm(cmdStr, widget_id) {
+      $.ajax({
+        type: 'GET',
+        url: '/output_mod/' + cmdStr,
+        success: function(data) {
+          getGPIOStateOutput_tm(widget_id);
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+          console.log("modOutputOutput_tm error:", errorThrown);
+        }
+      });
+    }
+
+    function getGPIOStateOutput_tm(widget_id) {
+      // 토글(checkbox) 찾기
+      const $chk = $('#tm_tog_'+widget_id);
+      if (!$chk.length) return;
+
+      const devName = $chk.attr('name');
+      if (!devName || devName.indexOf('/') === -1) {
+        // Unbound widget: stop all timers and show stable zeros to avoid bogus 09:00:xx
+        tm_clearStartBases(widget_id);
+        tm_stopCountdown(widget_id);
+        tm_stopTimestamp(widget_id, false);
+        tm_setTextStable(widget_id, '00:00:00');
+        console.debug('[AoT Timer] name missing or invalid for wid', widget_id);
+        return;
+      }
+      const parts = devName.split('/');
+      const dev_id = parts[0];
+      const ch_id  = parts[1];
+      if (!dev_id || !ch_id) {
+        tm_clearStartBases(widget_id);
+        tm_stopCountdown(widget_id);
+        tm_stopTimestamp(widget_id, false);
+        tm_setTextStable(widget_id, '00:00:00');
+        console.debug('[AoT Timer] device_id/channel_id missing for wid', widget_id);
+        return;
+      }
+
+      // 최상위 컨테이너 (배경색 변경용) — 옵션과 무관하게 전체 프레임에 적용
+      const $frame = $('#aot_tm_'+widget_id);
+
+      // 상태표시용 span
+      const $txt = $('#tm_state_'+widget_id);
+
+      // Ajax로 상태 읽어오기
+      $.getJSON('/outputstate_unique_id/' + dev_id + '/' + ch_id, function(state) {
+
+        if (state === 'off') {
+          $chk.prop('checked', false);
+          $frame.removeClass('active-background pause-background')
+                .addClass('inactive-background');
+          tm_lockInputs(widget_id, false);
+          if ($txt.length) $txt.text('(Inactive)');
+
+          // Restore previously frozen OFF display immediately to avoid brief disappearance
+          if (typeof tm_offFrozenText[widget_id] === 'string' && tm_offFrozenText[widget_id].length > 0) {
+            tm_setTextStable(widget_id, tm_offFrozenText[widget_id]);
+          }
+
+          // If we still have no frozen display, seed from local cache to avoid one-frame disappearance
+          if (!(typeof tm_offFrozenText[widget_id] === 'string' && tm_offFrozenText[widget_id].length > 0)
+              && typeof tm_frozenElapsedSec[widget_id] !== 'number') {
+            tm_renderFromLastSession(widget_id); // uses localStorage {start_ms, elapsed_sec}
+            if (typeof tm_lastRenderedText[widget_id] === 'string' && tm_lastRenderedText[widget_id].length > 0) {
+              tm_offFrozenText[widget_id] = tm_lastRenderedText[widget_id];
+            }
+          }
+
+          tm_stopCountdown(widget_id);
+          tm_stopTimestamp(widget_id, false);
+          // Safety: ensure no interval is ticking
+          if (tm_timestampInterval[widget_id]) {
+            clearInterval(tm_timestampInterval[widget_id]);
+            tm_timestampInterval[widget_id] = null;
+          }
+          // ---- Cross-browser last-session cache: freeze elapsed, persist on ON→OFF ----
+          const hadBase = (typeof tm_timestampStartSec[widget_id] !== 'undefined');
+          const justTurnedOff = (tm_prevState[widget_id] === 'on');
+
+          if (hadBase && justTurnedOff) {
+            // 1) ON→OFF 전환 시점에만 경과를 확정하고 저장 (서버 시계 오프셋 반영)
+            const nowMs = tm_nowServerMs();
+            const startMs = tm_timestampStartDate[widget_id].getTime();
+            const elapsed = Math.max(0, Math.floor((nowMs - startMs)/1000));
+            tm_frozenElapsedSec[widget_id] = elapsed; // 이후 OFF 주기에는 이 값을 그대로 표시
+            const elapsedStr = tm_formatHMS(elapsed);
+            let startedStr = '';
+            try { startedStr = tm_formatMD_HMS(tm_timestampStartDate[widget_id], widget_id) || ''; } catch(e) { startedStr=''; }
+            tm_setTextStable(widget_id, elapsedStr + (startedStr ? ", " + startedStr : ''));
+            tm_offFrozenText[widget_id] = tm_lastRenderedText[widget_id];
+
+            // 서버에도 1회 저장 (교차 브라우저용)
+            (async function(){
+              try{
+                await tm_saveLastSessionServer(widget_id, dev_id, ch_id,
+                  Math.floor(startMs), nowMs, elapsed);
+              }catch(e){}
+            })();
+            // Also persist locally for instant restore on refresh
+            tm_storeLastSession(widget_id, Math.floor(startMs), elapsed);
+
+          } else if (typeof tm_frozenElapsedSec[widget_id] === 'number') {
+            // 2) 이미 OFF 상태이고 고정 경과값이 있으면, 그 값을 그대로 표시 (증가 금지)
+            const elapsedStr = tm_formatHMS(tm_frozenElapsedSec[widget_id]);
+            const dOff = tm_getOffStartDate(widget_id);
+            const startedStr = dOff ? tm_formatMD_HMS(dOff, widget_id) : '';
+            tm_setTextStable(widget_id, elapsedStr + (startedStr ? ", " + startedStr : ''));
+          tm_offFrozenText[widget_id] = tm_lastRenderedText[widget_id];
+
+          } else {
+            // 3) 베이스가 없고 고정값도 없으면: 서버 캐시 1회 조회 후 고정 표시
+            //    실패 시에는 기존 표시를 유지하고, 아무 표시가 없을 때만 00:00:00로 초기화
+            (async function(){
+              const hadDisplay = (typeof tm_lastRenderedText[widget_id] === 'string' && tm_lastRenderedText[widget_id].length > 0);
+              try{
+                const js = await tm_fetchLastSessionServer(dev_id, ch_id);
+                if (js && typeof js.elapsed_sec==='number'){
+                  tm_frozenElapsedSec[widget_id] = Math.max(0, Math.floor(js.elapsed_sec));
+                  const d = (typeof js.start_ms==='number') ? tm_toDate(js.start_ms) : null;
+                  const startedStr = d ? tm_formatMD_HMS(d, widget_id) : '';
+                  const elapsedStr = tm_formatHMS(tm_frozenElapsedSec[widget_id]);
+                  tm_setTextStable(widget_id, elapsedStr + (startedStr? ", "+startedStr: ''));
+                  tm_offFrozenText[widget_id] = tm_lastRenderedText[widget_id];
+                  // Mirror server last-session into local cache for immediate reuse on next load
+                  if (typeof js.start_ms === 'number' && typeof js.elapsed_sec === 'number') {
+                    tm_storeLastSession(widget_id, Math.floor(js.start_ms), Math.max(0, Math.floor(js.elapsed_sec)));
+                  }
+                } else if (!hadDisplay) {
+                  // Only output default if no display at all (+ include start time if possible)
+                  const dOff = tm_getOffStartDate(widget_id);
+                  const startedStr = dOff ? tm_formatMD_HMS(dOff, widget_id) : '';
+                  tm_setTextStable(widget_id, '00:00:00' + (startedStr? ", "+startedStr: ''));
+                  tm_offFrozenText[widget_id] = tm_lastRenderedText[widget_id];
+                }
+              }catch(e){
+                if (!hadDisplay) {
+                  const dOff = tm_getOffStartDate(widget_id);
+                  const startedStr = dOff ? tm_formatMD_HMS(dOff, widget_id) : '';
+                  tm_setTextStable(widget_id, '00:00:00' + (startedStr? ", "+startedStr: ''));
+                  tm_offFrozenText[widget_id] = tm_lastRenderedText[widget_id];
+                }
+              }
+            })();
+          }
+
+          // clear stale bases so 다음 ON 주기에서 새 시작 시각을 강제로 동기화
+          tm_clearStartBases(widget_id);
+
+          tm_prevState[widget_id] = 'off';
+          console.debug("AoT Timer: state=off; duration-based frozen display.");
+
+        } else if (state === 'on') {
+          const was = tm_prevState[widget_id];
+          tm_prevState[widget_id] = 'on';
+          // Clear OFF display cache on ON transition so live timer can render
+          delete tm_offFrozenText[widget_id];
+          if (was !== 'on') {
+            // Transition OFF→ON:
+            // If we already have a provisional/local base (e.g., user just toggled ON), keep it.
+            // Otherwise, clear stale bases to force server re-sync.
+            const hasLocalBase = (tm_timestampStartDate[widget_id] instanceof Date) && (typeof tm_timestampStartSec[widget_id] === 'number');
+            if (!hasLocalBase) {
+              tm_clearStartBases(widget_id);
+            }
+            delete tm_frozenElapsedSec[widget_id];
+          }
+          $chk.prop('checked', true);
+          $frame.removeClass('inactive-background pause-background')
+                .addClass('active-background');
+          tm_lockInputs(widget_id, true);
+          if ($txt.length) $txt.text('(Active)');
+          // If we don't have a valid start base yet, wait for server start timestamp (no provisional local base)
+          if (typeof tm_timestampStartSec[widget_id] === 'undefined' || typeof tm_timestampStartDate[widget_id] === 'undefined') {
+            // No valid base yet; show a short syncing hint and immediately fetch server start-time once.
+            if (tm_lastRenderedText[widget_id] !== '{{_("Syncing...")}}') tm_setTextStable(widget_id, '{{_("Syncing...")}}');
+            (async function(){
+              const devName = $chk.attr('name');
+              const dev_id = devName ? devName.split('/')[0] : null;
+              const ch_id  = devName ? devName.split('/')[1] : null;
+              if (!dev_id || !ch_id) return;
+              try { await tm_maybeSyncServerStart(widget_id, dev_id, ch_id); } catch(e) {}
+            })();
+            return;
+          }
+
+          // Base exists; still allow light sync in background (no flicker due to ±120s guard)
+          (async function(){
+            const devName = $chk.attr('name');
+            const dev_id = devName ? devName.split('/')[0] : null;
+            const ch_id  = devName ? devName.split('/')[1] : null;
+            if (!dev_id || !ch_id) return;
+            try { await tm_maybeSyncServerStart(widget_id, dev_id, ch_id); } catch(e) {}
+          })();
+
+        } else {
+          // UI 변경 없이 오류 로그만 남깁니다.
+          console.error("AoT Timer: No connection for widget:", widget_id);
+        }
+      });
+    }
+
+        // --- Per-widget server-start status flags ---
+        let tm_serverStartKnown = {};   // wid -> boolean
+        let tm_lastServerTsMs   = {};   // wid -> number (ms)
+        let tm_baseSetAtMs      = {}; // wid -> ms (when tm_setTimestampBase last ran)
+        // ---- Server-side Start-Time Sync Helpers ----
+        async function tm_fetchServerStartTime(dev_id, ch_id, widget_id) {
+          const BASE = (window.AoT_BASE_PATH || '');
+
+          async function fetchStart(url) {
+            console.debug("AoT Timer: trying start-time endpoint", url);
+            try {
+              const res = await fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } });
+              tm_updateServerNowOffsetFromResponse(res);
+
+              // 401/403: Auth issue -> parent decides whether to fallback to private
+              if (res.status === 401 || res.status === 403) {
+                return { kind: 'auth_needed' };
+              }
+
+              // 204: 내용 없음 → JSON 파싱 시도 금지
+              if (res.status === 204) {
+                console.debug("AoT Timer: start-time 204 No Content from", url);
+                return { kind: 'none' };
+              }
+
+              if (!res.ok) {
+                console.debug("AoT Timer: start-time non-OK status", res.status, "from", url);
+                return { kind: 'none' };
+              }
+
+              const ctype = (res.headers.get('content-type') || '').toLowerCase();
+              if (!ctype.includes('application/json')) {
+                const txt = await res.text(); // 디버그용
+                console.debug("AoT Timer: start-time non-JSON body from", url, "len=", (txt || '').length);
+                return { kind: 'none' };
+              }
+
+              let data = null;
+              try { data = await res.json(); } catch (e) {
+                console.debug("AoT Timer: start-time JSON parse error from", url);
+                return { kind: 'none' };
+              }
+
+              const ts = tm_extractTimestampFromResponse(data, widget_id);
+              if (ts) return { kind: 'ts', ts };
+              return { kind: 'none' };
+            } catch (e) {
+              console.debug("AoT Timer: start-time fetch error for", url, e);
+              return { kind: 'none' };
+            }
+          }
+
+          const prefixes = [];
+          if (BASE) prefixes.push(BASE);
+          prefixes.push("");
+
+          // Try endpoints in order: public then (if auth needed) private, across prefixes
+          for (const pre of prefixes) {
+            const pubUrl = `${pre}/aot_timer_output_started_at_public/${dev_id}/${ch_id}`;
+            const pubRes = await fetchStart(pubUrl);
+            if (pubRes.kind === 'ts') return pubRes.ts;
+            if (pubRes.kind === 'auth_needed') {
+              const prvUrl = `${pre}/aot_timer_output_started_at/${dev_id}/${ch_id}`;
+              const prvRes = await fetchStart(prvUrl);
+              if (prvRes.kind === 'ts') return prvRes.ts;
+            }
+            // kind 'none' 또는 기타 → 다음 prefix 시도
+          }
+
+          return null;
+        }
+        // Ensure newest implementation overrides legacy globals
+        window.tm_fetchServerStartTime = tm_fetchServerStartTime;
+
+
+        function tm_extractTimestampFromResponse(data, widget_id) {
+          if (!data || typeof data !== 'object') return null;
+
+          function normEpochMs(v){
+            if (typeof v !== 'number' || !isFinite(v)) return null;
+            return (v >= 1e12) ? Math.floor(v) : Math.floor(v * 1000);
+          }
+
+          const ms_from_epoch = normEpochMs(data.started_at_epoch);
+          const ms_from_started_ms = normEpochMs(data.started_at_ms);
+          const ms_from_point_ts = normEpochMs(data.point_ts_epoch);
+
+          let epochMs = ms_from_epoch || ms_from_started_ms || null;
+
+          // If point_ts is present and differs by ~6–12h, prefer point_ts (sanitize locally-encoded epochs)
+          if (epochMs && ms_from_point_ts) {
+            const diff = Math.abs(epochMs - ms_from_point_ts);
+            const LOWER = (6*3600*1000) - (15*60*1000);
+            const UPPER = (12*3600*1000) + (15*60*1000);
+            if (diff >= LOWER && diff <= UPPER) {
+              epochMs = ms_from_point_ts;
+            }
+          }
+
+          if (epochMs && epochMs >= EPOCH_2000_MS) return epochMs;
+
+          if (typeof data.started_at_iso === 'string') {
+            const t = Date.parse(data.started_at_iso);
+            if (!isNaN(t) && t >= EPOCH_2000_MS) return t;
+          }
+
+          if (data.meta && (data.meta.started_at_epoch || data.meta.started_at_ms || data.meta.started_at_iso || data.meta.point_ts_epoch)) {
+            return tm_extractTimestampFromResponse(data.meta, widget_id);
+          }
+          return null;
+        }
+
+    // Start immediately on user-initiated ON: use local UTC-now as provisional base
+    function tm_setLocalStartBase(widget_id){
+      const nowMs = tm_nowServerMs();
+      const d = tm_toDate(nowMs);                   // UTC Date
+      tm_timestampStartDate[widget_id] = d;
+      tm_timestampStartSec[widget_id]  = Math.floor(nowMs/1000);
+      tm_startedUtcMs[widget_id]       = Math.floor(nowMs); // cache UTC only
+      // Start ticking immediately at 00:00:00
+      if (!tm_timestampInterval[widget_id]){
+        tm_timestampInterval[widget_id] = setInterval(function(){ tm_updateTimestamp(widget_id); }, 1000);
+      }
+      // Render immediately using TZ only for formatting
+      const startedStr = tm_formatMD_HMS(d, widget_id) || '';
+      tm_setTextStable(widget_id, '00:00:00' + (startedStr ? ", " + startedStr : ''));
+    }
+
+    // CONTRACT: startMs must be UTC epoch (ms). Timezone offsets are applied only when formatting labels.
+    function tm_setTimestampBase(widget_id, startMs) {
+      // NOTE: startMs is treated as a UTC epoch from the server; no timezone heuristics are applied.
+      // NOTE: Do not perform any timezone/drift compensation here. Server provides UTC epoch; we format to Asia/Seoul only at render time.
+      if (!(Number.isFinite(startMs)) || startMs < EPOCH_2000_MS) {
+        console.debug('AoT Timer: ignored invalid server start ms', startMs);
+        return;
+      }
+      if (startMs < 1e12) {
+        console.debug('AoT Timer: startMs appears in seconds; normalizing to ms', startMs);
+        startMs = Math.floor(startMs * 1000);
+      }
+      // If we already have a provisional/local base, only rebase when the server differs by >120s
+      if (tm_timestampStartDate[widget_id] instanceof Date) {
+        const existing = tm_timestampStartDate[widget_id].getTime();
+        const DIFF = Math.abs(startMs - existing);
+        if (DIFF <= 120000) {
+          // Keep current base to avoid flicker and label disappearing
+          if (window.AoT_DEBUG_TIMER) {
+            console.debug('AoT Timer: keeping existing base; server within 120s', { wid: widget_id, existing, server: startMs });
+          }
+          // Mark that server start is known so we don't keep fetching
+          tm_serverStartKnown[widget_id] = true;
+          tm_lastServerTsMs[widget_id]   = Math.floor(startMs);
+          return;
+        }
+      }
+      const d = tm_toDate(startMs);
+      tm_timestampStartDate[widget_id] = d;                 // UTC Date
+      tm_startedUtcMs[widget_id]       = Math.floor(startMs); // cache UTC only
+      tm_timestampStartSec[widget_id]  = Math.floor(startMs / 1000);
+      tm_lastServerTsMs[widget_id]     = Math.floor(startMs);
+      tm_serverStartKnown[widget_id]   = true;
+      tm_baseSetAtMs[widget_id] = tm_nowMs();
+      console.debug('AoT Timer: base set', {
+        startMs,
+        startISO: new Date(startMs).toISOString(),
+        startSec: tm_timestampStartSec[widget_id]
+      });
+      if (window.AoT_DEBUG_TIMER) {
+        console.debug('AoT Timer: baseSetAtMs', { wid: widget_id, baseSetAtMs: tm_baseSetAtMs[widget_id] });
+      }
+      tm_stopTimestamp(widget_id, false);
+      tm_updateTimestamp(widget_id);
+      const $chk = $('#tm_tog_'+widget_id);
+      if ($chk.length && $chk.is(':checked')) {
+        if (!tm_timestampInterval[widget_id]) {
+          tm_timestampInterval[widget_id] = setInterval(function(){ tm_updateTimestamp(widget_id); }, 1000);
+        }
+      } else {
+        if (tm_timestampInterval[widget_id]) {
+          clearInterval(tm_timestampInterval[widget_id]);
+          tm_timestampInterval[widget_id] = null;
+        }
+      }
+    }
+
+        async function tm_maybeSyncServerStart(widget_id, dev_id, ch_id) {
+          try {
+            // If we already have a server-certified base for this ON session, do not rebase.
+            if (tm_serverStartKnown[widget_id]) return;
+
+            const ts = await tm_fetchServerStartTime(dev_id, ch_id, widget_id);
+            if (!ts) return; // 204/none
+
+            // Adopt server start time unconditionally on first acquisition for this session.
+            tm_setTimestampBase(widget_id, ts);
+          } catch (e) { /* ignore */ }
+        }
+
+    // ---- Last-session server cache helpers ----
+    async function tm_saveLastSessionServer(widget_id, dev_id, ch_id, start_ms, stop_ms, elapsed_sec){
+      try{
+        const csrfToken = $('meta[name="csrf-token"]').attr('content');
+        const res = await fetch(`/aot_timer_output_last_session_set/${dev_id}/${ch_id}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type':'application/json',
+            'Accept':'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify({ widget_id: String(widget_id||''), start_ms: Math.floor(start_ms), stop_ms: Math.floor(stop_ms), elapsed_sec: Math.max(0, Math.floor(elapsed_sec||0)) })
+        });
+        return res.ok;
+      }catch(e){ return false; }
+    }
+    async function tm_fetchLastSessionServer(dev_id, ch_id){
+      try{
+        const res = await fetch(`/aot_timer_output_last_session_public/${dev_id}/${ch_id}`, { headers: { 'Accept':'application/json' } });
+        if(!res.ok) return null;
+        const js = await res.json();
+        return js && typeof js==='object' ? js : null;
+      }catch(e){ return null; }
+    }
+
+    // --- Per-widget UI state (to detect OFF→ON transitions) ---
+    let tm_prevState = {};        // wid -> 'on' | 'off' | undefined
+
+    // Helper: clear known server start and local bases
+    function tm_clearStartBases(widget_id) {
+      tm_serverStartKnown[widget_id] = false;
+      tm_lastServerTsMs[widget_id]   = undefined;
+      tm_timestampStartSec[widget_id]= undefined;
+      tm_timestampStartDate[widget_id]= undefined;
+      tm_baseSetAtMs[widget_id] = 0; // reset cooldown so next ON fetches immediately
+      // Do not clear display to avoid flicker; ticking will restart when a new base arrives
+      tm_stopTimestamp(widget_id, false);
+      tm_baseCorrectedOnce[widget_id] = false;
+      tm_startedUtcMs[widget_id] = undefined;
+    }
+
+    // 자동 갱신
+    function tm_initAutoRefresh(widget_id, refreshSec) {
+      if (!refreshSec || refreshSec <= 0) { return; }
+
+      // Ensure per-widget cadence state
+      if (typeof window._tm_refreshTick === 'undefined') window._tm_refreshTick = {};
+
+      window._tm_refreshTick[widget_id] = setInterval(async function(){
+        // Always poll on/off state on the configured cadence
+        getGPIOStateOutput_tm(widget_id);
+
+        // Only try to sync server start-time if ON
+        const $chkOn = $('#tm_tog_'+widget_id);
+        if ($chkOn.length && $chkOn.is(':checked')) {
+          const devName = $chkOn.attr('name');
+          if (!devName) return;
+          const dev_id = devName.split('/')[0];
+          const ch_id  = devName.split('/')[1];
+          await tm_maybeSyncServerStart(widget_id, dev_id, ch_id);
+        }
+      }, refreshSec * 1000);
+    }
+
+    // 카운트다운 로직
+    let tm_countdown = {};
+    let tm_currentSec = {};
+
+    function tm_getInputSec(widget_id){
+      let hh = parseInt($('#tm_hh_'+widget_id).val()) || 0;
+      let mm = parseInt($('#tm_mm_'+widget_id).val()) || 0;
+      let ss = parseInt($('#tm_ss_'+widget_id).val()) || 0;
+      if(hh>48) hh=48;
+      if(mm>59) mm=59;
+      if(ss>59) ss=59;
+      return (hh*3600 + mm*60 + ss);
+    }
+
+    function tm_applyInputSec(widget_id, totalSec){
+      if(totalSec<0) totalSec=0;
+      let hh = Math.floor(totalSec/3600);
+      let mm = Math.floor((totalSec%3600)/60);
+      let ss = totalSec % 60;
+      $('#tm_hh_'+widget_id).val(hh);
+      $('#tm_mm_'+widget_id).val(mm);
+      $('#tm_ss_'+widget_id).val(ss);
+    }
+
+    function tm_startCountdown(widget_id){
+      if(tm_countdown[widget_id]) return; // 이미 동작 중이면 무시
+
+      const totalSec = tm_getInputSec(widget_id);
+      tm_currentSec[widget_id] = totalSec;
+
+      // When a timer starts (ON with duration), reset last-session elapsed to 0 at now
+      const nowMs_for_timer = tm_nowMs();
+      tm_storeLastSession(widget_id, nowMs_for_timer, 0);
+
+      tm_lockInputs(widget_id, true);
+
+      if(totalSec <= 0){
+        // 0초면 무기한
+        return;
+      }
+
+      tm_countdown[widget_id] = setInterval(function(){
+        if(tm_currentSec[widget_id] > 0){
+          tm_currentSec[widget_id]--;
+        }
+        tm_applyInputSec(widget_id, tm_currentSec[widget_id]);
+
+        if(tm_currentSec[widget_id] <= 0){
+          clearInterval(tm_countdown[widget_id]);
+          tm_countdown[widget_id] = null;
+
+          // 서버 OFF
+          let baseName = $('#tm_tog_'+widget_id).attr('name');
+          if(baseName){
+            let dev_id= baseName.split('/')[0];
+            let ch_id= baseName.split('/')[1];
+            let cmd= dev_id+'/'+ch_id+'/off/sec/0';
+            modOutputOutput_tm(cmd, widget_id);
+          }
+        }
+      }, 1000);
+    }
+
+    function tm_stopCountdown(widget_id){
+      if(tm_countdown[widget_id]){
+        clearInterval(tm_countdown[widget_id]);
+        tm_countdown[widget_id] = null;
+      }
+      tm_lockInputs(widget_id, false);
+    }
+
+    function tm_lockInputs(widget_id, isLock){
+      $('#tm_hh_'+widget_id).prop('readOnly', isLock);
+      $('#tm_mm_'+widget_id).prop('readOnly', isLock);
+      $('#tm_ss_'+widget_id).prop('readOnly', isLock);
+      $('#tm_reset_'+widget_id).prop('disabled', isLock);
+      $('#tm_plus5_'+widget_id).prop('disabled', isLock);
+      $('#tm_plus10_'+widget_id).prop('disabled', isLock);
+    }
+
+    // 타임스탬프 로직
+    let tm_timestampInterval = {};
+    let tm_timestampStartSec = {};
+    let tm_timestampStartDate = {};
+    // OFF 상태에서 재표시 시 증가를 막기 위한 고정 경과시간(초)
+    let tm_frozenElapsedSec = {}; // wid -> number(sec)
+    // Cache the last valid rendered start-time label per widget (prevents occasional disappearance)
+    let tm_startedUtcMs = {}; // wid -> number (ms)
+     // Per-widget: whether initial timezone correction was applied for this ON session
+    let tm_baseCorrectedOnce = {}; // wid -> boolean
+    let tm_offFrozenText = {}; // wid -> string
+
+    function tm_stopTimestamp(widget_id, clearDisplay=true){
+      if(tm_timestampInterval[widget_id]){
+        clearInterval(tm_timestampInterval[widget_id]);
+        tm_timestampInterval[widget_id] = null;
+      }
+      if(clearDisplay){
+        $('#tm_timestamp_'+widget_id).text('');
+      }
+    }
+
+    function tm_startTimestamp(widget_id){
+      // Deprecated: timestamp now starts only when server provides a start time.
+      if (tm_timestampInterval[widget_id]) return;
+      // Do nothing here. tm_setTimestampBase() will be called when server start-time is known
+      // and will start ticking only if the device is ON.
+    }
+
+    function tm_updateTimestamp(widget_id){
+      // Update only when we have a valid base AND the device is ON
+      const $chk = $('#tm_tog_'+widget_id);
+      if (!$chk.length || !$chk.is(':checked')) return;
+      if (typeof tm_timestampStartSec[widget_id] === 'undefined' || typeof tm_timestampStartDate[widget_id] === 'undefined') {
+        // No valid base yet; avoid provisional 00:00:00 and show a short syncing hint once.
+        if (tm_lastRenderedText[widget_id] !== '동기화 중…') tm_setTextStable(widget_id, '동기화 중…');
+        return;
+      }
+      const nowMs = tm_nowServerMs();
+      const startMs = tm_timestampStartDate[widget_id].getTime();
+      const elapsed = Math.max(0, Math.floor((nowMs - startMs)/1000));
+      // DEBUG: numeric sanity (can be removed once stable)
+      if (window.AoT_DEBUG_TIMER) {
+        console.debug('AoT Timer DEBUG', {
+          nowMs: nowMs,
+          startMs: startMs,
+          diffMs: nowMs - startMs,
+          elapsed_s: elapsed,
+          start_iso: tm_timestampStartDate[widget_id] ? tm_timestampStartDate[widget_id].toISOString() : null
+        });
+      }
+      const elapsedStr = tm_formatHMS(elapsed);
+      let startedStr = '';
+      try { startedStr = tm_formatMD_HMS(tm_timestampStartDate[widget_id], widget_id) || ''; } catch(e) { startedStr = ''; }
+      tm_setTextStable(widget_id, elapsedStr + (startedStr ? ", " + startedStr : ''));
+    }
+
+    function tm_formatHMS(sec){
+      if(sec<0) sec=0;
+      const hh= Math.floor(sec/3600);
+      const mm= Math.floor((sec%3600)/60);
+      const ss= sec%60;
+      return String(hh).padStart(2,'0') + ":" +
+             String(mm).padStart(2,'0') + ":" +
+             String(ss).padStart(2,'0');
+    }
+    function tm_formatMD_HMS(d, widget_id){
+      // Render the timestamp using the widget-selected timezone offset (tz_offset)
+      // We shift the underlying UTC epoch by offset hours, then read UTC fields to format.
+      try{
+        const offH = tm_getOffsetHours(widget_id); // e.g., +9.0 for Seoul
+        const shifted = new Date(d.getTime() + Math.round(offH * 3600 * 1000));
+        const M = String(shifted.getUTCMonth() + 1).padStart(2, '0');
+        const D = String(shifted.getUTCDate()).padStart(2, '0');
+        const h = String(shifted.getUTCHours()).padStart(2, '0');
+        const m = String(shifted.getUTCMinutes()).padStart(2, '0');
+        const s = String(shifted.getUTCSeconds()).padStart(2, '0');
+        return `${M}월 ${D}일 ${h}:${m}:${s}`;
+      }catch(e){
+        return '';
+      }
+    }
+    // ---- Input cache (persist across reloads) ----
+    // (Removed: no input-duration caching)
+
+    // ---- Last session cache (persist last start time and elapsed at stop) ----
+    function tm_lastSessKey(widget_id) { return 'aot_tm_last_'+widget_id; }
+
+    function tm_storeLastSession(widget_id, startMs, elapsedSec) {
+      try {
+        const payload = { start_ms: (typeof startMs==='number'? Math.floor(startMs): null),
+                          elapsed_sec: (typeof elapsedSec==='number'? Math.max(0, Math.floor(elapsedSec)): null) };
+        localStorage.setItem(tm_lastSessKey(widget_id), JSON.stringify(payload));
+      } catch(e) { /* ignore */ }
+    }
+    
+    // Resolve a start-time Date for OFF display: prefer in-memory base first, else localStorage cache
+    function tm_getOffStartDate(widget_id){
+      try{
+        if (tm_timestampStartDate[widget_id] instanceof Date) return tm_timestampStartDate[widget_id];
+        const sess = tm_loadLastSession(widget_id);
+        if (sess && typeof sess.start_ms === 'number' && sess.start_ms >= EPOCH_2000_MS) {
+          return new Date(Math.floor(sess.start_ms));
+        }
+      }catch(e){}
+      return null;
+    }
+
+    function tm_loadLastSession(widget_id) {
+      try {
+        const raw = localStorage.getItem(tm_lastSessKey(widget_id));
+        if (!raw) return null;
+        const obj = JSON.parse(raw);
+        if (!obj || (typeof obj !== 'object')) return null;
+        if (typeof obj.start_ms !== 'number') return null;
+        const startMs = Math.floor(obj.start_ms);
+        const elapsed = (typeof obj.elapsed_sec === 'number') ? Math.max(0, Math.floor(obj.elapsed_sec)) : null;
+        return { start_ms: startMs, elapsed_sec: elapsed };
+      } catch(e) { return null; }
+    }
+
+    function tm_renderFromLastSession(widget_id) {
+      const sess = tm_loadLastSession(widget_id);
+      if (!sess) { tm_setTextStable(widget_id, '00:00:00'); return; }
+      const d = tm_toDate(sess.start_ms);
+      let startedStr = '';
+      try { startedStr = tm_formatMD_HMS(d, widget_id) || ''; } catch(e) { startedStr = ''; }
+      const elapsedStr = tm_formatHMS((typeof sess.elapsed_sec==='number')? sess.elapsed_sec: 0);
+      tm_setTextStable(widget_id, elapsedStr + (startedStr ? ", " + startedStr : ''));
+    }
+    // Resume countdown based on (cached total) - (elapsed since start)
+    function tm_resumeCountdownFromCache(widget_id){
+      // Input-duration caching and resume logic removed.
+    }
+
+    // --- Event bindings: time buttons (delegated) ---
+    // Reset
+    $(document)
+      .off('click.aot_timer_reset', 'input[id^="tm_reset_"]')
+      .on('click.aot_timer_reset', 'input[id^="tm_reset_"]', function(){
+        const wid = this.id.replace('tm_reset_','');
+        tm_applyInputSec(wid, 0);
+      });
+
+    // +5 minutes
+    $(document)
+      .off('click.aot_timer_plus5', 'input[id^="tm_plus5_"]')
+      .on('click.aot_timer_plus5', 'input[id^="tm_plus5_"]', function(){
+        const wid = this.id.replace('tm_plus5_','');
+        const cur = tm_getInputSec(wid);
+        const capped = Math.min(48*3600, cur + 5*60);
+        tm_applyInputSec(wid, capped);
+      });
+
+    // +10 minutes
+    $(document)
+      .off('click.aot_timer_plus10', 'input[id^="tm_plus10_"]')
+      .on('click.aot_timer_plus10', 'input[id^="tm_plus10_"]', function(){
+        const wid = this.id.replace('tm_plus10_','');
+        const cur = tm_getInputSec(wid);
+        const capped = Math.min(48*3600, cur + 10*60);
+        tm_applyInputSec(wid, capped);
+      });
+
+    // --- Event bindings: toggle ON/OFF (delegated) ---
+    // 위임 바인딩으로 위젯이 동적으로 생성/교체되어도 안정 동작
+    $(document)
+      .off('change.aot_timer', 'input.aot-timer-toggle')
+      .on('change.aot_timer', 'input.aot-timer-toggle', function(){
+        const wid   = this.id.replace('tm_tog_','');
+        const isOn  = $(this).is(':checked');
+        const devNm = $(this).attr('name');
+        if (!devNm) return;
+
+        const dev_id = devNm.split('/')[0];
+        const ch_id  = devNm.split('/')[1];
+
+        const totalSec = tm_getInputSec(wid);
+
+        if (isOn) {
+          // ON: duration 0이면 무기한(on/sec/0)으로 서버가 처리
+          const cmd = dev_id + '/' + ch_id + '/on/sec/' + totalSec;
+          modOutputOutput_tm(cmd, wid);
+          // Immediately start timer at 00:00:00 and freeze the start label
+          tm_setLocalStartBase(wid);
+          tm_startCountdown(wid);     // 0초면 내부적으로 카운트다운 없음(무기한)
+          // 서버 시작시각 동기화는 getGPIOStateOutput_tm → tm_fetchServerStartTime 경로에서 처리
+        } else {
+          // OFF
+          const cmd = dev_id + '/' + ch_id + '/off/sec/0';
+          modOutputOutput_tm(cmd, wid);
+          tm_stopCountdown(wid);
+          tm_stopTimestamp(wid, false);
+        }
+      });
+    
