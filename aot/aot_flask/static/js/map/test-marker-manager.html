@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AoTMarkerManager Test</title>
+    
+    <!-- MapLibre GL CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.1.1/dist/maplibre-gl.css" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        #header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        #header h1 {
+            font-size: 18px;
+            font-weight: 500;
+        }
+        
+        #header .status {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        #map-container {
+            position: relative;
+            height: calc(100vh - 60px);
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            max-width: 320px;
+        }
+        
+        #controls h3 {
+            font-size: 14px;
+            margin-bottom: 12px;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        
+        .control-group {
+            margin-bottom: 12px;
+        }
+        
+        .control-group label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        
+        .control-group button {
+            width: 100%;
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            border: 1px solid #ddd;
+            background: #fafafa;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            text-align: left;
+            transition: all 0.2s;
+        }
+        
+        .control-group button:hover {
+            background: #e8f4fc;
+            border-color: #2196F3;
+        }
+        
+        .control-group button:active {
+            background: #d4e9f7;
+        }
+        
+        .control-group button.active {
+            background: #2196F3;
+            color: white;
+            border-color: #1976D2;
+        }
+        
+        #info-panel {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            max-width: 350px;
+            font-size: 12px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        
+        #info-panel h4 {
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        #info-panel .event-info {
+            background: #f5f5f5;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .coordinates {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            z-index: 1000;
+        }
+        
+        .marker-list {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .marker-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 11px;
+        }
+        
+        .marker-item:last-child {
+            border-bottom: none;
+        }
+        
+        .marker-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        /* Custom marker styles */
+        .aot-marker {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .aot-marker:hover {
+            transform: scale(1.1);
+        }
+        
+        .aot-marker-site svg path {
+            filter: drop-shadow(0 2px 4px rgba(223, 83, 83, 0.4));
+        }
+        
+        .aot-marker-zone svg path {
+            filter: drop-shadow(0 2px 4px rgba(40, 167, 69, 0.4));
+        }
+        
+        .aot-marker-facility svg path {
+            filter: drop-shadow(0 2px 4px rgba(130, 137, 143, 0.4));
+        }
+        
+        .aot-marker-device svg path {
+            filter: drop-shadow(0 2px 4px rgba(0, 123, 255, 0.4));
+        }
+        
+        .aot-popup-content {
+            padding: 5px;
+        }
+        
+        .aot-popup-content strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+        
+        .aot-popup-content p {
+            margin: 4px 0 0 0;
+            font-size: 11px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>AoTMarkerManager Test</h1>
+        <div class="status" id="status">Initializing...</div>
+    </div>
+    
+    <div id="map-container">
+        <div id="map"></div>
+        
+        <div id="controls">
+            <h3>Marker Manager</h3>
+            
+            <div class="control-group">
+                <label>Add AoT Entity Markers</label>
+                <button id="btn-add-sites">Add Sites</button>
+                <button id="btn-add-zones">Add Zones</button>
+                <button id="btn-add-facilities">Add Facilities</button>
+                <button id="btn-add-devices">Add Devices</button>
+            </div>
+            
+            <div class="control-group">
+                <label>Custom Marker</label>
+                <button id="btn-add-custom">Add Custom HTML Marker</button>
+                <button id="btn-add-draggable">Add Draggable Marker</button>
+            </div>
+            
+            <div class="control-group">
+                <label>Group Operations</label>
+                <button id="btn-show-groups">Show All Groups</button>
+                <button id="btn-hide-sites">Hide Sites</button>
+                <button id="btn-show-sites">Show Sites</button>
+            </div>
+            
+            <div class="control-group">
+                <label>Marker Operations</label>
+                <button id="btn-remove-last">Remove Last Marker</button>
+                <button id="btn-clear-all">Clear All Markers</button>
+                <button id="btn-fit-bounds">Fit to All Markers</button>
+            </div>
+            
+            <div class="control-group">
+                <label>Active Markers: <span id="marker-count">0</span></label>
+                <div class="marker-list" id="marker-list"></div>
+            </div>
+        </div>
+        
+        <div id="info-panel">
+            <h4>Event Log</h4>
+            <div id="event-log">Interact with markers to see events</div>
+        </div>
+        
+        <div class="coordinates" id="coordinates">Lat: -- Lng: --</div>
+    </div>
+
+    <!-- MapLibre GL JS -->
+    <script src="https://unpkg.com/maplibre-gl@4.1.1/dist/maplibre-gl.js"></script>
+
+    <!-- AoTMarkerManager -->
+    <script src="aot-maplibre-marker.js"></script>
+
+    <script>
+        // Global state
+        let map = null;
+        let markerManager = null;
+        
+        // Sample data
+        const sampleSites = [
+            { lngLat: { lng: 127.0, lat: 37.5 }, name: 'Main Site', description: 'Primary facility location' },
+            { lngLat: { lng: 127.1, lat: 37.6 }, name: 'North Site', description: 'Secondary location' },
+            { lngLat: { lng: 126.9, lat: 37.4 }, name: 'South Site', description: 'Distribution center' }
+        ];
+        
+        const sampleZones = [
+            { lngLat: { lng: 127.02, lat: 37.52 }, name: 'Zone A', description: 'Production area' },
+            { lngLat: { lng: 127.05, lat: 37.55 }, name: 'Zone B', description: 'Storage area' },
+            { lngLat: { lng: 127.08, lat: 37.58 }, name: 'Zone C', description: 'Office area' }
+        ];
+        
+        const sampleFacilities = [
+            { lngLat: { lng: 127.03, lat: 37.53 }, name: 'Building 1', description: 'Main building' },
+            { lngLat: { lng: 127.06, lat: 37.56 }, name: 'Building 2', description: 'Research center' },
+            { lngLat: { lng: 127.09, lat: 37.59 }, name: 'Building 3', description: 'Warehouse' }
+        ];
+        
+        const sampleDevices = [
+            { lngLat: { lng: 127.035, lat: 37.535 }, name: 'Sensor 001', status: 'Online', color: '#28a745' },
+            { lngLat: { lng: 127.065, lat: 37.565 }, name: 'Sensor 002', status: 'Offline', color: '#dc3545' },
+            { lngLat: { lng: 127.095, lat: 37.595 }, name: 'Sensor 003', status: 'Warning', color: '#ffc107' },
+            { lngLat: { lng: 127.045, lat: 37.545 }, name: 'Device 001', status: 'Online', color: '#007bff' },
+            { lngLat: { lng: 127.075, lat: 37.575 }, name: 'Device 002', status: 'Online', color: '#007bff' }
+        ];
+        
+        // Custom HTML marker template
+        const customMarkerHTML = `
+            <div style="
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+                cursor: pointer;
+            ">
+                <span style="color: white; font-weight: bold; font-size: 14px;">★</span>
+            </div>
+        `;
+        
+        // Initialize map
+        function initMap() {
+            map = new maplibregl.Map({
+                container: 'map',
+                style: {
+                    version: 8,
+                    sources: {
+                        'osm': {
+                            type: 'raster',
+                            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                            tileSize: 256,
+                            attribution: '© OpenStreetMap contributors'
+                        }
+                    },
+                    layers: [{
+                        id: 'osm-tiles',
+                        type: 'raster',
+                        source: 'osm',
+                        minzoom: 0,
+                        maxzoom: 19
+                    }]
+                },
+                center: [127.0, 37.5],
+                zoom: 11
+            });
+            
+            map.addControl(new maplibregl.NavigationControl(), 'top-right');
+            map.addControl(new maplibregl.ScaleControl(), 'bottom-right');
+            
+            map.on('load', function() {
+                // Initialize marker manager
+                markerManager = new AoTMarkerManager(map, {
+                    cursorOnHover: true,
+                    closeButton: true,
+                    closeOnClick: false
+                });
+                
+                document.getElementById('status').textContent = 'Ready';
+                updateMarkerList();
+                
+                // Register event handlers
+                markerManager.onMarkerClick(function(markerId, data, event) {
+                    logEvent('click', 'Marker clicked: ' + markerId + ' (type: ' + data.type + ')');
+                });
+                
+                markerManager.onMarkerHover(function(markerId, data, type) {
+                    logEvent('hover', 'Marker ' + type + ': ' + markerId);
+                });
+                
+                markerManager.onMarkerDragEnd(function(markerId, data) {
+                    logEvent('dragend', 'Marker dragged: ' + markerId + ' at ' + 
+                        data.lngLat.lng.toFixed(5) + ', ' + data.lngLat.lat.toFixed(5));
+                });
+                
+                // Also listen to map events
+                map.on('aot:markerclick', function(e) {
+                    logEvent('map:markerclick', 'aot:markerclick - ' + e.markerId);
+                });
+                
+                map.on('aot:markerhover', function(e) {
+                    // Silent for hover to reduce log noise
+                });
+            });
+            
+            // Update coordinates on move
+            map.on('mousemove', function(e) {
+                document.getElementById('coordinates').textContent = 
+                    'Lat: ' + e.lngLat.lat.toFixed(5) + 
+                    ' Lng: ' + e.lngLat.lng.toFixed(5);
+            });
+        }
+        
+        // Update marker list UI
+        function updateMarkerList() {
+            const list = document.getElementById('marker-list');
+            const markers = markerManager ? markerManager.getAllMarkers() : [];
+            
+            document.getElementById('marker-count').textContent = markers.length;
+            
+            list.innerHTML = markers.map(function(markerId) {
+                const data = markerManager.getMarker(markerId);
+                const colors = {
+                    site: '#DF5353',
+                    zone: '#28a745',
+                    facility: '#82898f',
+                    device: '#007bff',
+                    default: '#3FB1CE'
+                };
+                const color = colors[data.type] || colors.default;
+                
+                return '<div class="marker-item">' +
+                    '<span class="marker-color" style="background:' + color + '"></span>' +
+                    '<span>' + markerId + '</span>' +
+                    '<span style="margin-left:auto; color:#888;">' + data.type + '</span>' +
+                    '</div>';
+            }).join('');
+        }
+        
+        // Log event to panel
+        function logEvent(type, message) {
+            const log = document.getElementById('event-log');
+            const time = new Date().toLocaleTimeString();
+            const entry = '<div><span style="color:#888;">[' + time + ']</span> <strong>' + type + ':</strong> ' + message + '</div>';
+            log.innerHTML = entry + log.innerHTML;
+            
+            // Limit log entries
+            if (log.children.length > 20) {
+                log.removeChild(log.lastChild);
+            }
+        }
+        
+        // Button handlers
+        document.getElementById('btn-add-sites').addEventListener('click', function() {
+            var ids = markerManager.addSiteMarkers(sampleSites);
+            document.getElementById('status').textContent = 'Sites added: ' + ids.length;
+            updateMarkerList();
+            logEvent('info', 'Added ' + ids.length + ' site markers');
+        });
+        
+        document.getElementById('btn-add-zones').addEventListener('click', function() {
+            var ids = markerManager.addZoneMarkers(sampleZones);
+            document.getElementById('status').textContent = 'Zones added: ' + ids.length;
+            updateMarkerList();
+            logEvent('info', 'Added ' + ids.length + ' zone markers');
+        });
+        
+        document.getElementById('btn-add-facilities').addEventListener('click', function() {
+            var ids = markerManager.addFacilityMarkers(sampleFacilities);
+            document.getElementById('status').textContent = 'Facilities added: ' + ids.length;
+            updateMarkerList();
+            logEvent('info', 'Added ' + ids.length + ' facility markers');
+        });
+        
+        document.getElementById('btn-add-devices').addEventListener('click', function() {
+            var ids = markerManager.addDeviceMarkers(sampleDevices);
+            document.getElementById('status').textContent = 'Devices added: ' + ids.length;
+            updateMarkerList();
+            logEvent('info', 'Added ' + ids.length + ' device markers');
+        });
+        
+        document.getElementById('btn-add-custom').addEventListener('click', function() {
+            var markerId = markerManager.addMarker({
+                lngLat: [126.85 + Math.random() * 0.3, 37.45 + Math.random() * 0.3],
+                html: customMarkerHTML,
+                type: 'custom',
+                properties: { custom: true }
+            });
+            
+            markerManager.addPopup(markerId, {
+                content: '<div class="aot-popup-content"><strong>Custom Marker</strong><p>This is a custom HTML marker!</p></div>'
+            });
+            
+            document.getElementById('status').textContent = 'Custom marker added: ' + markerId;
+            updateMarkerList();
+            logEvent('info', 'Added custom HTML marker');
+        });
+        
+        document.getElementById('btn-add-draggable').addEventListener('click', function() {
+            var markerId = markerManager.addMarker({
+                lngLat: [126.95 + Math.random() * 0.1, 37.45 + Math.random() * 0.2],
+                color: '#9b59b6',
+                scale: 1.1,
+                draggable: true,
+                properties: { draggable: true }
+            });
+            
+            document.getElementById('status').textContent = 'Draggable marker added: ' + markerId;
+            updateMarkerList();
+            logEvent('info', 'Added draggable marker');
+        });
+        
+        document.getElementById('btn-show-groups').addEventListener('click', function() {
+            var groups = markerManager.getAllGroups();
+            var groupInfo = groups.map(function(gId) {
+                var g = markerManager.getGroup(gId);
+                return gId + ': ' + g.markerIds.length + ' markers';
+            }).join(', ');
+            
+            document.getElementById('status').textContent = 'Groups: ' + groupInfo;
+            logEvent('info', 'Groups: ' + groupInfo);
+        });
+        
+        document.getElementById('btn-hide-sites').addEventListener('click', function() {
+            markerManager.setGroupVisible('sites', false);
+            document.getElementById('status').textContent = 'Sites hidden';
+            logEvent('info', 'Sites group hidden');
+        });
+        
+        document.getElementById('btn-show-sites').addEventListener('click', function() {
+            markerManager.setGroupVisible('sites', true);
+            document.getElementById('status').textContent = 'Sites shown';
+            logEvent('info', 'Sites group shown');
+        });
+        
+        document.getElementById('btn-remove-last').addEventListener('click', function() {
+            var markers = markerManager.getAllMarkers();
+            if (markers.length > 0) {
+                var lastId = markers[markers.length - 1];
+                markerManager.removeMarker(lastId);
+                document.getElementById('status').textContent = 'Removed: ' + lastId;
+                updateMarkerList();
+                logEvent('info', 'Removed marker: ' + lastId);
+            } else {
+                document.getElementById('status').textContent = 'No markers to remove';
+            }
+        });
+        
+        document.getElementById('btn-clear-all').addEventListener('click', function() {
+            markerManager.clearAll();
+            document.getElementById('status').textContent = 'All markers cleared';
+            updateMarkerList();
+            logEvent('info', 'All markers cleared');
+        });
+        
+        document.getElementById('btn-fit-bounds').addEventListener('click', function() {
+            markerManager.fitBounds(50);
+            document.getElementById('status').textContent = 'Fitted to markers';
+        });
+        
+        // Test Leaflet compatibility
+        document.getElementById('btn-add-custom').addEventListener('dblclick', function() {
+            // Test Leaflet-compatible API
+            var marker = markerManager.createMarker([37.55, 127.0], {
+                type: 'device',
+                color: '#e67e22'
+            });
+            
+            marker.bindPopup('<b>Leaflet-style marker</b><p>Created with createMarker()</p>');
+            
+            logEvent('info', 'Created Leaflet-compatible marker');
+        });
+        
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', initMap);
+    </script>
+</body>
+</html>

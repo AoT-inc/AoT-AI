@@ -1,0 +1,33 @@
+
+      <style>
+        .aot-color-preset { width: 22px; height: 22px; border-radius: 50%; border: 1px solid #bbb; display: inline-block; cursor: pointer; margin: 0 6px 0 0; }
+        .aot-color-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+        .aot-color-row label { font-weight:600; margin-right:6px; }
+      </style>
+      <div class="aot-color-row">
+        <label for="border_color">{{_('Border Color')}}</label>
+        <input id="border_color" name="border_color" type="color" value="{{ widget_options.get('border_color', '#D5D5D5') }}" class="form-control" style="width: 42px; height: 28px; padding: 0;">
+        {% set border_palette = ['#F4D624','#3E3F46','#8BC1C1','#2AA876','#1F78B4','#FEA60B'] %}
+        {% for c in border_palette %}
+          <span class="aot-color-preset" title="{{c}}" style="background:{{c}}" onclick="var inp=document.getElementById('border_color'); inp.value='{{c}}'; this.parentElement.querySelectorAll('.aot-color-preset').forEach(e=>e.style.outline='none'); this.style.outline='3px solid #666'"></span>
+        {% endfor %}
+      </div>
+      <div class="aot-color-row">
+        <label for="direction_color">{{_('Wind Direction Indicator Color')}}</label>
+        <input id="direction_color" name="direction_color" type="color" value="{{ widget_options.get('direction_color', '#F4D624') }}" class="form-control" style="width: 42px; height: 28px; padding: 0;">
+        {% set dir_palette = ['#DF5353','#1F78B4','#2AA876','#7B5EA7','#000000','#FF7F0E'] %}
+        {% for c in dir_palette %}
+          <span class="aot-color-preset" title="{{c}}" style="background:{{c}}" onclick="var inp=document.getElementById('direction_color'); inp.value='{{c}}'; this.parentElement.querySelectorAll('.aot-color-preset').forEach(e=>e.style.outline='none'); this.style.outline='3px solid #666'"></span>
+        {% endfor %}
+      </div>
+      <div class="form-row" style="align-items:center; gap:10px;">
+        <div class="col-auto">
+          <label class="control-label" for="direction_dot_px">{{_('Direction Dot Size (px)')}}</label>
+          <input id="direction_dot_px" name="direction_dot_px" class="form-control" type="number" min="2" max="20" step="1" value="{{ widget_options.get('direction_dot_px', 10) }}">
+        </div>
+        <div class="col-auto">
+          <label class="control-label" for="text_y_offset">{{_('Data Position Offset (%%)')}}</label>
+          <input id="text_y_offset" name="text_y_offset" class="form-control" type="number" min="-30" max="40" step="1" value="{{ widget_options.get('text_y_offset', 5) }}">
+        </div>
+      </div>
+    

@@ -1,0 +1,313 @@
+/*
+ * AoT Theme Variables
+ * CSS Token Architecture for Theme-Switchable UI
+ * Plan 019 + Supplement 022 — Phase 1 Deliverable
+ *
+ * ========================================================================
+ * TOKEN NAMING CONVENTION
+ * ========================================================================
+ *
+ * Pattern: --aot-{category}-{variant}
+ *
+ * Categories: color, bg, btn, border, surface, note, modal,
+ *             space, font, geometry, shadow, z
+ *
+ * Dark Mode Authority Rule:
+ *   :root[data-theme="dark"] (in THIS file)   → --aot-bg-* state tokens ONLY
+ *                                                (active, inactive, on, off, etc.)
+ *   custom-dark.css                            → surface tokens ONLY
+ *                                                (--aot-surface-*, --aot-note-*, etc.)
+ *
+ * ========================================================================
+ * TOKEN TAXONOMY (Sections)
+ * ========================================================================
+ * - Section 1.1:  color — brand
+ * - Section 1.2:  color — semantic
+ * - Section 1.3:  color — background-state
+ * - Section 1.4:  color — button
+ * - Section 1.5:  color — border
+ * - Section 1.6:  color — surface
+ * - Section 1.7:  color — note
+ * - Section 1.8:  color — upgrade / alert
+ * - Section 1.9:  color — modal
+ * - Section 1.10: spacing
+ * - Section 1.11: typography
+ * - Section 1.12: geometry
+ * - Section 1.13: z-index
+ * - Section 1.14: shadow
+ */
+
+:root {
+  /* ========================================================================
+     Section 1.1: color — brand
+     ======================================================================== */
+  --aot-color-brand-primary: #13261B;
+  --aot-color-brand-secondary: #5E6B64;
+  --aot-color-brand-accent: #F3F6F5;
+  --aot-color-text-primary: #13261B;
+  --aot-color-text-secondary: #5E6B64;
+  --aot-color-text-tertiary: #FFFFFF;
+
+  /* ========================================================================
+     Section 1.2: color — semantic
+     ======================================================================== */
+  --aot-color-primary: #F2D524;
+  --aot-color-primary-hover: #EBCF21;
+  --aot-color-success: #96C064;
+  --aot-color-warning: #FEA60B;
+  --aot-color-danger: #DF5353;
+  --aot-color-info: #029ACF;
+  --aot-color-llm: #6277c7;
+  --aot-color-mcp: #64c762;
+  --aot-color-dark: #141414; /* Dark text/bg for modal primary button hover */
+
+  /* ========================================================================
+     Section 1.3: color — background-state
+     ======================================================================== */
+  --aot-bg-active: #D1D5D5;
+  --aot-bg-inactive: #F3F6F5;
+  --aot-bg-pause: #D1D5D5;
+  --aot-bg-hold: #D1D5D5;
+  --aot-bg-on: #B5BABA;
+  --aot-bg-off: #F3F6F5;
+  --aot-bg-upgrade: #13261B;
+
+  /* ========================================================================
+     Section 1.4: color — button
+     ======================================================================== */
+  --aot-btn-bg-primary: #13261B;
+  --aot-btn-bg-secondary: #5E6B64;
+  --aot-btn-bg-active: #13261B;
+  --aot-btn-bg-inactive: #5E6B64;
+  --aot-btn-bg-pause: #989E9E;
+  --aot-btn-bg-hold: #D1D5D5;
+  --aot-btn-bg-flat: #D2D1D1;
+  --aot-btn-bg-upgrade: #13261B;
+  --aot-btn-color-primary: #FFFFFF;
+  --aot-btn-color-secondary: #FFFFFF;
+  --aot-btn-border-primary: #13261B;
+  --aot-btn-border-secondary: #5E6B64;
+
+  /* ========================================================================
+     Section 1.5: color — border
+     ======================================================================== */
+  --aot-border-neutral: #dddddd;
+  --aot-border-light: #f0f0f0;
+  --aot-border-form: #ced4da;
+  --aot-border-form-focus: #80bdff;
+
+  /* ========================================================================
+     Section 1.6: color — surface
+     ======================================================================== */
+  --aot-surface-card: #ffffff;
+  --aot-surface-modal: #ffffff;
+  --aot-surface-dropdown: #ffffff;
+  --aot-surface-input: #ffffff;
+  --aot-surface-body: #f8f9fa;
+
+  /* ========================================================================
+     Section 1.7: color — note (migrated from custom.css)
+     ======================================================================== */
+  --aot-note-card-bg: #ffffff;
+  --aot-note-card-border: #eef2f5;
+  --aot-note-card-shadow: rgba(0,0,0,0.03);
+  --aot-note-card-hover-shadow: rgba(0,0,0,0.06);
+  --aot-note-card-body-text: #4a5568;
+  --aot-note-footer-bg: #f8fafc;
+  --aot-note-footer-text: #94a3b8;
+  --aot-note-tag-bg: #e0f2fe;
+  --aot-note-tag-text: #0369a1;
+  --aot-note-tag-hover-bg: #bae6fd;
+  --aot-note-fab-bg: #3b82f6;
+  --aot-note-search-bg: #ffffff;
+  --aot-note-search-border: #cbd5e1;
+  --aot-note-search-focus: #3b82f6;
+
+  /* ========================================================================
+     Section 1.8: color — upgrade / alert
+     ======================================================================== */
+  --aot-upgrade-dropdown-text: #ededed;
+  --aot-upgrade-dropdown-bg: #f92f44;
+  --aot-expand-toggle: #3b82f6;
+  --aot-expand-toggle-hover: #2563eb;
+
+  /* ========================================================================
+     Section 1.9: color — modal
+     ======================================================================== */
+  --aot-modal-title-text: #222222;
+  --aot-modal-body-text: #444444;
+  --aot-modal-group-title: #888888;
+  --aot-modal-backdrop: rgba(0,0,0,0.5);
+  --panel-border-light: rgba(255, 255, 255, 0.4);
+
+  /* ========================================================================
+     Section 1.10: spacing
+     ======================================================================== */
+  --aot-space-1: 4px;
+  --aot-space-2: 8px;
+  --aot-space-3: 12px;
+  --aot-space-4: 16px;
+  --aot-space-5: 24px;
+  --aot-space-6: 32px;
+  --aot-space-btn-x: 12px;
+  --aot-step: 4px;
+
+  /* ========================================================================
+     Section 1.11: typography
+     ======================================================================== */
+  --aot-font-family: "Gothic A1", "Ubuntu", "Open Sans", "Nanum Gothic", "Malgun Gothic", "Apple SD Gothic Neo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  --aot-font-mono: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --aot-font-size-xs: 0.75rem;
+  --aot-font-size-sm: 0.85rem;
+  --aot-font-size-base: 0.95rem;
+  --aot-font-size-lg: 1.05rem;
+  --aot-font-size-xl: 1.4rem;
+  --aot-btn-font-size: 0.85rem;
+
+  /* ========================================================================
+     Section 1.12: geometry
+     ======================================================================== */
+  --aot-btn-height: 36px;
+  --aot-btn-height-sm: 32px;
+  --aot-btn-radius: 18px;
+  --aot-btn-radius-sm: 16px;
+  --aot-control-width: 160px;
+  --aot-btn-fixed-width: 60px;
+  --aot-roundbox-width: 60px;
+  --aot-base-size: 28px;
+
+  /* ========================================================================
+     Section 1.13: z-index scale
+     ======================================================================== */
+  --aot-z-modal: 20000;
+  --aot-z-modal-backdrop: 19990;
+  --aot-z-navbar: 35000;
+  --aot-z-dropdown: 1000;
+  --aot-z-tooltip: 500;
+
+  /* ========================================================================
+     Section 1.14: shadow
+     ======================================================================== */
+  --aot-shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+  --aot-shadow-md: 0 4px 12px rgba(0,0,0,0.03);
+  --aot-shadow-lg: 0 10px 25px rgba(0,0,0,0.06);
+  --aot-shadow-modal: 0 5px 20px rgba(0,0,0,0.15);
+
+  /* Additional shadow tokens for component-specific shadows */
+  --aot-shadow-dropdown: 0 4px 12px rgba(0,0,0,0.1);
+  --aot-shadow-tab-active: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --aot-shadow-nav-panel: 0 10px 40px rgba(0, 0, 0, 0.2);
+  --aot-shadow-btn-nav-back: 0 2px 5px rgba(0, 0, 0, 0.1);
+  --aot-shadow-btn-nav-hover: 0 4px 8px rgba(0, 0, 0, 0.15);
+  --aot-shadow-form-focus: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  --aot-shadow-mode-sub-tab: 0 2px 4px rgba(0, 123, 255, 0.3);
+
+  /* ========================================================================
+     Legacy token mappings (backward compatibility aliases)
+     ======================================================================== */
+  /* Brand Colors */
+  --brand-primary: var(--aot-color-brand-primary);
+  --brand-secondary: var(--aot-color-brand-secondary);
+  --brand-accent: var(--aot-color-brand-accent);
+
+  /* Text Colors */
+  --text-color-primary: var(--aot-color-text-primary);
+  --text-color-secondary: var(--aot-color-text-secondary);
+  --text-color-tertiary: var(--aot-color-text-tertiary);
+
+  /* UI State Colors */
+  --bg-active: var(--aot-bg-active);
+  --bg-inactive: var(--aot-bg-inactive);
+  --bg-pause: var(--aot-bg-pause);
+  --bg-hold: var(--aot-bg-hold);
+  --bg-on: var(--aot-bg-on);
+  --bg-off: var(--aot-bg-off);
+  --bg-upgrade: var(--aot-bg-upgrade);
+
+  /* Button Colors */
+  --bg-llm: var(--aot-color-llm);
+  --bg-mcp: var(--aot-color-mcp);
+  --bd-btn-primary: var(--aot-btn-bg-primary);
+  --bd-btn-secondary: var(--aot-btn-bg-secondary);
+  --bd-btn-tertiary: var(--aot-color-brand-accent);
+  --bg-btn-upgrade: var(--aot-btn-bg-upgrade);
+  --bg-btn-on: var(--aot-btn-bg-active);
+  --bg-btn-off: var(--aot-btn-bg-inactive);
+  --bg-btn-active: var(--aot-btn-bg-active);
+  --bg-btn-inactive: var(--aot-btn-bg-inactive);
+  --bg-btn-pause: var(--aot-btn-bg-pause);
+  --bg-btn-hold: var(--aot-btn-bg-hold);
+  --bd-btn-border: var(--aot-btn-border-primary);
+
+  /* Modal & Form */
+  --aot-common-control-width: var(--aot-control-width);
+  --aot-btn-pill-radius: 9999px;
+  --aot-primary: var(--aot-color-primary);
+  --aot-primary-hover: var(--aot-color-primary-hover);
+  --aot-input-focus-border: var(--aot-color-primary);
+  --aot-input-bg: var(--aot-surface-input);
+  --aot-text-main: var(--aot-modal-body-text);
+  --aot-text-title: var(--aot-modal-title-text);
+  --aot-text-secondary: var(--aot-color-text-secondary);
+  --gray: #eeebeb;
+  --gray-dark: #888888;
+  --gray-hard: #616161;
+  --text-tertiary: var(--aot-color-text-tertiary);
+  --modal-focus-ring: rgba(0, 123, 255, 0.1);
+  --camera-preview-bg: #1a1a1a;
+
+  /* Geometry (legacy aliases) */
+  --aot-btn-padding-x: var(--aot-space-btn-x);
+  --aot-step-size: var(--aot-step);
+
+  /* Neutral UI */
+  --border-neutral: var(--aot-border-neutral);
+  --border-light-disabled: #cccccc;
+  --border-divider-light: #eeeeee;
+  --border-form-control: var(--aot-border-form);
+  --border-form-focus: var(--aot-border-form-focus);
+  --bg-btn-flat: var(--aot-btn-bg-flat);
+  --btn-flat-hover: #bdbdbd;
+  --bg-btn-hover-light: #f0f0f0;
+  --bg-btn-hover-lighter: #f8f9fa;
+  --bg-btn-active-light: #e9ecef;
+  --text-dark-neutral: #363636;
+  --text-medium-gray: #666666;
+  --indicator-neutral: #555555;
+
+  /* GIS Mode */
+  --color-site-mode: #ffcc00;
+  --text-site-mode: #856404;
+  --color-zone-mode: #28a745;
+  --color-facility-mode: #82898f;
+  --text-facility-mode: #5a6268;
+  --color-equipment-mode: #007bff;
+  --color-equipment-mode-hover: #0056b3;
+  --color-device-mode: #995aff;
+  --bg-equipment-tint: #eef6ff;
+  --bg-equipment-tint-hover: #f0f7ff;
+}
+
+/* Dark Theme Overrides — :root[data-theme="dark"] */
+:root[data-theme="dark"] {
+  /* Background-state colors (device/state logic — NOT surface theming) */
+  --aot-bg-on: #F3F6F5;
+  --aot-bg-off: #D1D5D5;
+  --aot-bg-active: #F3F6F5;
+  --aot-bg-inactive: #D1D5D5;
+  --aot-bg-upgrade: #660000;
+  --aot-bg-pause: #D1D5D5;
+  --aot-bg-hold: #D1D5D5;
+
+  /*
+   * NOTE: Semantic and brand/text color overrides were moved from here
+   * to custom-dark.css per the authority rule (Section 3.1 of Plan 019):
+   * :root[data-theme="dark"] in aot-theme-variables.css holds ONLY --aot-bg-*
+   * state tokens. Surface token dark overrides belong in custom-dark.css.
+   *
+   * Moved tokens:
+   *   --aot-color-success, --aot-color-warning, --aot-color-danger, --aot-color-info
+   *   --aot-color-brand-accent, --aot-color-text-primary, --aot-color-text-secondary
+   *   --aot-color-dark
+   */
+}

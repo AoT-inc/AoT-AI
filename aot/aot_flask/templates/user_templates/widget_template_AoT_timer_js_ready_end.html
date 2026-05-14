@@ -1,0 +1,37 @@
+
+    {%- set wo = widget_options if widget_options is defined else {} -%}
+    {%- set output = wo.get('output', '') -%}
+    {%- set refresh_seconds = wo.get('refresh_seconds', 3) -%}
+    {%- set device_id = '' -%}
+    {%- set channel_id = '' -%}
+    {%- if output and ',' in output -%}
+      {%- set device_id = output.split(',')[0] -%}
+      {%- set channel_id = output.split(',')[1] -%}
+    {%- endif -%}
+
+    {%- if device_id and channel_id -%}
+      // [AoT Timer] READY_END: assign name and kick off initial fetches
+      (function(){
+        const wid   = "{{each_widget.unique_id}}";
+        const devId = "{{device_id}}";
+        const chId  = "{{channel_id}}";
+        const $chk  = $('#tm_tog_'+wid);
+
+        // 1) Set the 'name' attribute (dev/ch pair) only if both exist
+        if (devId && chId) {
+          $chk.attr('name', devId + '/' + chId);
+          console.debug('[AoT Timer] READY_END: name assigned', devId, chId);
+          // 2) Initial state check
+          getGPIOStateOutput_tm(wid);
+          // 3) Periodic state refresh
+          tm_initAutoRefresh(wid, {{ refresh_seconds }});
+        } else {
+          console.debug('[AoT Timer] READY_END: device_id/channel_id missing. Polling skipped for', wid);
+          tm_setTextStable(wid, '00:00:00');
+        }
+
+      })();
+    {%- else -%}
+      console.warn("[AoT Timer] READY_END: device_id or channel_id missing. Name not assigned.");
+    {%- endif -%}
+    

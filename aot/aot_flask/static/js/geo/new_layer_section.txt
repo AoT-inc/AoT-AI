@@ -1,0 +1,93 @@
+    var L_Layer = L_Evented.extend({
+        // Popup state
+        _popup: null,
+        _popupContent: null,
+        _popupOptions: {},
+        
+        addTo: function(map) {
+            if (map && map.addLayer) {
+                map.addLayer(this);
+            }
+            return this;
+        },
+        
+        remove: function() {
+            if (this._map && this._map.removeLayer) {
+                this._map.removeLayer(this);
+            }
+            return this;
+        },
+        
+        removeFrom: function(map) {
+            if (map && map.removeLayer) {
+                map.removeLayer(this);
+            }
+            return this;
+        },
+        
+        onAdd: function(map) {
+            this._map = map;
+        },
+        
+        onRemove: function(map) {
+            delete this._map;
+        },
+        
+        // Popup methods - Leaflet API compatibility
+        bindPopup: function(content, options) {
+            this._popupContent = content;
+            this._popupOptions = options || {};
+            return this;
+        },
+        
+        unbindPopup: function() {
+            this._popupContent = null;
+            this._popupOptions = {};
+            return this;
+        },
+        
+        getPopup: function() {
+            return this._popupContent ? { getContent: function() { return this._popupContent; }.bind(this) } : null;
+        },
+        
+        setPopupContent: function(content) {
+            this._popupContent = content;
+            return this;
+        },
+        
+        openPopup: function(latlng) {
+            if (!this._popupContent || !this._map) return this;
+            if (this._map._openPopup) {
+                this._map._openPopup(this, latlng, this._popupContent, this._popupOptions);
+            }
+            return this;
+        },
+        
+        closePopup: function() {
+            if (this._map && this._map._closePopup) {
+                this._map._closePopup(this);
+            }
+            return this;
+        },
+        
+        // Tooltip methods - Leaflet API compatibility
+        bindTooltip: function(content, options) {
+            this._tooltipContent = content;
+            this._tooltipOptions = options || {};
+            return this;
+        },
+        
+        unbindTooltip: function() {
+            this._tooltipContent = null;
+            this._tooltipOptions = {};
+            return this;
+        },
+        
+        openTooltip: function(latlng) {
+            return this;
+        },
+        
+        closeTooltip: function() {
+            return this;
+        }
+    });

@@ -1,0 +1,333 @@
+{% extends 'layout.html' %}
+{% block title %}3D 자산 라이브러리{% endblock %}
+
+{% block head %}
+<script src="/static/js/widget/AoT_facility/three.min.js?v=2"></script>
+<script src="/static/js/widget/AoT_facility/OrbitControls.js?v=1"></script>
+<script src="/static/js/widget/AoT_facility/GLTFLoader.js?v=1"></script>
+<style>
+  .asset-page { padding: 1.5rem; max-width: 1200px; margin: 0 auto; }
+  .asset-page h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 1.25rem; }
+
+  .asset-toolbar {
+    display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap;
+  }
+  .asset-toolbar input[type="text"] {
+    flex: 1; min-width: 180px; padding: 0.4rem 0.75rem;
+    border: 1px solid #ccc; border-radius: 6px; font-size: 0.88rem;
+  }
+  .btn-primary { background: #0070f3; color: #fff; border: none; padding: 0.42rem 1rem;
+    border-radius: 6px; cursor: pointer; font-size: 0.88rem; }
+  .btn-primary:hover { background: #005dd1; }
+  .btn-danger { background: #e53935; color: #fff; border: none; padding: 0.35rem 0.75rem;
+    border-radius: 5px; cursor: pointer; font-size: 0.8rem; }
+  .btn-secondary { background: #f0f0f0; color: #333; border: 1px solid #ccc; padding: 0.42rem 0.9rem;
+    border-radius: 6px; cursor: pointer; font-size: 0.88rem; }
+  .btn-secondary:hover { background: #e4e4e4; }
+
+  .asset-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;
+  }
+  .asset-card {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+    padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: box-shadow 0.15s;
+  }
+  .asset-card:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+  .asset-thumb {
+    width: 100%; aspect-ratio: 1; background: #f3f4f6; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  .asset-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .asset-thumb .no-thumb { color: #bbb; font-size: 2rem; }
+  .asset-name { font-size: 0.9rem; font-weight: 600; color: #222; }
+  .asset-kind { font-size: 0.75rem; color: #888; }
+  .asset-actions { display: flex; gap: 0.5rem; margin-top: auto; }
+  .asset-empty { color: #aaa; text-align: center; padding: 3rem 0; font-size: 0.95rem; }
+
+  /* Upload modal */
+  .modal-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    z-index: 1000; align-items: center; justify-content: center;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal-box {
+    background: #fff; border-radius: 12px; padding: 1.5rem;
+    width: 440px; max-width: 95vw; box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  }
+  .modal-box h4 { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; }
+  .form-group { margin-bottom: 0.9rem; }
+  .form-group label { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.3rem; color: #555; }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: 0.4rem 0.65rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.88rem;
+  }
+  .drop-zone {
+    border: 2px dashed #0070f3; border-radius: 8px; padding: 1.5rem;
+    text-align: center; cursor: pointer; color: #0070f3; font-size: 0.88rem;
+    transition: background 0.15s;
+  }
+  .drop-zone.hover { background: #e8f0ff; }
+  .drop-zone input { display: none; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.1rem; }
+  #upload-status { font-size: 0.82rem; color: #666; margin-top: 0.5rem; min-height: 1.2em; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="asset-page">
+  <h2>3D 자산 라이브러리</h2>
+
+  <div class="asset-toolbar">
+    <input type="text" id="asset-search" placeholder="이름으로 검색…" oninput="filterAssets(this.value)">
+    <select id="unit-select" style="padding:0.4rem 0.65rem;border:1px solid #ccc;border-radius:6px;font-size:0.88rem;"
+            onchange="saveUnit(this.value)">
+      <option value="mm">mm</option>
+      <option value="cm">cm</option>
+      <option value="m" selected>m</option>
+      <option value="in">in</option>
+      <option value="ft">ft</option>
+    </select>
+    <button class="btn-primary" onclick="openUploadModal()">+ GLTF 업로드</button>
+  </div>
+
+  <div class="asset-grid" id="asset-grid">
+    <div class="asset-empty" id="asset-empty" style="grid-column:1/-1;">불러오는 중…</div>
+  </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal-backdrop" id="upload-modal">
+  <div class="modal-box">
+    <h4>GLTF 모델 업로드</h4>
+    <form id="upload-form" onsubmit="submitUpload(event)">
+      <div class="form-group">
+        <label>자산 이름</label>
+        <input type="text" name="name" required placeholder="예: 비닐하우스 A형">
+      </div>
+      <div class="form-group">
+        <label>태그 (쉼표 구분)</label>
+        <input type="text" name="tags" placeholder="예: 하우스,아치형">
+      </div>
+      <div class="form-group">
+        <label>파일 (.glb / .gltf, 최대 25 MB)</label>
+        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()"
+             ondragover="event.preventDefault();this.classList.add('hover')"
+             ondragleave="this.classList.remove('hover')"
+             ondrop="handleDrop(event)">
+          <input type="file" id="file-input" accept=".glb,.gltf" onchange="handleFileSelect(this.files[0])">
+          <span id="drop-label">파일을 끌어다 놓거나 클릭하여 선택</span>
+        </div>
+      </div>
+      <div id="upload-status"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeUploadModal()">취소</button>
+        <button type="submit" class="btn-primary" id="upload-submit">업로드</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="/static/js/widget/AoT_facility/asset_library.js?v=1"></script>
+<script>
+  window.ASSET_LIB_CONFIG = {
+    mode: 'page',
+    lengthUnit: '{{ length_unit }}',
+  };
+  document.addEventListener('DOMContentLoaded', function () {
+    AoTAssetLibrary.init(window.ASSET_LIB_CONFIG);
+    loadUnit();
+    loadAssets();
+  });
+
+  // ── Unit preference ──────────────────────────────────────────────────────────
+  function loadUnit() {
+    fetch('/api/geo/settings/length_unit')
+      .then(r => r.json())
+      .then(d => {
+        const sel = document.getElementById('unit-select');
+        if (sel && d.length_unit) sel.value = d.length_unit;
+      })
+      .catch(() => {});
+  }
+  function saveUnit(unit) {
+    fetch('/api/geo/settings/length_unit', {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({length_unit: unit}),
+    }).catch(() => {});
+  }
+
+  // ── Asset list ───────────────────────────────────────────────────────────────
+  let _allAssets = [];
+  function loadAssets() {
+    fetch('/api/geo/model_assets')
+      .then(r => r.json())
+      .then(data => {
+        _allAssets = data;
+        renderGrid(data);
+      })
+      .catch(() => showEmpty('불러오기 실패'));
+  }
+  function filterAssets(q) {
+    const filtered = q
+      ? _allAssets.filter(a => a.name.toLowerCase().includes(q.toLowerCase()))
+      : _allAssets;
+    renderGrid(filtered);
+  }
+  function renderGrid(assets) {
+    const grid = document.getElementById('asset-grid');
+    const empty = document.getElementById('asset-empty');
+    if (!assets.length) {
+      empty.style.display = '';
+      empty.textContent = '등록된 자산이 없습니다. 위 버튼으로 업로드하세요.';
+      grid.querySelectorAll('.asset-card').forEach(c => c.remove());
+      return;
+    }
+    empty.style.display = 'none';
+    grid.querySelectorAll('.asset-card').forEach(c => c.remove());
+    assets.forEach(a => grid.appendChild(buildCard(a)));
+  }
+  function showEmpty(msg) {
+    const e = document.getElementById('asset-empty');
+    e.style.display = '';
+    e.textContent = msg;
+  }
+  function buildCard(a) {
+    const card = document.createElement('div');
+    card.className = 'asset-card';
+    card.dataset.uuid = a.unique_id;
+
+    const thumb = document.createElement('div');
+    thumb.className = 'asset-thumb';
+    if (a.preview_png && a.preview_status === 'ok') {
+      const img = document.createElement('img');
+      img.src = '/static/' + a.preview_png;
+      img.alt = a.name;
+      thumb.appendChild(img);
+    } else {
+      thumb.innerHTML = '<span class="no-thumb">📦</span>';
+    }
+
+    const name = document.createElement('div');
+    name.className = 'asset-name';
+    name.textContent = a.name;
+
+    const kind = document.createElement('div');
+    kind.className = 'asset-kind';
+    kind.textContent = { primitive: '프리미티브', extruded_polygon: '압출 폴리곤', imported_gltf: 'GLTF 임포트' }[a.kind] || a.kind;
+
+    const actions = document.createElement('div');
+    actions.className = 'asset-actions';
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-danger';
+    delBtn.textContent = '삭제';
+    delBtn.onclick = () => deleteAsset(a.unique_id, a.name);
+
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'btn-secondary';
+    prevBtn.textContent = '썸네일 재생성';
+    prevBtn.style.fontSize = '0.75rem';
+    prevBtn.onclick = () => regeneratePreview(a.unique_id, card, thumb);
+
+    actions.appendChild(prevBtn);
+    actions.appendChild(delBtn);
+    card.append(thumb, name, kind, actions);
+    return card;
+  }
+
+  function deleteAsset(uuid, name) {
+    if (!confirm(`[확인] "${name}" 자산을 삭제하시겠습니까?\n참조 중인 시설이 있으면 삭제가 거부됩니다.`)) return;
+    fetch('/api/geo/model_assets/' + uuid, {method: 'DELETE'})
+      .then(r => r.json().then(d => ({ok: r.ok, d})))
+      .then(({ok, d}) => {
+        if (!ok) {
+          let msg = d.error || '삭제 실패';
+          if (d.referencing_facilities && d.referencing_facilities.length) {
+            msg += '\n참조 시설: ' + d.referencing_facilities.join(', ');
+          }
+          alert(msg);
+          return;
+        }
+        _allAssets = _allAssets.filter(a => a.unique_id !== uuid);
+        renderGrid(_allAssets);
+      })
+      .catch(() => alert('삭제 요청 실패'));
+  }
+
+  function regeneratePreview(uuid, card, thumbEl) {
+    fetch('/api/geo/model_assets/' + uuid + '/regenerate_preview', {method: 'POST'})
+      .then(r => r.json())
+      .then(d => {
+        if (d.preview_png) {
+          thumbEl.innerHTML = '';
+          const img = document.createElement('img');
+          img.src = '/static/' + d.preview_png + '?t=' + Date.now();
+          img.alt = '썸네일';
+          thumbEl.appendChild(img);
+        }
+      })
+      .catch(() => {});
+  }
+
+  // ── Upload modal ─────────────────────────────────────────────────────────────
+  let _selectedFile = null;
+  function openUploadModal() {
+    document.getElementById('upload-modal').classList.add('open');
+    _selectedFile = null;
+    document.getElementById('upload-form').reset();
+    document.getElementById('drop-label').textContent = '파일을 끌어다 놓거나 클릭하여 선택';
+    document.getElementById('upload-status').textContent = '';
+  }
+  function closeUploadModal() {
+    document.getElementById('upload-modal').classList.remove('open');
+  }
+  function handleFileSelect(file) {
+    if (!file) return;
+    _selectedFile = file;
+    document.getElementById('drop-label').textContent = '✓ ' + file.name + ' (' + (file.size / 1024 / 1024).toFixed(1) + ' MB)';
+    document.getElementById('drop-zone').classList.remove('hover');
+  }
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('drop-zone').classList.remove('hover');
+    if (e.dataTransfer.files[0]) handleFileSelect(e.dataTransfer.files[0]);
+  }
+  function submitUpload(e) {
+    e.preventDefault();
+    if (!_selectedFile) { alert('파일을 선택해 주세요.'); return; }
+    const form = e.target;
+    const fd = new FormData();
+    fd.append('kind', 'imported_gltf');
+    fd.append('name', form.name.value);
+    fd.append('tags', form.tags.value);
+    fd.append('file', _selectedFile);
+    fd.append('authored_unit', document.getElementById('unit-select').value);
+
+    document.getElementById('upload-status').textContent = '업로드 중…';
+    document.getElementById('upload-submit').disabled = true;
+
+    fetch('/api/geo/model_assets', {method: 'POST', body: fd})
+      .then(r => r.json().then(d => ({ok: r.ok, d})))
+      .then(({ok, d}) => {
+        document.getElementById('upload-submit').disabled = false;
+        if (!ok) {
+          document.getElementById('upload-status').textContent = '오류: ' + (d.error || '업로드 실패');
+          return;
+        }
+        closeUploadModal();
+        _allAssets.unshift(d);
+        renderGrid(_allAssets);
+      })
+      .catch(err => {
+        document.getElementById('upload-submit').disabled = false;
+        document.getElementById('upload-status').textContent = '오류: ' + err.message;
+      });
+  }
+
+  // Close modal on backdrop click
+  document.getElementById('upload-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeUploadModal();
+  });
+</script>
+{% endblock %}

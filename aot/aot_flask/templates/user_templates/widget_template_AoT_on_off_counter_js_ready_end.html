@@ -1,0 +1,16 @@
+
+    {%- set wo = widget_options if widget_options is defined else {} -%}
+    {%- set output = wo.get('output', '') -%}
+    {%- set device_id = '' -%}
+    {%- set channel_id = '' -%}
+    {%- if output and ',' in output -%}
+      {%- set device_id = output.split(',')[0] -%}
+      {%- set channel_id = output.split(',')[1] -%}
+    {%- endif -%}
+
+    {%- if device_id and channel_id -%}
+      initAoTCounter('{{each_widget.unique_id}}');
+    {%- else -%}
+      console.warn('[AoT Counter] Output not configured for widget {{each_widget.unique_id}}');
+    {%- endif -%}
+    

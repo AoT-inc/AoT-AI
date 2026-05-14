@@ -1,0 +1,136 @@
+
+<style>
+/* PID 위젯 전용 UI 개선 */
+#pid_container_{{each_widget.unique_id}} .col-aot-2 {
+  width: 60px !important;
+}
+#pid_container_{{each_widget.unique_id}} .btn-aot-pid,
+#pid_container_{{each_widget.unique_id}} .btn-aot-pid-sm,
+#pid_container_{{each_widget.unique_id}} .btn-aot-pid-resume {
+  border: none !important;
+  box-shadow: none !important;
+}
+#pid_container_{{each_widget.unique_id}} .input-aot-pid {
+  background-color: #ffffff !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+</style>
+
+
+<link rel="stylesheet" href="/static/css/components/aot-toggle.css">
+{% set this_pid = table_pid.query.filter(table_pid.unique_id == widget_options['pid']).first() %}
+
+<div class="frame-aot" id="pid_container_{{each_widget.unique_id}}">
+  <div class="row-aot-1">
+    <div class="col-aot-1">
+      <div class="prt-text">
+        <div class="pid-aot-timestamp">
+          {% if widget_options.get('enable_timestamp',True) %}
+            {{_('Last active: ')}}
+            <span 
+              id="duration_time-{{each_widget.unique_id}}">
+            </span>{{_('s, ')}}
+            {% if widget_options.get('enable_timestamp',True) %}
+            <span
+              id="duration_time-{{each_widget.unique_id}}-timestamp">
+            </span>
+            {% endif %}
+            <span 
+              id="duration_time-{{each_widget.unique_id}}">
+            </span>
+          {% endif %}
+        </div>
+        {% if widget_options.get('show_pid_info',True) %}
+        <div class="pid-info">
+          PID =
+          <span  
+            id="pid_pid_value-{{each_widget.unique_id}}"></span>
+        </div>
+        {% else %}
+        <div class="pid-aot-hidden">
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    <!-- 토글 버튼 -->
+    <div class="col-aot-2">
+      <label class="btn-toggle">
+        <input type="checkbox"
+              id="toggle_input_{{each_widget.unique_id}}"
+              class="btn-toggle-input"
+              onclick="togglePID_AoT('{{each_widget.unique_id}}')">
+        <span class="btn-toggle-slider">
+              <span class="btn-toggle-thumb"></span>
+        </span>
+      </label>
+    </div>
+  </div>
+
+  <!-- 2행: 컨트롤 영역 -->
+  <div class="row-aot-2">
+    <div class="prt-text-inline">
+      {{_('Actual: ')}} <span id="actual-{{each_widget.unique_id}}"></span>
+    </div>
+    <div class="btn-aot-pid">
+    {% if widget_options.get('show_set_setpoint',True) %}
+      {% if this_pid %}
+        <input type="text"
+               id="pid_setpoint_{{widget_options['pid']}}"
+               class="input-aot-pid"
+               placeholder="{{_('Setpoint')}}"
+               value="{{this_pid.setpoint}}">
+      {% else %}
+        <input type="text"
+               id="pid_setpoint_{{widget_options['pid']}}"
+               class="input-aot-pid"
+               placeholder="{{_('Setpoint')}}">
+      {% endif %}
+      <button id="btn_pid_set_{{each_widget.unique_id}}"
+              name="{{widget_options['pid']}}/set_setpoint_pid|"
+              class="btn-aot-pid-sm"
+              onclick="setSetpointAoT('{{each_widget.unique_id}}')">
+        {{_('Setpoint')}}
+      </button>
+    {% else %}
+      <input type="text"
+             id="pid_setpoint_{{widget_options['pid']}}"
+             style="display:none;">
+      <button id="btn_pid_set_{{each_widget.unique_id}}"
+              style="display:none;"></button>
+    {% endif %}
+
+      <button id="btn_pid_pause_{{each_widget.unique_id}}"
+              name="{{widget_options['pid']}}/pause"
+              class="btn-aot-pid-sm"
+              onclick="sendPIDCommandAoT(this.name)">
+        {{_('Pause')}}
+      </button>
+      <button id="btn_pid_hold_{{each_widget.unique_id}}"
+              name="{{widget_options['pid']}}/hold"
+              class="btn-aot-pid-sm"
+              onclick="sendPIDCommandAoT(this.name)">
+        {{_('Hold')}}
+      </button>
+      <button id="btn_pid_resume_{{each_widget.unique_id}}"
+              name="{{widget_options['pid']}}/resume"
+              class="btn-aot-pid-resume"
+              style="display:none;"
+              onclick="sendPIDCommandAoT(this.name)">
+        {{_('Resume')}}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 숨김 버튼 -->
+<input type="button"
+       id="hidden_pid_activate_{{each_widget.unique_id}}"
+       style="display:none;"
+       name="{{widget_options['pid']}}/activate"
+       value="{{_('activate')}}"/>
+<input type="button"
+       id="hidden_pid_deactivate_{{each_widget.unique_id}}"
+       style="display:none;"
+       name="{{widget_options['pid']}}/deactivate"
+       value="{{_('deactivate')}}"/>

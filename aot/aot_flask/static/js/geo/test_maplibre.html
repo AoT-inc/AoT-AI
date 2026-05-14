@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AoT MapLibre Test - Korea Map</title>
+  
+  <!-- MapLibre GL CSS -->
+  <link href="https://unpkg.com/maplibre-gl@5.0.0/dist/maplibre-gl.css" rel="stylesheet" />
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+    }
+    
+    .header {
+      background: #16213e;
+      padding: 15px 20px;
+      border-bottom: 1px solid #0f3460;
+    }
+    
+    .header h1 {
+      font-size: 1.2rem;
+      color: #e94560;
+    }
+    
+    .container {
+      display: flex;
+      height: calc(100vh - 60px);
+    }
+    
+    .sidebar {
+      width: 280px;
+      background: #16213e;
+      padding: 15px;
+      overflow-y: auto;
+      border-right: 1px solid #0f3460;
+    }
+    
+    .sidebar h2 {
+      font-size: 1rem;
+      margin-bottom: 15px;
+      color: #e94560;
+    }
+    
+    .control-group {
+      margin-bottom: 15px;
+    }
+    
+    .control-group label {
+      display: block;
+      font-size: 0.85rem;
+      margin-bottom: 5px;
+      color: #aaa;
+    }
+    
+    .control-group select,
+    .control-group input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #0f3460;
+      border-radius: 4px;
+      background: #1a1a2e;
+      color: #eee;
+      font-size: 0.9rem;
+    }
+    
+    .control-group select:focus,
+    .control-group input:focus {
+      outline: none;
+      border-color: #e94560;
+    }
+    
+    .btn {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    
+    .btn-primary {
+      background: #e94560;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #c73e54;
+    }
+    
+    .btn-secondary {
+      background: #0f3460;
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background: #1a4a7a;
+    }
+    
+    #map {
+      flex: 1;
+      min-height: 400px;
+    }
+    
+    .status {
+      margin-top: 15px;
+      padding: 10px;
+      background: #0f3460;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+    
+    .status.success {
+      background: #1b4332;
+      color: #95d5b2;
+    }
+    
+    .status.error {
+      background: #5c1a1a;
+      color: #f08080;
+    }
+    
+    .maplibregl-ctrl-group {
+      background: #16213e !important;
+      border: 1px solid #0f3460 !important;
+    }
+    
+    .maplibregl-ctrl-group button {
+      background: #16213e !important;
+      border-color: #0f3460 !important;
+    }
+    
+    .maplibregl-ctrl-group button span {
+      filter: invert(1);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>AoT MapLibre-GL JS Test - Korea Region</h1>
+  </div>
+  
+  <div class="container">
+    <div class="sidebar">
+      <h2>Map Controls</h2>
+      
+      <div class="control-group">
+        <label for="location">Quick Location</label>
+        <select id="location">
+          <option value="daegu">Daegu (Default)</option>
+          <option value="seoul">Seoul</option>
+          <option value="busan">Busan</option>
+          <option value="incheon">Incheon</option>
+          <option value="gwangju">Gwangju</option>
+          <option value="daejeon">Daejeon</option>
+          <option value="sejong">Sejong</option>
+          <option value="ulsan">Ulsan</option>
+        </select>
+        <button class="btn btn-primary" onclick="flyToLocation()">Fly To</button>
+      </div>
+      
+      <div class="control-group">
+        <label for="zoom">Zoom Level: <span id="zoom-value">12</span></label>
+        <input type="range" id="zoom" min="4" max="18" value="12" step="0.5">
+      </div>
+      
+      <div class="control-group">
+        <label for="opacity">Layer Opacity: <span id="opacity-value">80%</span></label>
+        <input type="range" id="opacity" min="0" max="100" value="80" 
+               onchange="updateOpacity(this.value)">
+      </div>
+      
+      <div class="control-group">
+        <button class="btn btn-secondary" onclick="toggleFullscreen()">
+          Fullscreen
+        </button>
+        <button class="btn btn-secondary" onclick="resetView()">
+          Reset View
+        </button>
+      </div>
+      
+      <div id="status" class="status">
+        Initializing...
+      </div>
+      
+      <div class="info" style="margin-top: 15px; font-size: 0.75rem; color: #666;">
+        <p><strong>Center:</strong> <span id="center-display">128.6, 35.9</span></p>
+        <p><strong>Version:</strong> MapLibre GL v5.x</p>
+        <p><strong>Style:</strong> Demo Tiles</p>
+      </div>
+    </div>
+    
+    <div id="map"></div>
+  </div>
+  
+  <!-- MapLibre GL JS -->
+  <script src="https://unpkg.com/maplibre-gl@5.0.0/dist/maplibre-gl.js"></script>
+  
+  <!-- AoT MapLibre Core -->
+  <script src="src/core/maplibre-core.js"></script>
+  
+  <script>
+    // Location data
+    const LOCATIONS = {
+      seoul: { center: [126.9780, 37.5665], zoom: 11 },
+      busan: { center: [129.0756, 35.1796], zoom: 11 },
+      daegu: { center: [128.6, 35.9], zoom: 12 },
+      incheon: { center: [126.7052, 37.4563], zoom: 11 },
+      gwangju: { center: [126.8977, 35.1540], zoom: 11 },
+      daejeon: { center: [127.3850, 36.3504], zoom: 11 },
+      sejong: { center: [127.2493, 36.48], zoom: 12 },
+      ulsan: { center: [129.3167, 35.5667], zoom: 11 }
+    };
+    
+    let tileLayerId = 'custom-tiles';
+    
+    // Initialize map
+    function initMap() {
+      const map = AoTMapLibre.init('map', {
+        center: [128.6, 35.9],
+        zoom: 12,
+        style: 'https://demotiles.maplibre.org/style.json',
+        navigation: true
+      });
+      
+      if (map) {
+        updateStatus('Map initialized successfully', 'success');
+        
+        // Listen for map ready event
+        document.getElementById('map').addEventListener('aot-maplibre-ready', (e) => {
+          console.log('Map ready event:', e.detail);
+          updateStatus('Map loaded and ready', 'success');
+        });
+        
+        // Update display on move
+        map.on('moveend', updateCoordinates);
+        map.on('zoom', () => {
+          document.getElementById('zoom-value').textContent = map.getZoom().toFixed(1);
+        });
+        
+        // Zoom slider
+        document.getElementById('zoom').addEventListener('input', (e) => {
+          map.setZoom(parseFloat(e.target.value));
+        });
+        
+        // Add custom tile layer
+        addCustomTileLayer();
+      } else {
+        updateStatus('Map initialization failed', 'error');
+      }
+    }
+    
+    // Add custom tile overlay
+    function addCustomTileLayer() {
+      // Example: Add a simple overlay layer
+      // Replace with actual tile URL for production
+      AoTMapLibre.addTileLayer(tileLayerId, 
+        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        { 'raster-opacity': 0.5 }
+      );
+    }
+    
+    // Update opacity
+    function updateOpacity(value) {
+      document.getElementById('opacity-value').textContent = value + '%';
+      
+      if (AoTMapLibre.map && AoTMapLibre.map.getLayer(tileLayerId + '-layer')) {
+        AoTMapLibre.map.setPaintProperty(
+          tileLayerId + '-layer',
+          'raster-opacity',
+          value / 100
+        );
+      }
+    }
+    
+    // Fly to location
+    function flyToLocation() {
+      const loc = document.getElementById('location').value;
+      const coords = LOCATIONS[loc];
+      
+      if (coords) {
+        AoTMapLibre.flyTo(coords.center, coords.zoom);
+        document.getElementById('zoom').value = coords.zoom;
+        document.getElementById('zoom-value').textContent = coords.zoom;
+      }
+    }
+    
+    // Reset view
+    function resetView() {
+      AoTMapLibre.flyTo([128.6, 35.9], 12);
+      document.getElementById('zoom').value = 12;
+      document.getElementById('zoom-value').textContent = '12';
+      document.getElementById('location').value = 'daegu';
+    }
+    
+    // Toggle fullscreen
+    function toggleFullscreen() {
+      const mapEl = document.getElementById('map');
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        mapEl.requestFullscreen();
+      }
+    }
+    
+    // Update coordinates display
+    function updateCoordinates() {
+      if (AoTMapLibre.map) {
+        const center = AoTMapLibre.map.getCenter();
+        document.getElementById('center-display').textContent = 
+          center.lng.toFixed(4) + ', ' + center.lat.toFixed(4);
+      }
+    }
+    
+    // Update status message
+    function updateStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = 'status ' + (type || '');
+    }
+    
+    // Initialize on DOM ready
+    document.addEventListener('DOMContentLoaded', initMap);
+  </script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+
+{%- set device_id = widget_options['output'].split(",")[0] -%}
+{%- set measurement_id = widget_options['output'].split(",")[1] -%}
+{%- set channel_id = widget_options['output'].split(",")[2] -%}
+
+{% set is_pwm = [] -%}
+{% set is_ezo_pump = [] -%}
+{% for each_output in output if each_output.unique_id == device_id %}
+  {% if each_output.output_type in output_types['pwm'] %}
+    {%- do is_pwm.append(1) %}
+  {% elif each_output.output_type in ['atlas_ezo_pmp'] %}
+    {%- do is_ezo_pump.append(1) %}
+  {% endif %}
+{% endfor %}
+
+<div class="pause-background" id="container-output-{{each_widget.unique_id}}" style="height: 100%; text-align: center">
+  {%- if widget_options['enable_timestamp'] -%}
+  <span style="font-size: {{widget_options['font_em_timestamp']}}em" id="timestamp-{{each_widget.unique_id}}"></span>
+  {%- else -%}
+  <span style="display: none" id="timestamp-{{each_widget.unique_id}}"></span>
+  {%- endif -%}
+
+  {%- if widget_options['enable_value'] and widget_options['enable_timestamp'] -%}
+    {{' - '}}
+  {%- endif -%}
+
+  {%- if widget_options['enable_value'] -%}
+  <span style="font-size: {{widget_options['font_em_value']}}em" id="value-{{each_widget.unique_id}}"></span> %
+  {%- else -%}
+  <span style="display: none" id="value-{{each_widget.unique_id}}"></span>
+  {%- endif -%}
+
+  {%- if widget_options['enable_timestamp'] or widget_options['enable_value'] -%}
+  <br/>
+  {%- endif -%}
+
+<span id="range_val_{{each_widget.unique_id}}" style="font-size: {{widget_options['font_em_value']}}em"></span> <input id="range_{{each_widget.unique_id}}" type="range" min="0" max="100" step="1" value="0" style="width:80%;" oninput="showVal('{{each_widget.unique_id}}', this.value)" onchange="PWMSlidersendVal('{{each_widget.unique_id}}', '{{device_id}}', '{{channel_id}}', this.value)">
+
+  {% if widget_options['enable_output_controls'] %}
+
+  <div class="row small-gutters" style="padding: 0.3em 1.5em 0 1.5em">
+    <div class="col-auto">
+      <input class="btn btn-sm btn-primary turn_off_pwm_slider" id="turn_off" name="{{each_widget.unique_id}}/{{device_id}}/{{channel_id}}/off/sec/0" type="button" value="{{dict_translation['off']['title']}}">
+    </div>
+    <div class="col-auto">
+      <input class="form-control-sm" id="pwm_slider_duty_cycle_on_amt_{{each_widget.unique_id}}_{{device_id}}_{{channel_id}}" name="duty_cycle_on_amt_{{each_widget.unique_id}}_{{device_id}}_{{channel_id}}" title="Select the PWM duty cycle (0.0 - 100.0)" type="number" step="any" value="" placeholder="% Duty Cycle">
+    </div>
+    <div class="col-auto">
+      <input class="btn btn-sm btn-primary duty_cycle_on_amt_pwm_slider" id="turn_on" name="{{each_widget.unique_id}}/{{device_id}}/{{channel_id}}/on/pwm/" type="button" value="{{_('PWM On')}}">
+    </div>
+  </div>
+
+  {% endif %}
+
+</div>

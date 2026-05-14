@@ -1,0 +1,11 @@
+
+{% set refresh_sec = widget_options.get('refresh_seconds', 3.0) %}
+{% set max_age     = widget_options.get('max_measure_age', 3600) %}
+{% set dec_places  = widget_options.get('decimal_places', 1) %}
+
+{% for each_pid in pid if each_pid.unique_id == widget_options['pid'] and each_pid.measurement.split(',')|length == 2 %}
+getPidDataAoT('{{each_widget.unique_id}}','{{widget_options['pid']}}',{{max_age}},{{dec_places}});
+repeatPidDataAoT('{{each_widget.unique_id}}','{{widget_options['pid']}}',{{refresh_sec}},{{max_age}},{{dec_places}});
+{% else %}
+getPidDataAoT('{{each_widget.unique_id}}','{{widget_options['pid']}}',{{max_age}},{{dec_places}});
+{% endfor %}

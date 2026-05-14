@@ -1,0 +1,784 @@
+/* aot-modal-modern.css - Iteration 33: Organized System */
+
+/* Global Modal Z-Index Guaranteed Stacking */
+/* Using --aot-z-modal tokens defined in aot-theme-variables.css */
+.modal {
+    z-index: var(--aot-z-modal) !important;
+}
+.modal-backdrop {
+    z-index: var(--aot-z-modal-backdrop);
+}
+
+/* SECTION 1: DESIGN TOKENS — defined in aot-theme-variables.css */
+
+/* SECTION 1b: BODY / DESCRIPTION TEXT */
+.aot-modal-body-text {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--aot-text-secondary);
+    line-height: 1.45;
+    margin-top: 0.2rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+}
+
+/* SECTION 2: TOPOGRAPHY & LAYOUT HIERARCHY */
+.aot-modal-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--aot-text-title);
+    margin-top: 1rem;
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--aot-border-light);
+}
+
+.aot-modal-group-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--gray-dark);
+    margin-top: 1.6rem; /* 2:1 비율 - 위쪽 */
+    margin-bottom: 0.2rem; /* 2:1 비율 - 아래쪽 */
+    padding-left: 16px !important; /* 박스 내부 레이블과 정렬 통일 (16px) */
+}
+
+.aot-modal-section-title {
+    background: none !important;
+    color: var(--gray-dark) !important;
+    font-weight: 700 !important;
+    font-size: 1.05rem !important;
+    padding: 0 0 0 16px !important; /* 박스 내부 레이블과 정렬 통일 (16px) */
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-bottom: none !important;
+    margin: 1.6rem 0 0.2rem 0 !important; /* 2:1 비율 */
+    box-shadow: none !important;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* 좌측 정렬 */
+}
+
+/* Remove margin for the first section title to reduce top whitespace */
+.aot-modal-container + .aot-modal-section-title:first-of-type,
+.aot-modal-container:first-child + .aot-modal-section-title,
+.aot-modal-section-title:first-child {
+    margin-top: 0.2rem !important;
+}
+
+.aot-modal-subgroup-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--aot-text-main);
+    background: none !important;
+    padding: 7px 0 7px 0 !important; /* 상하 대칭 패딩 */
+    border-bottom: 1px solid var(--gray) !important;
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem; /* 상하 대칭 마진 */
+    display: flex;
+    align-items: center;
+    justify-content: center; /* 중앙 정렬 */
+}
+
+.aot-modal-container {
+    background-color: var(--aot-input-bg);
+    border: 1px solid var(--gray);
+    border-radius: 16px !important;
+    padding: 0 16px !important; /* 좌우 여백을 16px로 충분히 확보하여 답답함 해소 */
+    margin-bottom: 1.2rem;
+    overflow: visible !important; /* 드롭다운 목록이 잘리지 않도록 visible 설정 */
+}
+
+/* 채널 전용 그룹 스타일 (중첩 느낌 배제) */
+.aot-modal-channel-group {
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin-bottom: 1.2rem;
+}
+
+/* 채널 타이틀 스타일 (밑줄 없음, 중제목과 좌측 정렬) */
+.aot-modal-channel-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--aot-text-main);
+    background: none !important;
+    padding: 0 0 0 16px !important; /* 2:1 비율 패딩 */
+    border-bottom: none !important; /* 밑줄 제거 */
+    margin-top: 1.2rem; /* 2:1 비율 - 위쪽 */
+    margin-bottom: 0.2rem; /* 2:1 비율 - 아래쪽 */
+    display: flex;
+    align-items: center;
+}
+
+.aot-modal-channel-separator {
+    margin: 0 0.6rem;
+    color: var(--gray);
+    font-weight: 300;
+}
+
+.aot-modal-channel-name {
+    font-weight: 700;
+}
+
+/* Optional wrapper for a set of related options (Card-like look) */
+.aot-modal-option-group {
+    background: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.aot-modal-option-row {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4rem 0 !important;
+    min-height: 2.4rem;
+    border-bottom: 1px solid var(--gray); /* 통일된 경계선 */
+    gap: 15px; /* Increased for better touch separation */
+}
+
+.aot-modal-option-row:last-child {
+    border-bottom: none;
+}
+
+.aot-modal-option-row.aot-modal-option-row-wrap {
+    flex-wrap: wrap !important;
+    height: auto !important;
+}
+
+.aot-modal-row-wrap {
+    flex-wrap: wrap !important;
+    height: auto !important;
+}
+
+.aot-modal-option-label {
+    flex: 1 1 auto !important; /* Allow label to grow/shrink based on space */
+    min-width: 100px;
+    max-width: none; /* Removed restrictive max-width */
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--aot-text-main);
+    line-height: 1.3;
+    word-break: break-word; /* Prevent long titles from breaking layout */
+    margin-bottom: 0 !important; /* Override Bootstrap's default label margin to enable proper vertical centering */
+}
+
+/* SECTION 3: FORM CONTROLS & LAYOUT */
+.aot-modal-option-control {
+    flex: 0 0 var(--aot-common-control-width) !important;
+    width: var(--aot-common-control-width) !important;
+    min-width: var(--aot-common-control-width) !important; /* Force stability */
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-shrink: 0 !important; /* Critical: Prevent crushing on mobile */
+}
+
+/* SECTION 3: FORM CONTROLS (INPUTS, SELECTS) */
+.aot-modern-input,
+.aot-modern-select {
+    box-sizing: border-box !important;
+    border-radius: var(--aot-btn-pill-radius) !important;
+    border: 1px solid var(--gray) !important;
+    padding: 0 1rem !important;
+    height: 32px !important;
+    font-size: 0.85rem !important;
+    background-color: var(--aot-input-bg) !important;
+    color: var(--aot-text-main) !important;
+    text-align: left;
+    line-height: 30px !important;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+/* Select: remove browser default appearance for pill shape */
+.aot-modern-select {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23888' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0.75rem center !important;
+    padding-right: 2rem !important;
+}
+
+/* Color Picker Input (Custom UI) */
+.aot-modal-option-control input[type="color"] {
+    height: 32px !important;
+    width: 100% !important;
+    padding: 0 !important;
+    border: 1px solid var(--gray) !important;
+    border-radius: 16px !important;
+    cursor: pointer;
+    overflow: hidden !important;
+}
+
+/* WebKit shadow DOM elements inside color input */
+.aot-modal-option-control input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0 !important;
+    border-radius: 16px !important;
+}
+
+.aot-modal-option-control input[type="color"]::-webkit-color-swatch {
+    border: none !important;
+    border-radius: 16px !important;
+}
+
+/* Internal controls follow the container's 160px width precisely */
+.aot-modal-option-control .aot-modern-input,
+.aot-modal-option-control .aot-modern-select,
+.aot-modal-option-control .bootstrap-select:not(.aot-standard-select) {
+    width: 100% !important; /* Take full 160px from parent */
+    min-width: 0;
+}
+
+/* Exception: Inside Composite Groups (API Keys) - split the 160px */
+.aot-api-key-group .aot-modern-input {
+    width: 0 !important; /* Reset to let flex share space */
+    flex: 1 !important;
+}
+
+.aot-modern-input:focus {
+    border-color: var(--aot-input-focus-border) !important;
+    box-shadow: 0 0 0 0.15rem var(--modal-focus-ring) !important;
+}
+
+/* Map Section Style (Outside Box) */
+.map-option-section {
+    padding: 0 !important;
+    margin-bottom: 10px !important;
+}
+
+/* Bootstrap Select Override (Fix Double Box Look) */
+.aot-modal-option-control .bootstrap-select.aot-standard-select {
+    border: none !important; /* Remove outer border if selectpicker is used */
+    background: transparent !important;
+}
+
+/* Bootstrap Select Override */
+.aot-modal-option-control .bootstrap-select {
+    width: var(--aot-common-control-width) !important;
+    padding: 0 !important;
+}
+
+.aot-modal-option-control .bootstrap-select > .dropdown-toggle {
+    height: 32px !important;
+    border-radius: var(--aot-btn-pill-radius) !important;
+    background: var(--aot-input-bg) !important;
+    border: 1px solid var(--gray) !important;
+    color: var(--aot-text-main) !important;
+    font-size: 0.85rem !important;
+    text-align: center !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    box-shadow: none !important; /* Force stability */
+    /* Force GPU acceleration to fix repaint issues */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+/* Ensure bootstrap-select internal label is visible and centered */
+.aot-modal-option-control .bootstrap-select .filter-option {
+    color: var(--aot-text-main) !important;
+    text-align: center !important;
+}
+
+.aot-modal-option-control .bootstrap-select .filter-option-inner-inner {
+    color: var(--aot-text-main) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.aot-modal-option-control .bootstrap-select .dropdown-toggle:after {
+    display: none !important;
+}
+
+/* Ensure dropdown button doesn't shrink */
+.aot-modal-option-control .bootstrap-select .btn {
+    flex-shrink: 0 !important;
+    min-width: 0; /* Allow inner content to handle overflow if needed */
+}
+
+/* Dropdown Menu Style - Contextual Separation */
+
+/* Page-level list (Input/Output/Function settings cards outside modal):
+   gridstack items use position:absolute and stack by DOM order, which can
+   overlap a dropdown with default z-index. Fix: raise to 35000 (navbar level).
+   Modal rule below overrides this via higher specificity. */
+.aot-modal-option-control .bootstrap-select .dropdown-menu,
+.aot-main-selection-row .bootstrap-select .dropdown-menu {
+    z-index: var(--aot-z-navbar) !important;
+}
+
+/* Modal internal list: Force Right Align + Below Button + Auto Width */
+.modal .aot-modal-option-control .bootstrap-select .dropdown-menu {
+    border-radius: 12px !important;
+    z-index: var(--aot-z-navbar) !important;
+    left: auto !important;
+    right: 0 !important;
+    transform: none !important;
+    top: 100% !important;
+    margin-top: 4px !important;
+
+    /* Auto Width Logic */
+    min-width: 100% !important;
+    width: max-content !important; /* Adapt to content */
+    max-width: 85vw !important; /* Prevent overflowing screen/modal */
+}
+
+/* [Fix] Raise the row that contains an open dropdown above sibling rows.
+   Sibling rows painted later in DOM order overlap the dropdown despite z-index: var(--aot-z-navbar),
+   because they share the same stacking context. Elevating the row's own z-index
+   ensures it (and its dropdown child) paints on top of all other rows. */
+.aot-modal-option-row:has(.bootstrap-select.show) {
+    position: relative;
+    z-index: 100;
+}
+
+/* Prevent text wrapping to ensure width expands */
+.modal .aot-modal-option-control .bootstrap-select .dropdown-menu li a span.text {
+    white-space: nowrap !important;
+    display: block;
+}
+
+.modal .aot-modal-option-control .bootstrap-select .dropdown-menu li {
+    white-space: nowrap !important;
+}
+
+/* SECTION 4: BUTTONS & PILL STYLE */
+.aot-pill-btn {
+    border-radius: var(--aot-btn-pill-radius) !important;
+    width: var(--aot-common-control-width); /* Fixed width restored */
+    height: 32px !important;
+    font-weight: 600 !important;
+    font-size: 0.8rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 1rem !important;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    overflow: hidden;
+    white-space: nowrap;
+    flex-shrink: 0 !important; /* Prevent buttons from becoming tiny */
+    position: relative; /* Enable z-index */
+    z-index: 1; /* Below modals (1050) but above normal content */
+}
+
+/* Modal buttons should stay below modal backdrop */
+.modal .aot-pill-btn {
+    z-index: auto; /* Inherit from modal context, stays below modal */
+}
+
+/* Default (non-primary) pill buttons get a visible neutral border */
+.aot-pill-btn:not(.aot-pill-btn-primary):not(.aot-modern-btn) {
+    border: 1px solid var(--border-neutral, #ccc) !important;
+}
+
+.aot-pill-btn:not(.aot-pill-btn-primary):not(.aot-modern-btn):hover {
+    border-color: var(--aot-text-secondary, #888) !important;
+}
+
+/* [Global] Tooltip z-index — must render above this project's modals.
+   Modal z-index in this codebase is 20000 (far above Bootstrap's 1050 default).
+   Force tooltips above all overlays. */
+.tooltip {
+    z-index: 20100 !important;
+}
+
+/* Primary Styled Buttons (Yellow -> Custom Dark) */
+.aot-pill-btn-primary,
+.aot-modern-btn {
+    background-color: var(--bd-tertiary, var(--aot-primary)) !important;
+    border: 1px solid var(--bd-border, var(--aot-primary)) !important;
+    color: var(--text-color-tertiary) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+}
+
+.aot-pill-btn-primary:hover,
+.aot-modern-btn:hover {
+    background-color: var(--aot-color-dark) !important;
+    border: 1px solid var(--bd-border, var(--aot-primary-hover)) !important;
+    color: var(--text-color-tertiary) !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+    transform: translateY(-1px);
+}
+
+.aot-pill-btn-primary:active,
+.aot-modern-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+}
+
+/* SECTION 5: SPECIAL COMPOSITES (API KEYS, ACTIONS) */
+.aot-api-key-group,
+.aot-action-group {
+    display: flex !important;
+    align-items: center;
+    width: 100% !important;
+    gap: 4px !important;
+    min-width: 160px; /* Base container width */
+}
+
+/* Helper for 60px buttons */
+.aot-w-60 {
+    width: 60px !important;
+    padding: 0 !important; /* Reduce padding for small buttons */
+}
+
+/* Smart Grouping: 160px = Content(flex) + Button(60px) IF multiple items exist */
+.aot-api-key-group > .btn:not(:only-child),
+.aot-api-key-group > .btn-group:not(:only-child),
+.aot-action-group > .btn:not(:only-child),
+.aot-action-group > .btn-group:not(:only-child) {
+    flex: 0 0 var(--aot-btn-fixed-width) !important;
+    width: var(--aot-btn-fixed-width) !important;
+    padding: 0 !important;
+    font-size: 0.75rem !important;
+}
+
+/* Standalone items in groups take full 160px */
+.aot-api-key-group > .btn:only-child,
+.aot-api-key-group > .btn-group:only-child,
+.aot-action-group > .btn:only-child,
+.aot-action-group > .btn-group:only-child {
+    flex: 0 0 var(--aot-common-control-width) !important;
+    width: var(--aot-common-control-width) !important;
+}
+
+.aot-api-key-group .aot-modern-input,
+.aot-action-group .bootstrap-select {
+    flex: 1 1 0% !important; /* Grow to fill space but allow shrinking to 0 if needed for wrap */
+    width: 0 !important;
+    min-width: 80px; /* Don't let text inputs disappear completely */
+}
+
+/* Footer Button Wrapping Fix - Targets standard button containers in modals */
+.d-flex.flex-wrap.mb-3 {
+    flex-wrap: wrap !important;
+}
+
+/* Map Container Protection */
+.map-container, .map-option-wrapper {
+    max-width: 100% !important;
+    overflow: hidden !important;
+}
+
+/* SECTION 6: RESPONSIVE ADAPTATION */
+/* SECTION 6: RESPONSIVE ADAPTATION */
+@media (max-width: 768px) {
+    .aot-modal-option-row {
+        gap: 8px;
+        flex-wrap: nowrap !important; /* 가로 레이아웃 최대한 유지 */
+        height: auto !important;
+        padding: 0.4rem 0 !important;
+    }
+
+    .aot-modal-option-label {
+        flex: 1 1 auto !important;
+        min-width: 0; /* 라벨이 공간에 맞춰 줄어들 수 있도록 허용 */
+        margin-bottom: 0 !important;
+        font-size: 0.85rem !important; /* 좁은 화면에서 가독성 확보 */
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap; /* 라벨이 너무 길면 말줄임표 처리 */
+    }
+
+    .aot-modal-option-control {
+        flex: 0 0 var(--aot-common-control-width) !important; /* iOS: 160px 고정 유지 */
+        width: var(--aot-common-control-width) !important;
+        min-width: var(--aot-common-control-width) !important;
+        justify-content: flex-end !important;
+    }
+
+    /* 모바일에서는 소제목 좌측 정렬 */
+    .aot-modal-section-title,
+    .aot-modal-subgroup-title,
+    .aot-modal-channel-title {
+        justify-content: flex-start !important; /* 좌측 정렬 */
+        padding-left: 16px !important; /* 좌측 여백 추가 */
+    }
+
+    /* Phase 6: Anti-Zoom for iOS Input Fields */
+    /* 16px prevents native zoom on focus, stabilizing fixed layout */
+    .aot-in-modal-notes-container input,
+    .aot-in-modal-notes-container textarea,
+    .aot-in-modal-notes-container .aot-modern-input,
+    .aot-in-modal-notes-container .form-control {
+        font-size: 16px !important;
+    }
+
+    /* iOS Safari: prevent auto-zoom on ALL modal inputs (not just notes) */
+    .aot-option-modal input,
+    .aot-option-modal textarea,
+    .aot-option-modal select,
+    .aot-option-modal .aot-modern-input,
+    .aot-option-modal .form-control {
+        font-size: 16px !important;
+    }
+
+    /* 초소형 기기(360px 이하) — 1줄 강제, 라벨 축소 허용 */
+    @media (max-width: 360px) {
+        .aot-modal-option-row {
+            flex-wrap: nowrap !important;
+            gap: 6px;
+        }
+        .aot-modal-option-label {
+            flex: 1 1 auto !important;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 0 !important;
+        }
+        .aot-modal-option-control {
+            flex: 0 0 var(--aot-common-control-width) !important;
+            min-width: var(--aot-common-control-width) !important;
+            justify-content: flex-end !important;
+        }
+    }
+}
+
+/* SECTION 7: BOOTSTRAP GRID OVERRIDE IN MODALS */
+/* Fix horizontal scroll caused by Bootstrap's negative margins */
+.modal-dialog .modal-content .row,
+.modal-dialog .modal-body .row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+.modal-dialog .modal-content [class*="col-"],
+.modal-dialog .modal-body [class*="col-"] {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* Force horizontal overflow hidden on modal body */
+.modal-dialog .modal-body {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+    -webkit-overflow-scrolling: touch !important; /* Fix for iOS scroll */
+}
+
+/* Fix for iOS modal scrolling entire page */
+.modal-open .modal {
+    -webkit-overflow-scrolling: touch !important;
+}
+
+/* SECTION 8: IN-MODAL NOTES INTEGRATION */
+/* Force relative on modal content to keep notes inside */
+.modal-content {
+    position: relative !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+}
+
+.aot-in-modal-notes-container {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 400px;
+    max-width: 90vw; /* Guard for very small non-mobile windows */
+
+    @media (min-width: 992px) { /* LG */
+        width: 450px;
+    }
+    @media (min-width: 1200px) { /* XL */
+        width: 500px;
+    }
+    max-width: 100% !important; /* Never exceed modal width */
+    background: var(--aot-input-bg);
+    border-left: 1px solid var(--aot-border-light);
+    /* High enough to bypass modal body focus traps and map controllers (3500) */
+    z-index: var(--aot-z-navbar) !important;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    pointer-events: none;
+    visibility: hidden;
+    opacity: 0;
+    overscroll-behavior: contain;
+}
+
+.aot-in-modal-notes-container.active {
+    pointer-events: auto;
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.aot-in-modal-notes-container.is-global {
+    position: fixed !important;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    z-index: var(--aot-z-navbar) !important;
+}
+
+@media (max-width: 575.98px) {
+    .aot-in-modal-notes-container {
+        width: 100%;
+        height: 100%;
+        border-left: none;
+        box-shadow: none;
+        top: 0 !important;
+        right: 0 !important;
+    }
+}
+
+/* SECTION 9: FULL-WIDTH CODE/TEXT BLOCK (System Prompt etc.) */
+/* Override 160px constraint for rows that need full-width content */
+.aot-modal-option-row.aot-full-width-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+}
+
+.aot-modal-option-row.aot-full-width-row > .aot-modal-option-label {
+    margin-bottom: 0.4rem !important;
+}
+
+.aot-modal-option-row.aot-full-width-row > .aot-modal-option-control {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* SECTION 10: GIS/GEO UNIFICATION */
+/* Compatibility for old geo styles while migrating to modern */
+.aot-modal-option-control .gis-custom-option,
+.aot-modal-option-control .aot-modern-select.gis-custom-option {
+    width: 100% !important;
+    height: 32px !important;
+    border-radius: var(--aot-btn-pill-radius) !important;
+}
+
+/*
+   Maintain consistent modal width.
+   Specific restriction for input, output, function, gis_input, ai agent modals.
+*/
+.aot-option-modal .aot-modal-dialog {
+    max-width: 600px !important;
+}
+
+/* SECTION 11: CAMERA PREVIEW IN MODAL */
+.aot-camera-preview-section {
+    margin-bottom: 1rem;
+}
+
+.aot-camera-preview-wrapper {
+    display: flex;
+    gap: 12px;
+    padding: 8px 0;
+}
+
+.aot-camera-preview-media {
+    flex: 0 0 auto;
+    width: 240px;
+    height: 170px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--camera-preview-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.aot-camera-preview-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.aot-camera-preview-media .aot-camera-no-image {
+    color: var(--gray-dark);
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 8px;
+}
+
+.aot-camera-preview-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.82rem;
+    color: var(--aot-text-main);
+}
+
+.aot-camera-preview-info .preview-info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+}
+
+.aot-camera-preview-info .preview-info-label {
+    font-weight: 600;
+    color: var(--gray-dark);
+}
+
+.aot-camera-preview-toggle {
+    display: flex;
+    gap: 4px;
+    margin-top: auto;
+}
+
+.aot-camera-preview-toggle .btn {
+    flex: 1;
+    height: 28px;
+    font-size: 0.75rem;
+    border-radius: var(--aot-btn-pill-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--gray);
+    background: var(--aot-input-bg);
+    color: var(--aot-text-main);
+    transition: all 0.2s;
+}
+
+.aot-camera-preview-toggle .btn.active {
+    background: var(--bd-tertiary, var(--aot-primary));
+    border-color: var(--bd-border, var(--aot-primary));
+    color: var(--text-color-tertiary);
+    font-weight: 600;
+}
+
+/* Capture Control Buttons */
+.aot-camera-capture-controls {
+    display: flex;
+    gap: 8px;
+    padding: 0;
+    margin-bottom: 0.8rem;
+}
+
+.aot-camera-capture-controls .btn {
+    flex: 1;
+    height: 36px;
+    border-radius: var(--aot-btn-pill-radius);
+    font-size: 0.82rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+@media (max-width: 768px) {
+    .aot-camera-preview-wrapper {
+        flex-direction: column;
+    }
+    .aot-camera-preview-media {
+        width: 100%;
+        height: 180px;
+    }
+}
+

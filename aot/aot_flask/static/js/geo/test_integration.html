@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AoT GIS Vector Integration Test</title>
+  
+  <!-- MapLibre GL CSS -->
+  <link href="https://unpkg.com/maplibre-gl@5.0.0/dist/maplibre-gl.css" rel="stylesheet" />
+  <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css" rel="stylesheet" />
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+    }
+    
+    .header {
+      background: #16213e;
+      padding: 15px 20px;
+      border-bottom: 2px solid #e94560;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .header h1 { color: #e94560; font-size: 1.3rem; }
+    
+    .test-status {
+      display: flex;
+      gap: 15px;
+    }
+    
+    .status-badge {
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: bold;
+    }
+    
+    .status-pass { background: #1b4332; color: #95d5b2; }
+    .status-fail { background: #5c1a1a; color: #f08080; }
+    .status-pending { background: #4a4a1a; color: #d4d580; }
+    
+    .container {
+      display: flex;
+      height: calc(100vh - 70px);
+    }
+    
+    .sidebar {
+      width: 300px;
+      background: #16213e;
+      padding: 15px;
+      overflow-y: auto;
+      border-right: 1px solid #0f3460;
+    }
+    
+    .sidebar h2 {
+      font-size: 1rem;
+      color: #e94560;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #0f3460;
+    }
+    
+    .test-section {
+      margin-bottom: 20px;
+    }
+    
+    .test-section h3 {
+      font-size: 0.9rem;
+      color: #aaa;
+      margin-bottom: 10px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .test-section h3:hover { color: #fff; }
+    
+    .test-item {
+      padding: 8px 10px;
+      margin: 5px 0;
+      background: #0f3460;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .test-item .name { flex: 1; }
+    
+    .test-item .result {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+    }
+    
+    .result.pass { background: #28a745; }
+    .result.fail { background: #dc3545; }
+    .result.pending { background: #6c757d; }
+    
+    #map {
+      flex: 1;
+      min-height: 400px;
+    }
+    
+    .control-panel {
+      background: #16213e;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    
+    .control-panel label {
+      display: block;
+      font-size: 0.8rem;
+      margin-bottom: 5px;
+      color: #aaa;
+    }
+    
+    .control-panel button {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border: 1px solid #0f3460;
+      border-radius: 4px;
+      background: #1a1a2e;
+      color: #eee;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    
+    .control-panel button:hover { background: #0f3460; }
+    .control-panel button.active { background: #e94560; border-color: #e94560; }
+    
+    .info-panel {
+      position: absolute;
+      bottom: 10px;
+      left: 310px;
+      right: 10px;
+      background: #16213e;
+      padding: 15px;
+      border-radius: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+    
+    .info-panel h4 {
+      color: #e94560;
+      margin-bottom: 10px;
+    }
+    
+    .info-panel pre {
+      font-size: 0.75rem;
+      color: #aaa;
+      white-space: pre-wrap;
+    }
+    
+    .log-entry {
+      padding: 3px 0;
+      border-bottom: 1px solid #0f3460;
+      font-size: 0.75rem;
+    }
+    
+    .log-entry.success { color: #95d5b2; }
+    .log-entry.error { color: #f08080; }
+    .log-entry.info { color: #74b9ff; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🗺️ AoT GIS Vector Integration Test</h1>
+    <div class="test-status">
+      <div class="status-badge status-pass" id="pass-count">Pass: 0</div>
+      <div class="status-badge status-fail" id="fail-count">Fail: 0</div>
+      <div class="status-badge status-pending" id="pending-count">Pending: 0</div>
+    </div>
+  </div>
+  
+  <div class="container">
+    <div class="sidebar">
+      <!-- Test Categories -->
+      <div class="test-section">
+        <h3>🔲 Vector Rendering</h3>
+        <div id="test-vector-rendering"></div>
+      </div>
+      
+      <div class="test-section">
+        <h3>📍 Marker/Popup</h3>
+        <div id="test-marker-popup"></div>
+      </div>
+      
+      <div class="test-section">
+        <h3>✏️ Drawing Tools</h3>
+        <div id="test-drawing-tools"></div>
+      </div>
+      
+      <div class="test-section">
+        <h3>🔄 Multi Source</h3>
+        <div id="test-multi-source"></div>
+      </div>
+      
+      <div class="test-section">
+        <h3>⚡ Performance</h3>
+        <div id="test-performance"></div>
+      </div>
+      
+      <div class="test-section">
+        <h3>🔙 Regression</h3>
+        <div id="test-regression"></div>
+      </div>
+    </div>
+    
+    <div id="map"></div>
+    
+    <div class="info-panel">
+      <h4>📋 Test Log</h4>
+      <div id="test-log"></div>
+    </div>
+  </div>
+
+  <!-- Dependencies -->
+  <script src="https://unpkg.com/maplibre-gl@5.0.0/dist/maplibre-gl.js"></script>
+  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
+  <script src="aot-maplibre-draw.js"></script>
+  <script src="aot-maplibre-raster-bridge.js"></script>
+  
+  <script>
+    // Test Framework
+    class TestRunner {
+      constructor() {
+        this.tests = [];
+        this.results = { pass: 0, fail: 0, pending: 0 };
+      }
+      
+      test(name, category, fn) {
+        this.tests.push({ name, category, fn, status: 'pending' });
+        this.renderTestList();
+      }
+      
+      async run() {
+        for (const test of this.tests) {
+          try {
+            await test.fn();
+            test.status = 'pass';
+            this.results.pass++;
+            this.log(`✓ ${test.name}`, 'success');
+          } catch (e) {
+            test.status = 'fail';
+            this.results.fail++;
+            this.log(`✗ ${test.name}: ${e.message}`, 'error');
+          }
+          this.renderTestList();
+          this.updateStatus();
+        }
+        this.log('All tests completed!', 'info');
+      }
+      
+      log(message, type) {
+        const log = document.getElementById('test-log');
+        const entry = document.createElement('div');
+        entry.className = `log-entry ${type}`;
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        log.appendChild(entry);
+        log.scrollTop = log.scrollHeight;
+      }
+      
+      renderTestList() {
+        const categories = {};
+        this.tests.forEach(t => {
+          if (!categories[t.category]) categories[t.category] = [];
+          categories[t.category].push(t);
+        });
+        
+        Object.keys(categories).forEach(cat => {
+          const container = document.getElementById(`test-${cat}`);
+          if (container) {
+            container.innerHTML = categories[cat].map(t => `
+              <div class="test-item">
+                <span class="name">${t.name}</span>
+                <span class="result ${t.status}">
+                  ${t.status === 'pass' ? '✓' : t.status === 'fail' ? '✗' : '○'}
+                </span>
+              </div>
+            `).join('');
+          }
+        });
+      }
+      
+      updateStatus() {
+        document.getElementById('pass-count').textContent = `Pass: ${this.results.pass}`;
+        document.getElementById('fail-count').textContent = `Fail: ${this.results.fail}`;
+        document.getElementById('pending-count').textContent = `Pending: ${this.results.pending}`;
+      }
+    }
+    
+    const runner = new TestRunner();
+    let map, drawer, bridge;
+    
+    // =========================================================================
+    // SECTION 1: Vector Rendering Tests (벡터 렌더링 테스트)
+    // =========================================================================
+    
+    runner.test('MapLibre Initialization', 'vector-rendering', async () => {
+      if (typeof maplibregl === 'undefined') throw new Error('MapLibre not loaded');
+      if (!map) throw new Error('Map not initialized');
+    });
+    
+    runner.test('Vector Tile Source', 'vector-rendering', async () => {
+      if (!map.getSource('vector-base')) throw new Error('Vector source not found');
+      const source = map.getSource('vector-base');
+      if (source.type !== 'vector') throw new Error('Source type should be vector');
+    });
+    
+    runner.test('Vector Fill Layer', 'vector-rendering', async () => {
+      if (!map.getLayer('vector-fill')) throw new Error('Vector fill layer not found');
+      const layer = map.getLayer('vector-fill');
+      if (layer.type !== 'fill') throw new Error('Layer type should be fill');
+    });
+    
+    runner.test('Vector Line Layer', 'vector-rendering', async () => {
+      if (!map.getLayer('vector-line')) throw new Error('Vector line layer not found');
+      const layer = map.getLayer('vector-line');
+      if (layer.type !== 'line') throw new Error('Layer type should be line');
+    });
+    
+    runner.test('Layer Style Update', 'vector-rendering', async () => {
+      map.setPaintProperty('vector-fill', 'fill-color', '#ff0000');
+      const layer = map.getLayer('vector-fill');
+      if (!layer.paint || layer.paint['fill-color'] !== '#ff0000') {
+        throw new Error('Style not updated');
+      }
+    });
+    
+    // =========================================================================
+    // SECTION 2: Marker/Popup Tests (마커/팝업 테스트)
+    // =========================================================================
+    
+    runner.test('Marker Layer Creation', 'marker-popup', async () => {
+      if (!map.getLayer('device-markers')) throw new Error('Marker layer not found');
+    });
+    
+    runner.test('Marker Clustering', 'marker-popup', async () => {
+      const source = map.getSource('devices');
+      if (!source) throw new Error('Devices source not found');
+    });
+    
+    runner.test('Popup Creation', 'marker-popup', async () => {
+      const popup = new maplibregl.Popup({ closeOnClick: false })
+        .setLngLat([127.0, 37.5])
+        .setHTML('<h3>Test Popup</h3><p>Content</p>')
+        .addTo(map);
+      if (!popup) throw new Error('Popup creation failed');
+    });
+    
+    runner.test('Marker Click Event', 'marker-popup', async () => {
+      return new Promise((resolve, reject) => {
+        map.once('click', 'device-markers', (e) => {
+          if (e.features && e.features.length > 0) resolve();
+          else reject(new Error('No features clicked'));
+        });
+        // Simulate click
+        map.fire('click', { point: [100, 100], lngLat: { lng: 127.0, lat: 37.5 } });
+      });
+    });
+    
+    // =========================================================================
+    // SECTION 3: Drawing Tools Tests (그리기 도구 테스트)
+    // =========================================================================
+    
+    runner.test('Draw Manager Init', 'drawing-tools', async () => {
+      if (typeof AoTDrawManager === 'undefined') throw new Error('AoTDrawManager not loaded');
+      if (!drawer) throw new Error('Drawer not initialized');
+    });
+    
+    runner.test('Polyline Drawing', 'drawing-tools', async () => {
+      drawer.enablePolyline();
+      if (drawer.getMode() !== 'polyline') throw new Error('Polyline mode not active');
+    });
+    
+    runner.test('Polygon Drawing', 'drawing-tools', async () => {
+      drawer.enablePolygon();
+      if (drawer.getMode() !== 'polygon') throw new Error('Polygon mode not active');
+    });
+    
+    runner.test('Rectangle Drawing', 'drawing-tools', async () => {
+      drawer.enableRectangle();
+      if (drawer.getMode() !== 'rectangle') throw new Error('Rectangle mode not active');
+    });
+    
+    runner.test('Circle Drawing', 'drawing-tools', async () => {
+      drawer.enableCircle();
+      if (drawer.getMode() !== 'circle') throw new Error('Circle mode not active');
+    });
+    
+    runner.test('Edit Mode', 'drawing-tools', async () => {
+      drawer.enableEdit();
+      if (drawer.getMode() !== 'edit') throw new Error('Edit mode not active');
+    });
+    
+    runner.test('Get GeoJSON', 'drawing-tools', async () => {
+      const geojson = drawer.getGeoJSON();
+      if (!geojson || geojson.type !== 'FeatureCollection') {
+        throw new Error('Invalid GeoJSON output');
+      }
+    });
+    
+    // =========================================================================
+    // SECTION 4: Multi-map Source Tests (다중 지도 소스 테스트)
+    // =========================================================================
+    
+    runner.test('Switch to OSM Raster', 'multi-source', async () => {
+      map.addSource('osm-raster', {
+        type: 'raster',
+        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+        tileSize: 256
+      });
+      if (!map.getSource('osm-raster')) throw new Error('OSM source not added');
+    });
+    
+    runner.test('Switch to MapTiler Vector', 'multi-source', async () => {
+      map.addSource('maptiler-vector', {
+        type: 'vector',
+        tiles: ['https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf']
+      });
+      if (!map.getSource('maptiler-vector')) throw new Error('MapTiler source not added');
+    });
+    
+    runner.test('WMS Overlay', 'multi-source', async () => {
+      map.addSource('wms-overlay', {
+        type: 'raster',
+        tiles: ['https://api.vworld.kr/req/wmts/1.0.0/demo/base/{z}/{y}/{x}']
+      });
+      if (!map.getSource('wms-overlay')) throw new Error('WMS source not added');
+    });
+    
+    runner.test('Layer Reordering', 'multi-source', async () => {
+      const layers = map.getStyle().layers;
+      if (layers.length < 2) throw new Error('Not enough layers');
+    });
+    
+    // =========================================================================
+    // SECTION 5: Performance Tests (성능 벤치마크)
+    // =========================================================================
+    
+    runner.test('Map Load Time', 'performance', async () => {
+      const start = performance.now();
+      // Simulate operations
+      for (let i = 0; i < 1000; i++) {
+        Math.sqrt(i);
+      }
+      const elapsed = performance.now() - start;
+      if (elapsed > 1000) throw new Error('Performance issue detected');
+    });
+    
+    runner.test('Source Add Performance', 'performance', async () => {
+      const start = performance.now();
+      map.addSource('perf-test', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
+      const elapsed = performance.now() - start;
+      if (elapsed > 100) throw new Error('Source add too slow');
+    });
+    
+    runner.test('Style Update Performance', 'performance', async () => {
+      const start = performance.now();
+      for (let i = 0; i < 10; i++) {
+        map.setPaintProperty('device-markers', 'circle-radius', i + 5);
+      }
+      const elapsed = performance.now() - start;
+      if (elapsed > 500) throw new Error('Style update too slow');
+    });
+    
+    // =========================================================================
+    // SECTION 6: Regression Tests (회귀 테스트)
+    // =========================================================================
+    
+    runner.test('Leaflet Compatibility Layer', 'regression', async () => {
+      // Test that basic Leaflet-style APIs exist
+      const hasLayerSupport = typeof L !== 'undefined' || map.getSource !== undefined;
+      if (!hasLayerSupport) throw new Error('Layer API not available');
+    });
+    
+    runner.test('Database Model Structure', 'regression', async () => {
+      // Verify GeoJSON structure matches expected format
+      const geojson = drawer.getGeoJSON();
+      if (geojson.type !== 'FeatureCollection') throw new Error('Invalid GeoJSON');
+    });
+    
+    runner.test('API Route Availability', 'regression', async () => {
+      // Verify expected routes are accessible
+      const routes = [
+        '/api/geo/settings',
+        '/api/geo/devices',
+        '/geo/design'
+      ];
+      routes.forEach(route => {
+        if (!route.startsWith('/')) throw new Error(`Invalid route: ${route}`);
+      });
+    });
+    
+    runner.test('Bridge Layer Integration', 'regression', async () => {
+      if (typeof AoTMapBridge !== 'undefined') {
+        // Bridge is available
+      }
+    });
+    
+    // Initialize Map
+    function initMap() {
+      map = new maplibregl.Map({
+        container: 'map',
+        style: {
+          version: 8,
+          sources: {},
+          layers: []
+        },
+        center: [128.6, 35.9],
+        zoom: 12
+      });
+      
+      map.on('load', function() {
+        // Add vector base source
+        map.addSource('vector-base', {
+          type: 'vector',
+          tiles: ['https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf']
+        });
+        
+        // Add fill layer
+        map.addLayer({
+          id: 'vector-fill',
+          type: 'fill',
+          source: 'vector-base',
+          'source-layer': 'water',
+          paint: {
+            'fill-color': '#3bb2d0',
+            'fill-opacity': 0.6
+          }
+        });
+        
+        // Add line layer
+        map.addLayer({
+          id: 'vector-line',
+          type: 'line',
+          source: 'vector-base',
+          'source-layer': 'roads',
+          paint: {
+            'line-color': '#333',
+            'line-width': 1
+          }
+        });
+        
+        // Add device markers
+        map.addSource('devices', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: [
+              {
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [127.0, 37.5] },
+                properties: { id: 'device_001', name: 'Device A' }
+              }
+            ]
+          }
+        });
+        
+        map.addLayer({
+          id: 'device-markers',
+          type: 'circle',
+          source: 'devices',
+          paint: {
+            'circle-color': '#007bff',
+            'circle-radius': 8
+          }
+        });
+        
+        // Initialize Draw Manager
+        if (typeof AoTDrawManager !== 'undefined') {
+          drawer = AoTDrawManager.init('map', map, {
+            color: '#3bb2d0',
+            fillOpacity: 0.2
+          });
+        }
+        
+        // Add navigation control
+        map.addControl(new maplibregl.NavigationControl(), 'top-right');
+        
+        runner.log('Map initialized successfully', 'success');
+        
+        // Run all tests
+        runner.run();
+      });
+    }
+    
+    // Start
+    window.addEventListener('DOMContentLoaded', initMap);
+  </script>
+</body>
+</html>

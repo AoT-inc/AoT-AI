@@ -1,0 +1,295 @@
+
+  // --- SVG Gauge helpers (no external libs) ---
+  function aotWindEnsureGauge(widget_id) {
+    if (!window.widget) window.widget = {};
+    if (!window.widget[widget_id]) window.widget[widget_id] = {};
+    var el = document.getElementById('container-gauge-' + widget_id);
+    if (!el) return;
+
+    // Rebuild every call to apply latest geometry/needle (remove legacy long-needle SVG if present)
+    var existing = document.getElementById('svg-' + widget_id);
+    if (existing && existing.parentNode) {
+      existing.parentNode.removeChild(existing);
+    }
+
+    // Compute size
+    var w = el.clientWidth || 300;
+    var h = el.clientHeight || 240;
+    var size = Math.min(w, h);
+    // outer padding like general gauge mock (~10%)
+    var pad = size * 0.1;
+    var cx = size * 0.50, cy = size * 0.45; // align center with AoT_gauge_angular, keep current radius
+    var rOuter = (size / 2) - pad;
+    var rTicks = rOuter;
+
+    // helper: sanitize color strings coming from options/inputs
+    function sanitizeColor(c, fallback){
+      if (c === undefined || c === null) return fallback;
+      var s = String(c).trim();
+      if (!s || s.toLowerCase() === 'undefined' || s.toLowerCase() === 'null') return fallback;
+      if (/^#[0-9a-fA-F]{6}$/.test(s)) return s;
+      if (/^[0-9a-fA-F]{6}$/.test(s)) return '#' + s; // accept hex without '#'
+      return fallback;
+    }
+
+    // Colors and text offset from runtime options (set in ready_end)
+    var _opts = (window.widget[widget_id] && window.widget[widget_id].opts) ? window.widget[widget_id].opts : {};
+    var borderColor = sanitizeColor(_opts.border_color, '#D5D5D5');
+    var dirColor = sanitizeColor(_opts.direction_color, '#F4D624');
+    var dotR = parseFloat(_opts.direction_dot_px);
+    if (!isFinite(dotR) || dotR <= 0) dotR = 10;
+    var textOffsetPct = parseFloat(_opts.text_y_offset); if (!isFinite(textOffsetPct)) textOffsetPct = 5;
+    var dirFontEm = parseFloat(_opts.direction_label_font_em); if (!isFinite(dirFontEm)) dirFontEm = 1.5;
+
+    // Fixed border thickness (~4% of size)
+    var borderStroke = Math.max(3, size * 0.04);
+
+    // Build SVG
+    var svgNS = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('id', 'svg-' + widget_id);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    svg.setAttribute('viewBox', '0 0 ' + size + ' ' + size);
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+    // Background circle
+    var bg = document.createElementNS(svgNS, 'circle');
+    bg.setAttribute('cx', cx);
+    bg.setAttribute('cy', cy);
+    bg.setAttribute('r', rOuter);
+    bg.setAttribute('fill', 'none');
+    bg.setAttribute('stroke', borderColor);
+    bg.setAttribute('stroke-width', borderStroke);
+    svg.appendChild(bg);
+
+    // Ticks removed per spec; only labels remain.
+
+    // Cardinal labels N/E/S/W
+    var labels = [{d:0,t:'N'},{d:90,t:'E'},{d:180,t:'S'},{d:270,t:'W'}];
+    labels.forEach(function(o){
+      var rad = (o.d - 90) * Math.PI / 180.0;
+      var rx = cx + Math.cos(rad) * (rOuter - 9);
+      var ry = cy + Math.sin(rad) * (rOuter - 9) + 4;
+      var text = document.createElementNS(svgNS, 'text');
+      text.setAttribute('x', rx);
+      text.setAttribute('y', ry);
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('font-size', Math.max(12, size * 0.07));
+      text.setAttribute('fill', '#9aa0a6');
+      text.textContent = o.t;
+      svg.appendChild(text);
+    });
+
+    // Direction marker group (small circle at outer ring)
+    var needleGroup = document.createElementNS(svgNS, 'g');
+    needleGroup.setAttribute('id', 'needle-' + widget_id);
+    needleGroup.setAttribute('transform', 'rotate(0 ' + cx + ' ' + cy + ')');
+
+    // Circle positioned at the exact center of the ring stroke
+    var marker = document.createElementNS(svgNS, 'circle');
+    marker.setAttribute('cx', cx);
+    marker.setAttribute('cy', cy - (rOuter));
+    marker.setAttribute('r', dotR);
+    marker.setAttribute('fill', dirColor);
+    marker.setAttribute('stroke', dirColor);
+    marker.setAttribute('stroke-width', 1);
+    needleGroup.appendChild(marker);
+
+    svg.appendChild(needleGroup);
+
+    // Speed text (center)
+    var speedText = document.createElementNS(svgNS, 'text');
+    speedText.setAttribute('id', 'speed-' + widget_id);
+    speedText.setAttribute('x', cx);
+    speedText.setAttribute('y', cy + (size * (textOffsetPct/100.0)));
+    speedText.setAttribute('text-anchor', 'middle');
+    speedText.setAttribute('font-weight', '700');
+    // speedText.setAttribute('font-family', 'Inter, "Noto Sans KR", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif');
+    speedText.setAttribute('font-size', Math.max(12, size * 0.12));
+    speedText.setAttribute('fill', '#111');
+    speedText.textContent = '';
+    svg.appendChild(speedText);
+
+    // Direction text under speed
+    var dirText = document.createElementNS(svgNS, 'text');
+    dirText.setAttribute('id', 'dirtext-' + widget_id);
+    dirText.setAttribute('x', cx);
+    dirText.setAttribute('y', cy + (size * (textOffsetPct/100.0)) + Math.max(18, size*0.10));
+    dirText.setAttribute('text-anchor', 'middle');
+    dirText.setAttribute('font-size', Math.max(10, size * 0.06) * dirFontEm);
+    // dirText.setAttribute('font-family', 'Inter, "Noto Sans KR", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif');
+    dirText.setAttribute('fill', '#333');
+    dirText.textContent = '';
+    svg.appendChild(dirText);
+
+    el.appendChild(svg);
+
+    // Adjust dirText Y based on computed speed font-size (to keep spacing tidy)
+    setTimeout(function(){
+      try{
+        var t = document.getElementById('speed-' + widget_id);
+        var dtxt = document.getElementById('dirtext-' + widget_id);
+        if (t && dtxt){
+          var fs = parseFloat(getComputedStyle(t).fontSize) || (size*0.12);
+          var baseY = cy + (size * (textOffsetPct/100.0));
+          // place direction ~0.75 of speed font below baseline + small padding
+          dtxt.setAttribute('y', baseY + fs*0.75 + Math.max(6, size*0.02));
+        }
+      }catch(e){}
+    }, 0);
+
+    // store geometry for updates
+    window.widget[widget_id].__cx = cx;
+    window.widget[widget_id].__cy = cy;
+    window.widget[widget_id].__rOuter = rOuter;
+  }
+
+  function aotWindAngleToCompass8(deg){
+    var d = ((Number(deg)%360)+360)%360;
+    var card = function(x){ 
+      return [window._('N'), window._('E'), window._('S'), window._('W')][x]; 
+    };
+    // If within 22.5° of a cardinal, return it directly
+    var near = [0,90,180,270];
+    for (var i=0;i<near.length;i++){
+      if (Math.abs(d - near[i]) <= 22.5 || Math.abs(d - near[i] + 360) <= 22.5) {
+        return card(i);
+      }
+    }
+    // Determine quadrant
+    if (d > 0 && d < 90){ // N-E
+      return window._('NE');
+    } else if (d > 90 && d < 180){ // E-S
+      return window._('SE');
+    } else if (d > 180 && d < 270){ // S-W
+      return window._('SW');
+    } else { // 270..360 or 0
+      return window._('NW');
+    }
+  }
+
+  function aotWindUpdateNeedle(widget_id, deg) {
+    var g = document.getElementById('needle-' + widget_id);
+    if (!g) return;
+    var cx = window.widget[widget_id].__cx || 0;
+    var cy = window.widget[widget_id].__cy || 0;
+    // Normalize input (handles strings, NaN, negatives, >360)
+    var d = Number(deg);
+    if (!isFinite(d)) d = 0;
+    d = ((d % 360) + 360) % 360; // wrap into [0,360)
+    // Our needle geometry points to North when 0°, so rotate by d directly.
+    g.setAttribute('transform', 'rotate(' + (d % 360) + ' ' + cx + ' ' + cy + ')');
+    var lbl = document.getElementById('dirtext-' + widget_id);
+    if (lbl) lbl.textContent = aotWindAngleToCompass8(d);
+  }
+
+  function aotWindUpdateSpeed(widget_id, val, unit, decimals, dataFontSizeEm, unitFontSizeEm) {
+    var t = document.getElementById('speed-' + widget_id);
+    if (!t) return;
+    var v = (val === null || val === undefined) ? '' : Number(val).toFixed(decimals || 1);
+    var dataSpan = '<tspan style="font-size:' + (dataFontSizeEm || 1.5) + 'em;">' + v + '</tspan>';
+    var unitSpan = unit ? '<tspan style="font-size:' + (unitFontSizeEm || 0.7) + 'em;"> ' + unit + '</tspan>' : '';
+    t.innerHTML = dataSpan + unitSpan;
+  }
+
+  // --- Data fetchers (unchanged endpoints) ---
+  function aotWindGetLastDir(widget_id,
+                       unique_id,
+                       measure_type,
+                       measurement_id,
+                       max_measure_age_sec) {
+    const url = '/last/' + unique_id + '/' + measure_type + '/' + measurement_id + '/' + max_measure_age_sec.toString();
+    $.ajax(url, {
+      success: function(data, responseText, jqXHR) {
+        if (jqXHR.status === 204) {
+          if (!window.widget) window.widget = {};
+          if (!window.widget[widget_id]) window.widget[widget_id] = {};
+          window.widget[widget_id].lastDir = null;
+          aotWindUpdateNeedle(widget_id, 0);
+        }
+        else {
+          const measurement = data[1];
+          if (!window.widget) window.widget = {};
+          if (!window.widget[widget_id]) window.widget[widget_id] = {};
+          window.widget[widget_id].lastDir = measurement;
+          aotWindUpdateNeedle(widget_id, measurement);
+        }
+      },
+      error: function() {
+        if (!window.widget) window.widget = {};
+        if (!window.widget[widget_id]) window.widget[widget_id] = {};
+        window.widget[widget_id].lastDir = null;
+        aotWindUpdateNeedle(widget_id, 0);
+      }
+    });
+  }
+
+  function aotWindRepeatLastDir(widget_id,
+                          dev_id,
+                          measure_type,
+                          measurement_id,
+                          period_sec,
+                          max_measure_age_sec) {
+    setInterval(function () {
+      aotWindGetLastDir(widget_id,
+                  dev_id,
+                  measure_type,
+                  measurement_id,
+                  max_measure_age_sec)
+    }, period_sec * 1000);
+  }
+
+  function aotWindGetLastSpeed(widget_id,
+                                unique_id,
+                                measure_type,
+                                measurement_id,
+                                max_measure_age_sec,
+                                decimals,
+                                dataFontEm,
+                                unitFontEm,
+                                unitLabel) {
+    const url = '/last/' + unique_id + '/' + measure_type + '/' + measurement_id + '/' + max_measure_age_sec.toString();
+    $.ajax(url, {
+      success: function(data, responseText, jqXHR) {
+        if (!window.widget) window.widget = {};
+        if (!window.widget[widget_id]) window.widget[widget_id] = {};
+        if (jqXHR.status === 204) {
+          window.widget[widget_id].lastSpeed = null;
+        } else {
+          window.widget[widget_id].lastSpeed = data[1];
+        }
+        aotWindUpdateSpeed(widget_id, window.widget[widget_id].lastSpeed, unitLabel, decimals, dataFontEm, unitFontEm);
+      },
+      error: function() {
+        if (!window.widget) window.widget = {};
+        if (!window.widget[widget_id]) window.widget[widget_id] = {};
+        window.widget[widget_id].lastSpeed = null;
+        aotWindUpdateSpeed(widget_id, window.widget[widget_id].lastSpeed, unitLabel, decimals, dataFontEm, unitFontEm);
+      }
+    });
+  }
+
+  function aotWindRepeatLastSpeed(widget_id,
+                                   dev_id,
+                                   measure_type,
+                                   measurement_id,
+                                   period_sec,
+                                   max_measure_age_sec,
+                                   decimals,
+                                   dataFontEm,
+                                   unitFontEm,
+                                   unitLabel) {
+    setInterval(function () {
+      aotWindGetLastSpeed(widget_id,
+                           dev_id,
+                           measure_type,
+                           measurement_id,
+                           max_measure_age_sec,
+                           decimals,
+                           dataFontEm,
+                           unitFontEm,
+                           unitLabel)
+    }, period_sec * 1000);
+  }
+  

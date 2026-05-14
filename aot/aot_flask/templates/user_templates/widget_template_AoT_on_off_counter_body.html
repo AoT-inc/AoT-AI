@@ -1,0 +1,100 @@
+
+    <style>
+    /* 온오프 카운터 위젯 전용 UI 개선 */
+    #aot_counter_{{each_widget.unique_id}} .col-aot-2 {
+      width: 60px !important;
+    }
+    #aot_counter_{{each_widget.unique_id}} .input-time {
+      border: none !important;
+      box-shadow: none !important;
+    }
+    #aot_counter_{{each_widget.unique_id}} .input-time-ss {
+      background-color: #ffffff !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+    </style>
+
+    {%- set wo = widget_options if widget_options is defined else {} -%}
+
+    {%- set output = wo.get('output', '') -%}
+    {%- set device_id = '' -%}
+    {%- set channel_id = '' -%}
+    {%- if output and ',' in output -%}
+      {%- set device_id = output.split(',')[0] -%}
+      {%- set channel_id = output.split(',')[1] -%}
+    {%- endif -%}
+    {%- set refresh_seconds = wo.get('refresh_seconds', 5.0) -%}
+    {%- set default_run = wo.get('default_run_seconds', 10) -%}
+    {%- set default_rest = wo.get('default_rest_seconds', 10) -%}
+    {%- set default_cycles = wo.get('default_cycles', 5) -%}
+
+    <div class="frame-aot inactive-background"
+         id="aot_counter_{{each_widget.unique_id}}"
+         data-device="{{device_id}}"
+         data-channel="{{channel_id}}"
+         data-refresh="{{refresh_seconds}}">
+      <div class="row-aot-1">
+        <div class="col-aot-1">
+          <span class="prt-text prt-text-inline" id="aot_counter_summary_{{each_widget.unique_id}}" style="font-size: {{widget_options['widget_name_font_em']}}em;">
+            0/0
+          </span>
+          <span class="prt-text prt-text-inline" id="aot_counter_phase_{{each_widget.unique_id}}" style="font-size: {{widget_options['widget_name_font_em']}}em;">
+            {{_('Inactive')}}
+          </span>
+        </div>
+        <div class="col-aot-2" style="display:flex; justify-content:flex-end;">
+          <label class="btn-toggle">
+            <input type="checkbox"
+                   id="tm_tog_{{each_widget.unique_id}}"
+                   class="btn-toggle-input aot-counter-toggle"
+                   data-wid="{{each_widget.unique_id}}"
+                   name="{{device_id}}/{{channel_id}}">
+            <span class="btn-toggle-slider">
+              <span class="btn-toggle-thumb"></span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      {% if widget_options['enable_output_controls'] %}
+      <div class="row-aot-2">
+        <div class="input-time" style="margin-left:auto;">
+          <label style="margin-right:0.5em;">
+            {{_('Run (s)')}}
+            <input type="number"
+                   min="1"
+                   id="aot_counter_run_{{each_widget.unique_id}}"
+                   class="input-time-hh"
+                   value="{{ default_run|int }}"
+                   style="font-size: {{widget_options['font_em_time_input']}}em;">
+          </label>
+          <label style="margin-right:0.5em;">
+            {{_('Rest (s)')}}
+            <input type="number"
+                   min="0"
+                   id="aot_counter_rest_{{each_widget.unique_id}}"
+                   class="input-time-mm"
+                   value="{{ default_rest|int }}"
+                   style="font-size: {{widget_options['font_em_time_input']}}em;">
+          </label>
+          <label style="margin-right:0.5em;">
+            {{_('Cycles')}}
+            <input type="number"
+                   min="1"
+                   id="aot_counter_cycles_{{each_widget.unique_id}}"
+                   class="input-time-ss"
+                   value="{{ default_cycles|int }}"
+                   style="font-size: {{widget_options['font_em_time_input']}}em;">
+          </label>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if not (device_id and channel_id) %}
+      <div class="row-aot-2">
+        <span class="prt-text">{{_('Select the Output to control in the widget options.')}}</span>
+      </div>
+      {% endif %}
+    </div>
+    

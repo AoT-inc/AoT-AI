@@ -1,0 +1,94 @@
+# ==============================================================
+# AoT_ai 프로젝트 .gitignore
+# ==============================================================
+
+# --- macOS ---
+.DS_Store
+**/.DS_Store
+
+# --- Python ---
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# --- 가상환경 ---
+env/
+env.corrupted/
+venv/
+.venv/
+
+# --- Flask 세션 (런타임 데이터) ---
+flask_session_*/
+
+# --- 로그 ---
+logs/
+
+# --- 데이터베이스 ---
+aot.db
+influxdb_data/
+
+# --- T2 Executor / Agent 파일 ---
+*.ready
+CLAUDE.md
+CLAUDE.md.t2backup.*
+mcp_config.py
+.dependency
+
+# --- 태스크 / 작업 디렉터리 ---
+Tasks/
+*_DONE.yaml
+2603_AoT_ai_*.yaml
+003_*.yaml
+
+# --- 앵커 인덱스 (로컬 사본 / 심볼릭 링크) ---
+anchor_index/
+_anchor_index
+
+# --- 런타임 큐 / 컨텍스트 레이어 ---
+_queue/
+context_layer/
+
+# --- 도커 백업 ---
+docker_backup/
+
+# --- 스크린샷 ---
+*.png
+
+# --- 임시/분석 문서 (커밋 불필요) ---
+AoT_Analysis_Report*.md
+AoT_Comprehensive_Analysis_Report.md
+AoT_Introduction_For_Policy.md
+proposal_kaatusa*.md
+inspection_report_*.yaml
+001_AI_USER_PERSONALIZATION_INVESTIGATION.yaml
+001_docstring_quality_inspection.yaml
+INVESTIGATION_DONE.yaml
+DESIGN.yaml
+
+# --- 통계 CSV (런타임 생성) ---
+statistics*.csv
+"statistics 2.csv"
+"statistics 3.csv"
+"statistics 5.csv"
+
+# --- 테스트 / 디버그 스크립트 ---
+test_*.py
+debug_search.py
+foreman_arch_db.py
+
+# --- Node.js ---
+node_modules/
+**/node_modules/
+
+# --- 🔐 보안: 절대 커밋 금지 ---
+*.key
+*.pem
+ssl_certs/
+.env
+.env.*
+**/ssl_certs/
+docker/.env
+aot/databases/flask_secret_key

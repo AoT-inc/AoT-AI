@@ -1,0 +1,17 @@
+
+  $('.activate_controller').click(function() {
+    const btn_val = this.name;
+    const id = btn_val.split('/')[0];
+    {% if not misc.hide_alert_info %}
+    toastr['info']('Command sent to Activate Controller');
+    {% endif %}
+    adctivate_deactivate_controller(btn_val);
+  });
+  $('.deactivate_controller').click(function() {
+    const btn_val = this.name;
+    const id = btn_val.split('/')[0];
+    {% if not misc.hide_alert_info %}
+    toastr['info']('Command sent to Deactivate Controller');
+    {% endif %}
+    adctivate_deactivate_controller(btn_val);
+  });

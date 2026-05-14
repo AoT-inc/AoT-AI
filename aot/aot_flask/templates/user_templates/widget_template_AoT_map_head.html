@@ -1,0 +1,89 @@
+
+<!-- MapLibre GL is provided by the AoT dashboard page template.
+     Do NOT load it here — a second copy overwrites window.maplibregl,
+     breaks the existing Map instance (canvas hidden, API mismatch).
+     If maplibregl is missing the widget init will log a clear error. -->
+
+<!-- Vector Layer Manager -->
+<script src="/static/js/geo/aot-vector-layer-manager.js?v=20260507a"></script>
+
+<!-- Map tool styles (.map-tools-left/right, .tool-group, .btn-circle) — same as /geo/design -->
+<link rel="stylesheet" href="/static/css/map/map.css?v=20260507a" />
+
+<!-- Output-entry button styles (aot-btn-on/off, aot-entry-btn-base, aot-paired-btn) — reused by 3-way actuator popup -->
+<link rel="stylesheet" href="/static/css/aot-entry-ui.css?v=phase9.2" />
+
+<!-- AoT Map Loader (device control: toggleDevice, commandActuator, output state, etc.) -->
+<script src="/static/js/geo/aot-map-loader.js?v=20260514a"></script>
+
+<!-- Stopwatch manager (output duration timer) -->
+<script src="/static/js/widget/AoT_map/aot-stopwatch-manager.js?v=20260507a"></script>
+
+<!-- Map Controls (MapLibre-compatible: nav, fullscreen, search, location, lock/hide) -->
+<script src="/static/js/geo/aot-map-controls.js?v=20260507a"></script>
+
+<!-- Custom Map Controls (MeasurementPanel, SiteList, etc.) -->
+<script src="/static/js/geo/aot-map-custom-controls.js?v=20260508c"></script>
+
+<!-- Three.js + facility 3D mesh builder + MapLibre 3D overlay -->
+<script src="/static/js/widget/AoT_facility/three.min.js?v=2"></script>
+<script src="/static/js/widget/AoT_facility/aot-facility-3d.js?v=6"></script>
+<script src="/static/js/geo/aot-facility-map-3d.js?v=11"></script>
+
+<!-- Pure MapLibre Widget (Leaflet-free) -->
+<script src="/static/js/widget/AoT_map/aot-map-widget-vector.js?v=20260514d"></script>
+
+<!-- GeoJSON overlay support -->
+<script src="/static/js/geo/aot-geojson-manager.js"></script>
+
+<style>
+  /* Pure MapLibre Styles */
+  .aot-map-container {
+    width: 100%;
+    height: 100%;
+    min-height: 400px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  /* Vector markers (MapLibre) */
+  .aot-vector-marker {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .aot-vector-marker:hover {
+    transform: scale(1.2);
+    z-index: 1000;
+  }
+  .aot-vector-marker.device-on {
+    box-shadow: 0 0 10px currentColor;
+  }
+  
+  /* MapLibre controls styling */
+  .maplibregl-ctrl-group {
+    border-radius: 4px !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+  }
+  .maplibregl-ctrl-compass .maplibregl-ctrl-icon {
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' viewBox='0 0 29 29'%3E%3Cpath fill='%23333' d='M14.5 0l-5 9h10z'/%3E%3Cpath fill='%23ccc' d='M14.5 29l5-9h-10z'/%3E%3C/svg%3E");
+  }
+  
+  /* Device popup */
+  .aot-device-popup .maplibregl-popup-content {
+    padding: 8px;
+    border-radius: 4px;
+  }
+  
+  /* 3D Controls */
+  .aot-3d-controls {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .aot-3d-controls input[type="range"] {
+    cursor: pointer;
+  }
+  
+  /* Attribution */
+  .maplibregl-ctrl-attrib {
+    font-size: 10px;
+  }
+</style>

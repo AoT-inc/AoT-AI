@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AoT MapLibre Draw Test</title>
+  
+  <!-- MapLibre GL CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.23.0/dist/maplibre-gl.css" />
+  
+  <!-- Mapbox Draw CSS -->
+  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css" />
+  
+  <style>
+    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    #map { width: 100%; height: 100vh; }
+    .draw-controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 10px;
+      border-radius: 4px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .draw-controls button {
+      display: block;
+      width: 100%;
+      margin: 5px 0;
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #f8f8f8;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .draw-controls button:hover { background: #eee; }
+    .draw-controls button.active { background: #3bb2d0; color: white; border-color: #3bb2d0; }
+    .info-panel {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
+      background: white;
+      padding: 10px;
+      border-radius: 4px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+    .info-panel pre { margin: 0; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  
+  <div class="draw-controls">
+    <h4 style="margin: 0 0 10px 0;">그리기 도구</h4>
+    <button id="btn-polyline" onclick="enableTool('polyline')">선 (Polyline)</button>
+    <button id="btn-polygon" onclick="enableTool('polygon')">면 (Polygon)</button>
+    <button id="btn-rectangle" onclick="enableTool('rectangle')">사각형 (Rectangle)</button>
+    <button id="btn-circle" onclick="enableTool('circle')">원 (Circle)</button>
+    <button id="btn-marker" onclick="enableTool('marker')">마커 (Marker)</button>
+    <hr>
+    <button id="btn-edit" onclick="enableTool('edit')">편집 (Edit)</button>
+    <button id="btn-delete" onclick="enableTool('delete')">삭제 (Delete)</button>
+    <button id="btn-clear" onclick="clearAll()">전체 삭제</button>
+    <hr>
+    <button onclick="exportGeoJSON()">GeoJSON 내보내기</button>
+  </div>
+  
+  <div class="info-panel">
+    <h4 style="margin: 0 0 10px 0;">상태 정보</h4>
+    <div id="status">초기화 중...</div>
+    <h4 style="margin: 10px 0 10px 0;">GeoJSON 출력</h4>
+    <pre id="geojson-output">그리기 결과가 여기에 표시됩니다.</pre>
+  </div>
+
+  <!-- Dependencies -->
+  <script src="https://unpkg.com/maplibre-gl@5.23.0/dist/maplibre-gl.js"></script>
+  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
+
+  <!-- AoT Draw Manager (inline for testing - replace with actual file in production) -->
+  <script>
+    // AoTDrawManager is loaded from aot-maplibre-draw.js
+  </script>
+
+  <script>
+    let map;
+    let drawer;
+
+    // Initialize map
+    function initMap() {
+      map = new maplibregl.Map({
+        container: 'map',
+        style: {
+          version: 8,
+          sources: {
+            'osm': {
+              type: 'raster',
+              tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+              tileSize: 256,
+              attribution: '&copy; OpenStreetMap contributors'
+            }
+          },
+          layers: [{
+            id: 'osm',
+            type: 'raster',
+            source: 'osm',
+            minzoom: 0,
+            maxzoom: 19
+          }]
+        },
+        center: [128.6, 35.9], // Daegu, Korea
+        zoom: 12
+      });
+
+      map.on('load', function() {
+        // Initialize draw manager
+        drawer = AoTDrawManager.init('map1', map, {
+          color: '#3bb2d0',
+          fillOpacity: 0.2
+        });
+
+        // Set up event listeners
+        drawer.on('created', function(feature) {
+          console.log('[Test] Feature created:', feature);
+          updateOutput();
+        });
+
+        drawer.on('edited', function(feature) {
+          console.log('[Test] Feature edited:', feature);
+          updateOutput();
+        });
+
+        drawer.on('deleted', function(feature) {
+          console.log('[Test] Feature deleted:', feature);
+          updateOutput();
+        });
+
+        updateStatus('초기화 완료');
+        updateOutput();
+      });
+
+      map.addControl(new maplibregl.NavigationControl(), 'top-right');
+    }
+
+    function enableTool(tool) {
+      // Reset all buttons
+      document.querySelectorAll('.draw-controls button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      // Disable drawing first
+      drawer.disableDraw();
+
+      // Enable selected tool
+      switch(tool) {
+        case 'polyline':
+          drawer.enablePolyline();
+          break;
+        case 'polygon':
+          drawer.enablePolygon();
+          break;
+        case 'rectangle':
+          drawer.enableRectangle();
+          break;
+        case 'circle':
+          drawer.enableCircle();
+          break;
+        case 'marker':
+          drawer.enableMarker();
+          break;
+        case 'edit':
+          drawer.enableEdit();
+          break;
+        case 'delete':
+          drawer.enableDelete();
+          break;
+      }
+
+      document.getElementById('btn-' + tool).classList.add('active');
+      updateStatus('모드: ' + tool);
+    }
+
+    function clearAll() {
+      drawer.clearAll();
+      updateOutput();
+    }
+
+    function exportGeoJSON() {
+      const geojson = drawer.getGeoJSON();
+      const blob = new Blob([JSON.stringify(geojson, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'aot-draw-export.geojson';
+      a.click();
+      URL.revokeObjectURL(url);
+      updateStatus('GeoJSON 내보내기 완료');
+    }
+
+    function updateOutput() {
+      const geojson = drawer.getGeoJSON();
+      document.getElementById('geojson-output').textContent = JSON.stringify(geojson, null, 2);
+    }
+
+    function updateStatus(msg) {
+      document.getElementById('status').textContent = msg + ' | 피처 수: ' + drawer.getCount();
+    }
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', initMap);
+  </script>
+</body>
+</html>

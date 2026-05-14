@@ -1,0 +1,115 @@
+/* 3-way Actuator control block (Open / Stop / Close + slider + position %) */
+/* Used inside AoT Map output popups for actuator_paired devices. */
+
+.aot-3way-popup {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+  .aot-map-popup .maplibregl-popup-content:has(.aot-3way-popup) {
+    max-width: 185px !important;
+  }
+}
+
+.aot-3way-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.aot-3way-position {
+  font-family: monospace;
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #333;
+  flex: 0 0 auto;
+}
+
+/* Buttons reuse the global output-entry classes:
+ *   .form-control .btn .aot-btn-on / .aot-btn-off .aot-entry-btn-base .aot-paired-btn
+ * (defined in /static/css/aot-entry-ui.css, loaded by widget_template_AoT_map_head.html)
+ * The 3-way popup only needs to lay them out side-by-side and ensure the value
+ * text is centered (input[type=button] doesn't inherit flex centering reliably). */
+.aot-3way-buttons {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.aot-3way-buttons > .aot-paired-btn {
+  flex: 1;
+  text-align: center !important;
+  text-align-last: center !important;
+  line-height: 1 !important;
+}
+
+.aot-3way-slider-wrap {
+  margin-bottom: 8px;
+}
+
+/* Slider: dark track = closed side (0%), light track = open side (100%), dark-gray thumb.
+ * The fill is driven by --aot-3way-fill (set inline from `value` and via oninput JS).
+ * Inverted: 0% (closed) = dark (#5E6B64), 100% (open) = light (#d2d7dc). */
+.aot-3way-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  outline: none;
+  border: none;
+  background: linear-gradient(
+    to right,
+    #d2d7dc 0%,
+    #d2d7dc var(--aot-3way-fill, 0%),
+    var(--aot-color-brand-secondary, #5E6B64) var(--aot-3way-fill, 0%),
+    var(--aot-color-brand-secondary, #5E6B64) 100%
+  );
+}
+
+.aot-3way-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--aot-color-brand-secondary, #5E6B64);
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+}
+
+.aot-3way-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--aot-color-brand-secondary, #5E6B64);
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+}
+
+.aot-3way-info {
+  border-top: 1px solid #eee;
+  padding-top: 8px;
+}
+
+.aot-3way-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.aot-3way-info-label {
+  font-weight: bold;
+  color: #555;
+}
+
+.aot-3way-info-value {
+  font-family: monospace;
+  font-size: 1.1em;
+  color: #777;
+}
