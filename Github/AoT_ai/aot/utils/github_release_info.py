@@ -155,7 +155,7 @@ class AoTRelease:
                     if version_only:
                         return each_tag[1:]
                     else:
-                        return f"https://github.com/aot-inc/AoT/tarball/{each_tag}"
+                        return f"https://github.com/AoT-inc/AoT-AI/tarball/{each_tag}"
         except Exception:
             logger.exception("return_latest_version_url()")
 
@@ -176,7 +176,7 @@ class AoTRelease:
                     if version_only:
                         return each_tag[1:]
                     else:
-                        return f"https://github.com/aot-inc/AoT/tarball/{each_tag}"
+                        return f"https://github.com/AoT-inc/AoT-AI/tarball/{each_tag}"
         except Exception:
             logger.exception("return_latest_maj_version_url()")
 

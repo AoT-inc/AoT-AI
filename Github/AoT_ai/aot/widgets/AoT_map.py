@@ -46,6 +46,10 @@ def execute_at_modification(mod_widget, request_form, custom_options_presave, cu
         selected_dev_unique_ids = []
         for key in manual_logic_keys:
             raw_val = final_options.get(key, '')
+            # Fallback to presave when postsave cleared the field (multi-select with no selection
+            # is omitted from form submission, causing null_value to set empty default).
+            if not raw_val and key in options and options[key]:
+                raw_val = options[key]
             if raw_val:
                 if isinstance(raw_val, list):
                     ids = [str(x).strip() for x in raw_val if str(x).strip()]
@@ -273,7 +277,18 @@ WIDGET_HEAD_HTML = """
 <script src="/static/js/geo/aot-map-custom-controls.js?v=20260508c"></script>
 
 <!-- Pure MapLibre Widget (Leaflet-free) -->
-<script src="/static/js/widget/AoT_map/aot-map-widget-vector.js?v=20260508g"></script>
+<script src="/static/js/widget/AoT_map/aot-map-widget-vector.js?v=20260514i"></script>
+
+<!-- 3D Facility rendering (three.js + AoTFacility3D + AoTFacilityMap3D)
+     Guard prevents duplicate load when AoT_facility widget is on the same dashboard. -->
+<script>
+if (!window._aotThreeScriptsLoaded) {
+  window._aotThreeScriptsLoaded = true;
+  document.write('<script src="/static/js/widget/AoT_facility/three.min.js?v=2"><\/script>');
+  document.write('<script src="/static/js/widget/AoT_facility/aot-facility-3d.js?v=6"><\/script>');
+  document.write('<script src="/static/js/geo/aot-facility-map-3d.js?v=11"><\/script>');
+}
+</script>
 
 <!-- GeoJSON overlay support -->
 <script src="/static/js/geo/aot-geojson-manager.js"></script>
@@ -327,6 +342,20 @@ WIDGET_HEAD_HTML = """
   /* Attribution */
   .maplibregl-ctrl-attrib {
     font-size: 10px;
+  }
+
+  /* Label cluster badge */
+  .aot-label-cluster {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .aot-label-cluster:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important;
+  }
+
+  /* Device-type label toggle: overrides collision handler's inline display:block */
+  .aot-type-hidden {
+    display: none !important;
   }
 </style>
 """
@@ -638,10 +667,15 @@ WIDGET_INFORMATION = {
         {
             'id': 'label_spacing',
             'type': 'integer',
-            'default_value': '10',
+            'default_value': '0',
 
             'name': lazy_gettext('Label Spacing (px)'),
-            'phrase': lazy_gettext('Set the minimum spacing between labels.'),
+            'phrase': lazy_gettext(
+                'Extra pixel padding around each label before overlap check. '
+                '0 (default): cluster only when labels visually overlap on screen. '
+                'Positive values add a gap buffer — labels within N px of each other will also cluster. '
+                'For dense deployments where you want earlier clustering, use 10–30.'
+            ),
             'constraints': {'min': 0, 'max': 100}
         },
         {

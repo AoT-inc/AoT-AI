@@ -72,6 +72,11 @@ output_set_fields = ns_output.model('Output Modulation Fields', {
         description='The volume to send to an output.',
         required=False,
         example=35.0,
+        min=0),
+    'position': fields.Float(
+        description='Target position percentage (0-100) for 3-way actuator outputs (e.g. actuator_paired).',
+        required=False,
+        example=50.0,
         min=0)
 })
 
@@ -178,6 +183,7 @@ class Outputs(Resource):
         duration = None
         duty_cycle = None
         volume = None
+        position = None
 
         if ns_output.payload:
             if 'state' in ns_output.payload:
@@ -238,8 +244,23 @@ class Outputs(Resource):
                     except Exception:
                         abort(422, message='volume does not represent float value')
 
+            if 'position' in ns_output.payload:
+                position = ns_output.payload["position"]
+                if position is not None:
+                    try:
+                        position = float(position)
+                        if position < 0 or position > 100:
+                            abort(422, message='Required: 0 <= position <= 100')
+                    except Exception:
+                        abort(422, message='position does not represent float value')
+
         try:
-            if state is not None and duration is not None:
+            if position is not None:
+                # [3-way Actuator] state=on with output_type='value' drives target position.
+                # actuator_paired interprets amount as target % (0-100); 0 = Close, 100 = Open.
+                return_ = control.output_on(
+                    unique_id, output_channel=channel, output_type='value', amount=position)
+            elif state is not None and duration is not None:
                 return_ = control.output_on_off(
                     unique_id, state, output_channel=channel,
                     output_type='sec', amount=duration)

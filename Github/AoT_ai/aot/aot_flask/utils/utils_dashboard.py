@@ -284,8 +284,11 @@ def widget_mod(form_base, request_form):
         custom_options_json_presave = {}
 
     # Generate custom options as a JSON string.
+    # Pass presave so null_value logic preserves existing values (e.g. device_selection_*)
+    # when those fields are absent from the form (multi-select with no selection omits the field).
     error, custom_options_json_postsave = custom_options_return_json(
-        error, dict_widgets, request_form, mod_dev=mod_widget, device=mod_widget.graph_type)
+        error, dict_widgets, request_form, mod_dev=mod_widget, device=mod_widget.graph_type,
+        custom_options=custom_options_json_presave)
 
     if 'execute_at_modification' in dict_widgets[mod_widget.graph_type]:
         (allow_saving,

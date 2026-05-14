@@ -69,15 +69,42 @@ map_config_id, map_configs, map_overlays, shape_on_color, shape_off_color, shape
 <script>
     (function ($) {
         $(function () {
-            // Create object and initialize controller
-            new AoTMapModalController({
+            var initOpts = {
                 mapId: 'map_{{ unique_id }}',
                 uniqueId: '{{ unique_id }}',
                 latId: '{{ lat_field_id }}',
                 lngId: '{{ lng_field_id }}',
                 formId: '{{ form_id }}',
                 type: '{{ type }}'
-            });
+            };
+            var $cont = $('#' + initOpts.mapId);
+            var $modal = $cont.closest('.modal');
+            var ctrl = null;
+
+            if ($modal.length) {
+                // Lazy: create the map only when the modal is shown so we don't
+                // exhaust the browser's WebGL context cap with one map per output.
+                $modal.on('shown.bs.modal.aotmaplazy', function () {
+                    if (!ctrl) {
+                        try { ctrl = new AoTMapModalController(initOpts); }
+                        catch (e) { console.error('[AoTMapModal] lazy init failed:', e); }
+                    }
+                });
+                // Dispose on close: map.remove() releases the WebGL context.
+                $modal.on('hidden.bs.modal.aotmaplazy', function () {
+                    if (ctrl && typeof ctrl.destroy === 'function') {
+                        try { ctrl.destroy(); } catch (e) { /* silent */ }
+                    }
+                    ctrl = null;
+                });
+                // Edge case: modal already visible at script load.
+                if ($modal.hasClass('show')) {
+                    ctrl = new AoTMapModalController(initOpts);
+                }
+            } else {
+                // Not inside a modal — keep eager init for inline usages.
+                ctrl = new AoTMapModalController(initOpts);
+            }
         });
     })(jQuery);
 </script>

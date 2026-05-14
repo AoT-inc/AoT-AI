@@ -83,7 +83,7 @@ def db_retrieve_table_daemon(
             logger.exception(
                 "Could not read the AoT database. "
                 "Please submit a New Issue at "
-                "https://github.com/aot-inc/AoT/issues/new")
+                "https://github.com/AoT-inc/AoT-AI/issues/new")
         else:
             logger.error(
                 "The AoT database is locked. "

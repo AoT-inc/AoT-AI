@@ -19,13 +19,14 @@ def camera_add(form, platform='unknown'):
         config = CAMERA_TYPES.get(camera_type, {})
         library = config.get('library', 'opencv')
         
+        max_pos = db.session.query(db.func.max(Camera.position_y)).scalar()
         new_camera = Camera(
             unique_id=str(uuid.uuid4()),
             name=f"{gettext('New Camera')} ({config.get('display_name', camera_type)})",
             camera_type=camera_type,
             library=library,
             is_activated=False,
-            position_y=999, # 맨 뒤에 추가
+            position_y=(max_pos or 0) + 1,  # 맨 뒤에 추가
             capture_mode='snapshot',
             capture_settings={}
         )

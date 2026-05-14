@@ -6,7 +6,7 @@ AoT ist Open-Source-Software für den [Raspberry Pi](https://en.wikipedia.org/wi
 
 ### Information
 
-See the [README](https://github.com/aot-inc/AoT#uses) for features, projects using AoT, screenshots, and other information.
+See the [README](https://github.com/AoT-inc/AoT-AI#uses) for features, projects using AoT, screenshots, and other information.
 
 ### Prerequisites
 
@@ -30,8 +30,8 @@ https://127.0.0.1
 
 ### Support
 
-*   [AoT on GitHub](https://github.com/aot-inc/AoT)
-*   [AoT Wiki](https://github.com/aot-inc/AoT/wiki)
+*   [AoT on GitHub](https://github.com/AoT-inc/AoT-AI)
+*   [AoT Wiki](https://github.com/AoT-inc/AoT-AI/wiki)
 *   [AoT API](https://aot-inc.github.io/AoT/aot-api.html)
 *   [Discussion Forum](https://forum.radicaldiy.com)
 *   [Frequently Asked Questions](https://forum.radicaldiy.com/docs?category=23&tags=aot)

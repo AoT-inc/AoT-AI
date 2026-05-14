@@ -32,7 +32,7 @@ measurements_dict = {
 # Input information
 # See the inputs directory for examples of working modules.
 # The following link provides the full list of options with descriptions:
-# https://github.com/aot-inc/AoT/blob/single_file_input_modules/aot/inputs/examples/example_all_options_temperature.py
+# https://github.com/AoT-inc/AoT-AI/blob/single_file_input_modules/aot/inputs/examples/example_all_options_temperature.py
 INPUT_INFORMATION = {
     'input_name_unique': 'SCD30',
     'input_manufacturer': 'Sensirion',

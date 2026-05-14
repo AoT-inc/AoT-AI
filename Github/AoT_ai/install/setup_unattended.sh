@@ -11,7 +11,7 @@ LOG_LOCATION=${INSTALL_DIRECTORY}/install/setup.log
 
 # Fix for below issue(s)
 # https://github.com/pypa/setuptools/issues/3278
-# https://github.com/aot-inc/AoT/issues/1149
+# https://github.com/AoT-inc/AoT-AI/issues/1149
 export SETUPTOOLS_USE_DISTUTILS=stdlib
 
 if [ "$EUID" -ne 0 ]; then
@@ -65,7 +65,7 @@ Open to the end of the setup log to view the full error:
 %s/install/setup.log
 
 Please contact the developer by submitting a bug report
-at https://github.com/aot-inc/AoT/issues with the
+at https://github.com/AoT-inc/AoT-AI/issues with the
 pertinent excerpts from the setup log located at:
 %s/install/setup.log
 " "${INSTALL_DIRECTORY}" "${INSTALL_DIRECTORY}" 2>&1 | tee -a "${LOG_LOCATION}"

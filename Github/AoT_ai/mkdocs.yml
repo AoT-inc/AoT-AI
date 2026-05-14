@@ -3,7 +3,7 @@ site_url: https://aot-inc.github.io/AoT
 site_author: AoT Inc.
 site_description: AoT Documentation
 repo_name: 'aot-inc/AoT'
-repo_url: 'https://github.com/aot-inc/AoT'
+repo_url: 'https://github.com/AoT-inc/AoT-AI'
 
 plugins:
   - search:

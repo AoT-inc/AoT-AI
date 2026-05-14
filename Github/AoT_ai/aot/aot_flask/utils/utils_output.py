@@ -157,7 +157,8 @@ def output_add(form_add, request_form, tab_id=None):
             size_y = len(dict_outputs[output_type]['channels_dict']) + 1
             new_output.size_y = len(dict_outputs[output_type]['channels_dict']) + 1
             new_output.output_type = output_type
-            new_output.position_y = 999
+            max_pos = db.session.query(db.func.max(Output.position_y)).scalar()
+            new_output.position_y = (max_pos or 0) + 1
 
             # Default map location from Misc
             try:
@@ -327,9 +328,14 @@ def output_duplicate(form_mod):
     if not source_output:
         return None, None
 
-    # Duplicate output
+    # Duplicate output. Force position_y to max+1 so the clone lands at the
+    # bottom of the grid; otherwise it inherits the source's position_y and
+    # causes GridStack cards to overlap and ORDER BY to tie.
+    max_pos = db.session.query(db.func.max(Output.position_y)).scalar()
     new_output = clone_model(
-        source_output, unique_id=set_uuid(), name=f"Copy of {source_output.name}")
+        source_output, unique_id=set_uuid(),
+        name=f"Copy of {source_output.name}",
+        position_y=(max_pos or 0) + 1)
 
     duplicated_output = Output.query.filter(
         Output.unique_id == new_output.unique_id).first()
@@ -349,8 +355,24 @@ def output_duplicate(form_mod):
         # Duplicate channels
         dev_channels = OutputChannel.query.filter(
             OutputChannel.output_id == form_mod.output_id.data).all()
+        is_paired = source_output.output_type == 'actuator_paired'
         for each_dev in dev_channels:
-            clone_model(each_dev, unique_id=set_uuid(), output_id=duplicated_output.unique_id)
+            new_ch = clone_model(
+                each_dev, unique_id=set_uuid(),
+                output_id=duplicated_output.unique_id)
+            # For actuator_paired, blank out the underlying open/close refs and
+            # any position state on the duplicate so it doesn't share physical
+            # channels with the source. User must reconfigure on the copy.
+            if is_paired and new_ch and new_ch.custom_options:
+                try:
+                    import json as _json
+                    co = _json.loads(new_ch.custom_options)
+                    for k in ('output_open_id', 'output_close_id', 'last_position_pct'):
+                        if k in co:
+                            co[k] = '' if k != 'last_position_pct' else 0.0
+                    new_ch.custom_options = _json.dumps(co)
+                except Exception:
+                    pass
             
         # Duplicate GeoShapes (Map Overlays)
         shapes = GeoShape.query.filter(GeoShape.device_id == form_mod.output_id.data).all()
@@ -483,11 +505,20 @@ def output_mod(form_output, request_form):
             custom_options_dict_postsave = {}
 
         custom_options_channels_dict_postsave = {}
+        # DEBUG: log form keys related to paired channel options when modifying actuator_paired
+        if mod_output.output_type == 'actuator_paired':
+            _paired_keys = [k for k in request_form.keys()
+                            if k.startswith(form_output.output_id.data)]
+            logger.info("[paired-save] output_id=%s form-keys for this output: %s",
+                        form_output.output_id.data, _paired_keys)
+            for _k in _paired_keys:
+                logger.info("[paired-save]   %s = %r", _k, request_form.get(_k))
         for each_channel in channels:
             messages["error"], custom_options_channels_json_postsave_tmp = custom_channel_options_return_json(
                 messages["error"], dict_outputs, request_form,
                 form_output.output_id.data, each_channel.channel,
-                device=mod_output.output_type, use_defaults=False)
+                device=mod_output.output_type, use_defaults=False,
+                custom_options=custom_options_channels_dict_presave.get(each_channel.channel, {}))
             custom_options_channels_json_postsave_tmp = _safe_json_string(custom_options_channels_json_postsave_tmp)
             try:
                 custom_options_channels_dict_postsave[each_channel.channel] = json.loads(

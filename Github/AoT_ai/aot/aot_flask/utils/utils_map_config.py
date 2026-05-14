@@ -76,7 +76,7 @@ def clone_map_config(source_map_uuid, new_device_name=None):
         db.session.add(GeoShape(geo_id=cloned.unique_id,
                                   device_id=overlay.device_id,
                                   # level_id removed as it is now a property
-                                  channel_id=c_id,
+                                  channel_id=overlay.channel_id,
                                   feature=duplicated_feature))
     current_app.logger.debug("Cloned map %s -> %s", source_map_uuid, cloned.unique_id)
     return cloned

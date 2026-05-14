@@ -6,7 +6,7 @@ AoT는 [라즈베리 파이](https://en.wikipedia.org/wiki/Raspberry_Pi) 및 기
 
 ### 정보
 
-[README](https://github.com/aot-inc/AoT#uses)에서 기능, AoT를 사용하는 프로젝트, 스크린샷 및 기타 정보를 확인하십시오.
+[README](https://github.com/AoT-inc/AoT-AI#uses)에서 기능, AoT를 사용하는 프로젝트, 스크린샷 및 기타 정보를 확인하십시오.
 
 ### 사전 요구 사항
 
@@ -30,8 +30,8 @@ https://127.0.0.1
 
 ### 지원
 
-*   [AoT on GitHub](https://github.com/aot-inc/AoT)
-*   [AoT Wiki](https://github.com/aot-inc/AoT/wiki)
+*   [AoT on GitHub](https://github.com/AoT-inc/AoT-AI)
+*   [AoT Wiki](https://github.com/AoT-inc/AoT-AI/wiki)
 *   [AoT API](https://aot-inc.github.io/AoT/aot-api.html)
 *   [포럼](https://forum.radicaldiy.com)
 *   [자주 묻는 질문](https://forum.radicaldiy.com/docs?category=23&tags=aot)

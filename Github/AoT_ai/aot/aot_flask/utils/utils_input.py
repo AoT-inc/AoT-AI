@@ -93,7 +93,8 @@ def input_add(form_add, tab_id=None):
     if form_add.validate():
         new_input = Input()
         new_input.device = input_name
-        new_input.position_y = 999
+        max_pos = db.session.query(db.func.max(Input.position_y)).scalar()
+        new_input.position_y = (max_pos or 0) + 1
 
         if input_interface:
             new_input.interface = input_interface
@@ -319,9 +320,14 @@ def input_duplicate(form_mod):
     if not source_input:
         return None, None
 
-    # Duplicate dashboard with new unique_id and name
+    # Duplicate dashboard with new unique_id and name. Force position_y to
+    # max+1 so the clone lands at the bottom of the grid; otherwise it
+    # inherits the source's position_y and causes overlap + tied ORDER BY.
+    max_pos = db.session.query(db.func.max(Input.position_y)).scalar()
     new_input = clone_model(
-        source_input, unique_id=set_uuid(), name=f"Copy of {source_input.name}")
+        source_input, unique_id=set_uuid(),
+        name=f"Copy of {source_input.name}",
+        position_y=(max_pos or 0) + 1)
 
     duplicated_input = Input.query.filter(
         Input.unique_id == new_input.unique_id).first()
@@ -629,7 +635,8 @@ def input_mod(form_mod, request_form):
             messages["error"], custom_options_channels_json_postsave_tmp = custom_channel_options_return_json(
                 messages["error"], dict_inputs, request_form,
                 form_mod.input_id.data, each_channel.channel,
-                device=mod_input.device, use_defaults=False)
+                device=mod_input.device, use_defaults=False,
+                custom_options=custom_options_channels_dict_presave.get(each_channel.channel, {}))
             custom_options_channels_dict_postsave[each_channel.channel] = json.loads(
                 custom_options_channels_json_postsave_tmp)
 

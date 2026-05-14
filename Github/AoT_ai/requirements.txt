@@ -99,3 +99,5 @@ pdfplumber>=0.10.0
 PyYAML>=6.0
 paho-mqtt==1.5.1
 jmespath==0.10.0
+trimesh>=4.0.0
+pyrender>=0.1.45

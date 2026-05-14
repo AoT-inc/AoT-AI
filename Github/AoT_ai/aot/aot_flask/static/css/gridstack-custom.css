@@ -163,35 +163,35 @@
   }
 }
 
-/* Improve visibility and touch area of resize handles, especially on mobile */
-/* Removed 'yellow diamond' effect by setting background-color to transparent and removing transform */
-.grid-stack-item > .ui-resizable-handle {
+/* Contain all widget content z-indices within the item-content stacking context.
+   Without this, Leaflet controls (z-index:1000) escape and cover the resize handle.
+   The handle is a sibling (z-index:100 inline) and wins once content is isolated. */
+.grid-stack-item > .grid-stack-item-content {
+  isolation: isolate;
+}
+
+/* Remove GridStack default yellow-diamond resize handle art.
+   - Do NOT override right/bottom: GridStack dynamically injects right:10px; bottom:10px
+     (matching the margin inset), placing the handle at the content corner.
+     Overriding with 0 pushes it into the invisible 10px gap = impossible to click.
+   - Do NOT set z-index: GridStack injects z-index:100 inline via JS. */
+.grid-stack-item > .ui-resizable-se {
   background-image: none !important;
-  background-color: transparent !important; 
-  border: none !important;
-  opacity: 1 !important; /* Keep it interactive */
-  width: 25px !important;
-  height: 25px !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  transform: none !important; /* Remove rotation that makes it a diamond */
-  cursor: se-resize;
-}
-
-/* On mobile, we still need a visual hint, but let's use a subtle corner triangle instead of a diamond */
-@media (max-width: 768px) {
-  .grid-stack-item > .ui-resizable-handle {
-    width: 35px !important;  /* Larger touch target */
-    height: 35px !important;
-    background: linear-gradient(135deg, transparent 70%, rgba(0,0,0,0.1) 70%) !important; /* Subtle triangle hint */
-  }
-}
-
-/* Remove hover background that was causing the yellow diamond effect */
-.grid-stack-item:hover > .ui-resizable-handle,
-.grid-stack-item > .ui-resizable-handle:active {
   background-color: transparent !important;
+  border: none !important;
   opacity: 1 !important;
+  width: 30px !important;
+  height: 30px !important;
+  transform: none !important;
+  cursor: se-resize !important;
+  pointer-events: auto !important;
+}
+
+@media (max-width: 768px) {
+  .grid-stack-item > .ui-resizable-se {
+    width: 40px !important;
+    height: 40px !important;
+  }
 }
 
 

@@ -46,10 +46,9 @@ def get_js_translations():
         js_content = f"window.AOT_I18N = {json_catalog};"
         
         response = Response(js_content, mimetype='application/javascript')
-        # Prevent caching so language switches are immediate, or use Vary
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
+        # 언어별로 캐시 (10분), 언어 변경 시 세션 쿠키 변경으로 자동 무효화
+        response.headers['Cache-Control'] = 'private, max-age=600'
+        response.headers['Vary'] = 'Cookie'
         return response
     except Exception as e:
         return Response(f"console.error('Error loading translations: {str(e)}');", mimetype='application/javascript')

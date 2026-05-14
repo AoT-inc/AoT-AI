@@ -918,6 +918,79 @@ if (!window.AoTMapLoader) {
     },
 
     /**
+     * commandActuator: control a 3-way actuator output (Open/Stop/Close/goto).
+     * Maps logical actions to the /api/outputs/<id> POST payload:
+     *   - 'open'  -> position: 100
+     *   - 'close' -> position: 0
+     *   - 'stop'  -> state: false
+     *   - 'goto'  -> position: <value 0..100>
+     * Also primes _pending_command on the marker (10s local override) so polled
+     * server state cannot snap the UI back before the command takes effect.
+     *
+     * @param {string} deviceId
+     * @param {string} action one of 'open' | 'close' | 'stop' | 'goto'
+     * @param {number|null} value target position (0-100) when action === 'goto' (otherwise ignored)
+     * @param {number|string} channel
+     * @param {string} widgetUniqueId widget instance id (used to locate marker for pending guard)
+     */
+    commandActuator: function (deviceId, action, value, channel = 0, widgetUniqueId = null) {
+        if (channel === 'undefined' || channel === 'null' || !channel) channel = 0;
+
+        let baseId = deviceId;
+        if (deviceId && deviceId.indexOf('::') !== -1) {
+            baseId = deviceId.split('::')[0];
+        }
+
+        const payload = { channel: channel };
+        let optimisticPos = null;
+        if (action === 'open') {
+            payload.position = 100;
+            optimisticPos = 100;
+        } else if (action === 'close') {
+            payload.position = 0;
+            optimisticPos = 0;
+        } else if (action === 'stop') {
+            payload.state = false;
+        } else if (action === 'goto') {
+            const v = parseFloat(value);
+            if (isNaN(v)) return;
+            payload.position = Math.max(0, Math.min(100, v));
+            optimisticPos = payload.position;
+        } else {
+            return;
+        }
+
+        try {
+            if (widgetUniqueId && window.AoTMapApp && window.AoTMapApp[widgetUniqueId]) {
+                const m = window.AoTMapApp[widgetUniqueId].deviceMarkers[deviceId];
+                if (m) {
+                    m.options._pending_command = Date.now();
+                    if (optimisticPos !== null) {
+                        m.options.position_pct = optimisticPos;
+                    }
+                    if (action === 'stop') {
+                        m.options.is_active = false;
+                    } else if (optimisticPos !== null) {
+                        m.options.is_active = (optimisticPos > 0);
+                        m.options.last_status_change = m.options.is_active ? Math.floor(Date.now() / 1000) : null;
+                    }
+                }
+            }
+        } catch (e) { /* noop */ }
+
+        fetch(`/api/outputs/${baseId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/vnd.aot.v1+json',
+                'Accept': 'application/vnd.aot.v1+json'
+            },
+            body: JSON.stringify(payload)
+        })
+            .then(res => res.json())
+            .catch(() => {});
+    },
+
+    /**
      * Formats duration in seconds to HH:MM:SS
      */
     formatDuration: function (seconds) {

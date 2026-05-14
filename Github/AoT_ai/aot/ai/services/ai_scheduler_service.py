@@ -65,7 +65,13 @@ def get_scheduler():
 
 
 def _ai_scheduler_mcp_health_job():
-    """Background job to check health of all activated MCP servers."""
+    """Background job to check health of all activated MCP servers.
+
+    Skipped when AIGlobalSettings.ai_enabled is False — no AI code path can
+    reach MCP tools in that state, so probing servers (and keeping their
+    subprocesses warm) is wasted work. Any live subprocesses are torn down
+    on the transition so OFF means OFF.
+    """
     from aot.ai.services.mcp_bridge_service import MCPBridgeService
     global _flask_app
     if not _flask_app:
@@ -74,6 +80,18 @@ def _ai_scheduler_mcp_health_job():
 
     with _flask_app.app_context():
         try:
+            from aot.databases.models import AIGlobalSettings
+            settings = AIGlobalSettings.query.first()
+            if settings is None or not settings.ai_enabled:
+                # Tear down any subprocesses left running from a prior ON window
+                if getattr(MCPBridgeService, '_instances', None):
+                    try:
+                        MCPBridgeService.shutdown_all()
+                        logger.info("[027_STEP_1] AI Service disabled — MCP bridge subprocesses shut down")
+                    except Exception as _sd_err:
+                        logger.warning(f"[027_STEP_1] MCP shutdown_all failed: {_sd_err}")
+                return
+
             MCPBridgeService.health_check_all()
         except Exception as e:
             logger.error(f"[027_STEP_1] Error in MCP health check job: {e}")

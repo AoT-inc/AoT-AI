@@ -2425,10 +2425,10 @@ msgstr "Information"
 
 #: config_translations_docs.py:56
 msgid ""
-"See the [README](https://github.com/aot-inc/AoT#uses) for features, "
+"See the [README](https://github.com/AoT-inc/AoT-AI#uses) for features, "
 "projects using AoT, screenshots, and other information."
 msgstr ""
-"See the [README](https://github.com/aot-inc/AoT#uses) for features, "
+"See the [README](https://github.com/AoT-inc/AoT-AI#uses) for features, "
 "projects using AoT, screenshots, and other information."
 
 #: config_translations_docs.py:58

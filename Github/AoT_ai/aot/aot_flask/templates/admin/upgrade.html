@@ -136,12 +136,12 @@
           upgrade != 1 %}
 
     <p style="padding-top: 0.5em">
-      {{_('Installed Version')}}: <a href="https://github.com/aot-inc/AoT/releases/tag/v{{current_release}}" target="_blank">{{current_release}}</a>
-      <br>{{_('Latest Version')}}: <a href="https://github.com/aot-inc/AoT/releases/tag/v{{current_latest_release}}" target="_blank">{{current_latest_release}}</a>
+      {{_('Installed Version')}}: <a href="https://github.com/AoT-inc/AoT-AI/releases/tag/v{{current_release}}" target="_blank">{{current_release}}</a>
+      <br>{{_('Latest Version')}}: <a href="https://github.com/AoT-inc/AoT-AI/releases/tag/v{{current_latest_release}}" target="_blank">{{current_latest_release}}</a>
     </p>
     <p>
-      <a href="https://github.com/aot-inc/AoT/blob/master/CHANGELOG.md" target="_blank">{{_('Changelog')}}</a> {{_('contains all changes.')}}
-      <br>{{_('Major Version Changes')}}: <a href="https://github.com/aot-inc/AoT/releases/tag/v{{current_latest_major_version}}.0.0" target="_blank">{{current_latest_major_version}}.0.0</a>
+      <a href="https://github.com/AoT-inc/AoT-AI/blob/master/CHANGELOG.md" target="_blank">{{_('Changelog')}}</a> {{_('contains all changes.')}}
+      <br>{{_('Major Version Changes')}}: <a href="https://github.com/AoT-inc/AoT-AI/releases/tag/v{{current_latest_major_version}}.0.0" target="_blank">{{current_latest_major_version}}.0.0</a>
     </p>
     <p style="font-weight: bold; color: red">{{_('Major version change detected!')}}</p>
     <p>{{_('A new major version has been released on GitHub: v')}}{{current_latest_major_version}}{{"."}}{{_('x.x (current latest version v')}}{{current_latest_release}}{{_('). This update may cause system changes for some users, and existing system settings may not be maintained if upgraded. Before upgrading, it is recommended to perform a settings database export or record important information (GPIO pins, PID settings, etc.).')}}</p>
@@ -170,7 +170,7 @@
 
     <div style="padding: 0.5em 0">
       {{_('There is no new version available for upgrade. You are currently using the latest version:')}} 
-      <a href="https://github.com/aot-inc/AoT/releases/tag/v{{current_release}}" target="_blank">{{ current_release }}</a>
+      <a href="https://github.com/AoT-inc/AoT-AI/releases/tag/v{{current_release}}" target="_blank">{{ current_release }}</a>
     </div>
 
     {% elif force_upgrade_master %}
@@ -197,18 +197,18 @@
 
     <div style="padding: 0.5em 0">
       {{_('There is no new version available for upgrade. You are currently using the latest version:')}} 
-      <a href="https://github.com/aot-inc/AoT/releases/tag/v{{current_release}}" target="_blank">{{ current_release }}</a>
+      <a href="https://github.com/AoT-inc/AoT-AI/releases/tag/v{{current_release}}" target="_blank">{{ current_release }}</a>
     </div>
 
     {% elif upgrade_available %}
 
     <div style="padding: 0.5em 0">
-      {{_('Installed Version')}}: <a href="https://github.com/aot-inc/AoT/releases/tag/v{{current_release}}" target="_blank">{{current_release}}</a>
-      <br>{{_('Latest Version')}}: <a href="https://github.com/aot-inc/AoT/releases/tag/v{{current_major_release}}" target="_blank">{{current_major_release}}</a>
+      {{_('Installed Version')}}: <a href="https://github.com/AoT-inc/AoT-AI/releases/tag/v{{current_release}}" target="_blank">{{current_release}}</a>
+      <br>{{_('Latest Version')}}: <a href="https://github.com/AoT-inc/AoT-AI/releases/tag/v{{current_major_release}}" target="_blank">{{current_major_release}}</a>
     </div>
     <div style="padding: 0.5em 0">
       {{_('You are')}} {{releases_behind}} {{_('releases behind current version.')}}
-      <br>{{_('All changes can be found in the')}} <a href="https://github.com/aot-inc/AoT/blob/master/CHANGELOG.md" target="_blank">{{_('Changelog')}}</a>.
+      <br>{{_('All changes can be found in the')}} <a href="https://github.com/AoT-inc/AoT-AI/blob/master/CHANGELOG.md" target="_blank">{{_('Changelog')}}</a>.
     </div>
     <div style="padding: 1em 0 1.5em 0">
       {{_('Click the button below to start the upgrade. Upgrades typically take a few minutes, but can rarely take up to several hours. During this period, functions such as AoT web interface and server sensor data recording, and output manipulation will be completely suspended.')}}
@@ -235,7 +235,7 @@
         {% for each_release in current_releases %}
           <tr>
             <td>
-              <a href="https://github.com/aot-inc/AoT/releases/tag/v{{ each_release }}" target="_blank" {% if current_release == each_release %}style="color: red"{% endif %}>v{{ each_release }}</a>
+              <a href="https://github.com/AoT-inc/AoT-AI/releases/tag/v{{ each_release }}" target="_blank" {% if current_release == each_release %}style="color: red"{% endif %}>v{{ each_release }}</a>
             </td>
             <td>
               {% if each_release == current_release %}{{_('Current Version')}}{% elif each_release == current_major_release %}{{_('Latest Version')}}{% endif %}

@@ -96,7 +96,7 @@ const DashboardGrid = {
                 handle: '.panel-heading, .card-header, .widget-drag-handle',
                 cancel: 'input, textarea, select, button, a, .no-drag, .modal, .dropdown-menu, .list-group, .table, .form-control'
             },
-            alwaysShowResizeHandle: 'mobile',
+            alwaysShowResizeHandle: isLocked ? 'mobile' : true,
             float: false,
             disableOneColumnMode: true, 
             oneColumnSize: 0
@@ -234,6 +234,11 @@ const DashboardGrid = {
     },
 
     enableEditing() {
+        // Mark grid as editable so CSS can show resize handles
+        if (window.grid && window.grid.el) {
+            window.grid.el.classList.add('dashboard-unlocked');
+        }
+
         // Persist layout on change
         window.grid.on('change', (event, items) => {
             // Block saving only during initial sync/layout transition

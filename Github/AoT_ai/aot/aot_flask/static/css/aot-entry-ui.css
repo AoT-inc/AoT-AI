@@ -67,8 +67,7 @@
   resize: none !important; /* Phase 9-8: Recursive disable */
 }
 
-/* Aggressive GridStack handle removal */
-.grid-stack-item .ui-resizable-handle,
+/* Aggressive GridStack handle removal — entry UI only, not the dashboard widget grid */
 .aot-entry-item .ui-resizable-handle,
 .aot-entry-item-header .ui-resizable-handle,
 .aot-entry-item-channel .ui-resizable-handle {
@@ -367,6 +366,14 @@
   background-color: var(--bg-btn-on, #13261B) !important;
 }
 
+/* Actuator Paired: row turns active like any other output, but the non-moving
+   direction button is forced back to the off color so only the active direction
+   stands out. Higher specificity than the row-cascade rule above. */
+.aot-entry-item-channel.active-background .aot-btn-on.aot-paired-inactive,
+.aot-entry-item.active-background .aot-btn-on.aot-paired-inactive {
+  background-color: var(--bg-btn-off, #5E6B64) !important;
+}
+
 .aot-btn-on:hover {
   filter: brightness(0.9);
 }
@@ -504,12 +511,10 @@
 }
 
 .aot-entry-item-channel:last-of-type {
+  height: 40px !important; /* 8px 단축으로 엔트리 간 시각적 갭 8px 확보 */
+  min-height: 40px !important;
   border-bottom-left-radius: 19px !important; /* 렌더링 뭉개짐 방지 */
   border-bottom-right-radius: 19px !important;
-  border-bottom: none !important;
-}
-
-.aot-entry-item-channel:last-of-type {
   border-bottom: none !important;
 }
 
@@ -556,6 +561,20 @@
   min-width: 40px !important;
   max-width: 40px !important;
   flex: none !important;
+}
+
+/* 채널 행 2단 좌우 여백 */
+.aot-ch-col-left {
+  padding-left: 8px !important;
+}
+
+.aot-ch-col-right {
+  padding-right: 4px !important;
+}
+
+/* form-control aot-entry-name-input 과 aot-paired-pos 사이 간격 */
+.aot-entry-name-input .aot-paired-pos {
+  margin-left: 8px;
 }
 
 /* ===== Mobile Responsive ===== */

@@ -119,10 +119,11 @@
       });
     }
 
-    // Unbind previous event listener to prevent duplicates
-    window.grid.off('change');
-    window.grid.on('change', function (event, items) {
-      // Do not save layout if currently in mobile/single-column mode
+    // Save only on user-initiated drag completion. 'change' fires during
+    // column transitions / programmatic updates (e.g. window resize) and
+    // would otherwise overwrite the saved order with transient layouts.
+    window.grid.off('dragstop');
+    window.grid.on('dragstop', function (event, el) {
       if (window.grid.getColumn() === 1) return;
 
       let serializedFull = window.grid.save(false);

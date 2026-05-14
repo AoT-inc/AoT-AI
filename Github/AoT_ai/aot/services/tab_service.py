@@ -487,7 +487,7 @@ class TabService:
     def _delete_input_entry(input_id: str):
         """Delete an Input entry with proper cleanup (deactivation, channels, measurements, etc.)"""
         from aot.aot_flask.utils.utils_input import controller_activate_deactivate
-        from aot.aot_flask.utils.utils_geo import delete_map_config
+        from aot.aot_flask.utils.utils_map_config import delete_map_config
         
         input_dev = Input.query.filter_by(unique_id=input_id).first()
         if not input_dev:
@@ -517,12 +517,20 @@ class TabService:
         
         # Delete Input
         delete_entry_with_id(Input, input_id, flash_message=False)
-        
-        # Delete map config
+
+        # Delete map config ONLY if no remaining Input/Output shares it.
         if map_config_id:
-            delete_map_config(map_config_id)
-        
-        # Delete GeoShapes
+            shared_by_input = Input.query.filter_by(map_config_id=map_config_id).first()
+            shared_by_output = Output.query.filter_by(map_config_id=map_config_id).first()
+            if shared_by_input or shared_by_output:
+                logger.info(
+                    f"Skipping delete_map_config({map_config_id}): still referenced "
+                    f"by other devices"
+                )
+            else:
+                delete_map_config(map_config_id)
+
+        # Delete GeoShapes owned by this input (device-scoped, safe).
         GeoShape.query.filter_by(device_id=input_id).delete(synchronize_session=False)
         
         # Delete Python code file
@@ -537,7 +545,7 @@ class TabService:
     def _delete_output_entry(output_id: str):
         """Delete an Output entry with proper cleanup (channels, measurements, etc.)"""
         from aot.aot_flask.utils.utils_output import manipulate_output
-        from aot.aot_flask.utils.utils_geo import delete_map_config
+        from aot.aot_flask.utils.utils_map_config import delete_map_config
         
         output_dev = Output.query.filter_by(unique_id=output_id).first()
         if not output_dev:
@@ -557,12 +565,22 @@ class TabService:
         
         # Delete Output
         delete_entry_with_id(Output, output_id, flash_message=False)
-        
-        # Delete map config
+
+        # Delete map config ONLY if no remaining Output (or Input) shares it.
+        # Shared map_configs typically back zone/site/facility GeoShapes used
+        # across pages; blindly deleting them wipes those shared shapes too.
         if map_config_id:
-            delete_map_config(map_config_id)
-        
-        # Delete GeoShapes
+            shared_by_output = Output.query.filter_by(map_config_id=map_config_id).first()
+            shared_by_input = Input.query.filter_by(map_config_id=map_config_id).first()
+            if shared_by_output or shared_by_input:
+                logger.info(
+                    f"Skipping delete_map_config({map_config_id}): still referenced "
+                    f"by other devices"
+                )
+            else:
+                delete_map_config(map_config_id)
+
+        # Delete GeoShapes owned by this output (device-scoped, safe).
         GeoShape.query.filter_by(device_id=output_id).delete(synchronize_session=False)
         
         # Notify daemon
@@ -652,7 +670,7 @@ class TabService:
     def _delete_custom_controller_entry(controller_id: str):
         """Delete a CustomController entry with proper cleanup (deactivation, channels, measurements, etc.)"""
         from aot.aot_flask.utils.utils_controller import controller_deactivate
-        from aot.aot_flask.utils.utils_geo import delete_map_config
+        from aot.aot_flask.utils.utils_map_config import delete_map_config
         
         controller = CustomController.query.filter_by(unique_id=controller_id).first()
         if not controller:
@@ -676,10 +694,21 @@ class TabService:
         
         # Delete CustomController
         delete_entry_with_id(CustomController, controller_id, flash_message=False)
-        
-        # Delete map config
+
+        # Delete map config ONLY if no remaining device shares it.
         if map_config_id:
-            delete_map_config(map_config_id)
+            shared = (
+                CustomController.query.filter_by(map_config_id=map_config_id).first()
+                or Input.query.filter_by(map_config_id=map_config_id).first()
+                or Output.query.filter_by(map_config_id=map_config_id).first()
+            )
+            if shared:
+                logger.info(
+                    f"Skipping delete_map_config({map_config_id}): still referenced "
+                    f"by other devices"
+                )
+            else:
+                delete_map_config(map_config_id)
         
         # Delete Python code file
         try:
@@ -707,6 +736,10 @@ class TabService:
         valid_tab_ids = {tab.unique_id for tab in Tab.query.all()}
         valid_tab_ids.add(None)  # NULL is valid (legacy entries)
 
+        # NOTE: Widget is intentionally excluded. Widget.tab_id references the
+        # Dashboard model's unique_id, not the Tab model. Treating widgets as
+        # orphans by Tab membership reassigned them to a Tab id, breaking the
+        # Dashboard->Widget link and making dashboards appear empty.
         TABLE_MAP = {
             'input': Input,
             'output': Output,
@@ -715,7 +748,6 @@ class TabService:
             'pid': PID,
             'custom_controller': CustomController,
             'function': Function,
-            'widget': Widget,
         }
 
         orphans = {}
@@ -735,7 +767,15 @@ class TabService:
 
     @staticmethod
     def cleanup_orphaned_entries(orphans: Dict[str, list]) -> int:
-        """Reassign orphaned entries to their page's default tab to preserve data."""
+        """Reassign orphaned entries to their page's default tab to preserve data.
+
+        Note: Does NOT commit. The caller's transaction owns the commit so that
+        a rollback in the caller also rolls back the reassignments. Previously
+        this committed independently, which leaked partial changes when the
+        parent tab-delete failed.
+        """
+        # Widget excluded — see find_orphaned_entries note. Widget.tab_id
+        # references Dashboard.unique_id, not Tab.unique_id.
         PAGE_MAP = {
             'input': 'input',
             'output': 'output',
@@ -744,7 +784,6 @@ class TabService:
             'pid': 'function',
             'custom_controller': 'function',
             'function': 'function',
-            'widget': 'dashboard',
         }
         MODEL_MAP = {
             'input': Input,
@@ -754,7 +793,6 @@ class TabService:
             'pid': PID,
             'custom_controller': CustomController,
             'function': Function,
-            'widget': Widget,
         }
 
         reassigned = 0
@@ -782,8 +820,7 @@ class TabService:
                     )
 
         if reassigned:
-            db.session.commit()
-            logger.info(f"Orphan cleanup: reassigned {reassigned} entries to default tabs")
+            logger.info(f"Orphan cleanup: reassigned {reassigned} entries to default tabs (pending commit)")
 
         return reassigned
 

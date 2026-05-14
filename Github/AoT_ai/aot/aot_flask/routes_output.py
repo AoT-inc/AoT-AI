@@ -116,6 +116,10 @@ def page_output_submit():
             messages, page_refresh = utils_output.output_mod(
                 form_mod_output, clean_request_form)
             output_id = form_mod_output.output_id.data
+            if page_refresh and not messages["error"]:
+                ch_count = OutputChannel.query.filter(
+                    OutputChannel.output_id == output_id).count()
+                size_y = ch_count + 1 if ch_count else 2
         elif form_mod_output.output_duplicate.data:
             messages, output_id = utils_output.output_duplicate(form_mod_output)
             page_refresh = True
@@ -160,13 +164,17 @@ def save_output_layout():
     if not utils_general.user_has_permission('edit_controllers'):
         return redirect(url_for('routes_general.home'))
     data = request.get_json()
-    keys = ('id', 'y')
-    for each_output in data:
-        if all(k in each_output for k in keys):
-            output_mod = Output.query.filter(
-                Output.unique_id == each_output['id']).first()
-            if output_mod:
-                output_mod.position_y = each_output['y']
+    # Sort by reported y, then re-rank to sequential ints to eliminate ties.
+    # Without this, multiple cards can share the same position_y (especially
+    # newly-created ones), making ORDER BY position_y nondeterministic and
+    # the rendered card order unstable across reloads.
+    items = [d for d in data if 'id' in d and 'y' in d]
+    items.sort(key=lambda d: (d['y'], d['id']))
+    for rank, each_output in enumerate(items):
+        output_mod = Output.query.filter(
+            Output.unique_id == each_output['id']).first()
+        if output_mod:
+            output_mod.position_y = rank
     db.session.commit()
     return "success"
 
@@ -192,7 +200,7 @@ def page_output():
     if not current_tab:
         # Fallback: Tab 테이블이 비어있는 경우
         logger.warning("No default tab found for output page")
-        output = Output.query.order_by(Output.position_y).all()
+        output = Output.query.order_by(Output.position_y, Output.id).all()
     else:
         # ===== FILTER BY TAB (Including Legacy NULL) =====
         output = Output.query.filter(
@@ -200,7 +208,7 @@ def page_output():
                 Output.tab_id == current_tab.unique_id,
                 Output.tab_id.is_(None)
             )
-        ).order_by(Output.position_y).all()
+        ).order_by(Output.position_y, Output.id).all()
     # ==================================
 
     each_output = None
@@ -257,6 +265,12 @@ def page_output():
     for each_output in all_outputs:
         if each_output.unique_id not in custom_options_values_output_channels:
             custom_options_values_output_channels[each_output.unique_id] = {}
+
+    # channel_unique_id -> channel_number map for fast lookup in templates
+    # (used by actuator_paired card to resolve its underlying open/close channels)
+    output_channels_by_uid = {
+        c.unique_id: c.channel for c in output_channel.query.all()
+    }
 
     custom_commands = {}
     for each_output_dev in output:
@@ -327,6 +341,7 @@ def page_output():
                                custom_commands=custom_commands,
                                custom_options_values_outputs=custom_options_values_outputs,
                                custom_options_values_output_channels=custom_options_values_output_channels,
+                               output_channels_by_uid=output_channels_by_uid,
                                dict_outputs=dict_outputs,
                                display_order_output=display_order_output,
                                map_configs=map_configs,
@@ -387,6 +402,7 @@ def page_output():
                                custom_commands=custom_commands,
                                custom_options_values_outputs=custom_options_values_outputs,
                                custom_options_values_output_channels=custom_options_values_output_channels,
+                               output_channels_by_uid=output_channels_by_uid,
                                dict_outputs=dict_outputs,
                                display_order_output=display_order_output,
                                each_output=each_output,
@@ -450,6 +466,7 @@ def page_output():
                                custom_commands=custom_commands,
                                custom_options_values_outputs=custom_options_values_outputs,
                                custom_options_values_output_channels=custom_options_values_output_channels,
+                               output_channels_by_uid=output_channels_by_uid,
                                dict_outputs=dict_outputs,
                                display_order_output=display_order_output,
                                each_output=each_output,

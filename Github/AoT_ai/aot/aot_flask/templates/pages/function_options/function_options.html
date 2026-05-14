@@ -159,7 +159,7 @@
 
   <div class="grid-stack" id="mod_function_actions_{{each_function.unique_id}}">
     {% for each_action in action|sort(attribute='position') if each_action.function_id == each_function.unique_id %}
-    {% call gridstack_action_item(each_action, each_function, is_sequence=False, gs_h=1) %}{% endcall %}
+    {% call gridstack_action_item(each_action, each_function, is_sequence=False, gs_h=2) %}{% endcall %}
     {% endfor %}
   </div>
 

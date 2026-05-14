@@ -36,21 +36,83 @@
       </div>
     </div>
 
-    {% for each_output_channel in dict_outputs[each_output.output_type]['channels_dict'] %}
-    <div class="item_channel row small-gutters aot-entry-item-channel {% if output_states and output_states[each_output_channel|string] == 'on' %}active-background{% else %}inactive-background{% endif %}"
-      id="{{each_output.unique_id}}-{{each_output_channel}}-output-state">
-      <div class="aot-output-spacer-40"></div>
-      <div class="aot-entry-content-item aot-output-col-4">
+    {% for each_output_channel in custom_options_values_output_channels[each_output.unique_id]|sort %}
+    {%- set ch_static = dict_outputs[each_output.output_type]['channels_dict'].get(each_output_channel) or dict_outputs[each_output.output_type]['channels_dict'].get(0) or {} %}
+    {% set _is_paired = each_output.output_type == 'actuator_paired' %}
+    {% set _paired_opts = custom_options_values_output_channels[each_output.unique_id][each_output_channel] if _is_paired else {} %}
+    {%- set _ns = namespace(open_oid='', open_ch=0, close_oid='', close_ch=0) -%}
+    {%- if _is_paired -%}
+      {%- set _open_ref = _paired_opts.get('output_open_id', '') -%}
+      {%- set _close_ref = _paired_opts.get('output_close_id', '') -%}
+      {# select_channel parses into {'device_id': ..., 'channel_id': ...}.
+         Older configs may still be a plain output_id string. #}
+      {%- if _open_ref is mapping -%}
+        {%- set _ns.open_oid = _open_ref.get('device_id') or '' -%}
+        {%- set _ouid = _open_ref.get('channel_id') or '' -%}
+        {%- if _ouid and output_channels_by_uid is defined and _ouid in output_channels_by_uid -%}
+          {%- set _ns.open_ch = output_channels_by_uid[_ouid] -%}
+        {%- endif -%}
+      {%- elif _open_ref -%}
+        {%- if ',' in _open_ref -%}
+          {%- set _p = _open_ref.split(',') -%}
+          {%- set _ns.open_oid = _p[0] -%}
+          {%- if output_channels_by_uid is defined and _p[1] in output_channels_by_uid -%}
+            {%- set _ns.open_ch = output_channels_by_uid[_p[1]] -%}
+          {%- endif -%}
+        {%- else -%}
+          {%- set _ns.open_oid = _open_ref -%}
+        {%- endif -%}
+      {%- endif -%}
+      {%- if _close_ref is mapping -%}
+        {%- set _ns.close_oid = _close_ref.get('device_id') or '' -%}
+        {%- set _cuid = _close_ref.get('channel_id') or '' -%}
+        {%- if _cuid and output_channels_by_uid is defined and _cuid in output_channels_by_uid -%}
+          {%- set _ns.close_ch = output_channels_by_uid[_cuid] -%}
+        {%- endif -%}
+      {%- elif _close_ref -%}
+        {%- if ',' in _close_ref -%}
+          {%- set _p = _close_ref.split(',') -%}
+          {%- set _ns.close_oid = _p[0] -%}
+          {%- if output_channels_by_uid is defined and _p[1] in output_channels_by_uid -%}
+            {%- set _ns.close_ch = output_channels_by_uid[_p[1]] -%}
+          {%- endif -%}
+        {%- else -%}
+          {%- set _ns.close_oid = _close_ref -%}
+        {%- endif -%}
+      {%- endif -%}
+    {%- endif -%}
+    <div class="item_channel row small-gutters aot-entry-item-channel {% if _is_paired %}aot-paired-row{% endif %} {% if output_states and output_states[each_output_channel|string] == 'on' %}active-background{% else %}inactive-background{% endif %}"
+      id="{{each_output.unique_id}}-{{each_output_channel}}-output-state"
+      {% if _is_paired %}data-paired="1" data-open-id="{{_ns.open_oid}}" data-open-ch="{{_ns.open_ch}}" data-close-id="{{_ns.close_oid}}" data-close-ch="{{_ns.close_ch}}"{% endif %}>
+      <div class="aot-entry-content-item aot-output-col-4 aot-ch-col-left">
         <div class="form-control aot-entry-name-input">CH{{each_output_channel}}
       {%- if 'name' in custom_options_values_output_channels[each_output.unique_id][each_output_channel] and
              custom_options_values_output_channels[each_output.unique_id][each_output_channel]['name'] -%}
         {{': ' + custom_options_values_output_channels[each_output.unique_id][each_output_channel]['name']}}
-      {%- elif 'name' in dict_outputs[each_output.output_type]['channels_dict'][each_output_channel] -%}
-        {{': ' + dict_outputs[each_output.output_type]['channels_dict'][each_output_channel]['name']}}
+      {%- elif 'name' in ch_static and ch_static['name'] -%}
+        {{': ' + ch_static['name']}}
       {%- endif -%}
+      {%- if _is_paired %}
+        <span class="aot-paired-pos" id="{{each_output.unique_id}}-{{each_output_channel}}-paired-pos">
+          {{ ' ' ~ (_paired_opts.get('last_position_pct', 0)|round(0)|int) ~ '%' }}
+        </span>
+      {%- endif %}
         </div>
       </div>
-      <div class="aot-entry-actions aot-output-col-6 aot-entry-button-group">
+      <div class="aot-entry-actions aot-output-col-6 aot-entry-button-group aot-ch-col-right">
+        {% if each_output.output_type == 'actuator_paired' %}
+        <input onclick="return $(this).actuator_paired_cmd('close', '{{each_output.unique_id}}', '{{each_output_channel}}');"
+          class="form-control btn aot-btn-on aot-entry-btn-base aot-paired-btn"
+          id="{{each_output.unique_id}}-{{each_output_channel}}-paired-close-btn"
+          type="button" value="{{_('Close')}}">
+        <input onclick="return $(this).actuator_paired_cmd('stop', '{{each_output.unique_id}}', '{{each_output_channel}}');"
+          class="form-control btn aot-btn-off aot-entry-btn-base aot-paired-btn"
+          type="button" value="{{_('Stop')}}">
+        <input onclick="return $(this).actuator_paired_cmd('open', '{{each_output.unique_id}}', '{{each_output_channel}}');"
+          class="form-control btn aot-btn-on aot-entry-btn-base aot-paired-btn"
+          id="{{each_output.unique_id}}-{{each_output_channel}}-paired-open-btn"
+          type="button" value="{{_('Open')}}">
+        {% else %}
         {% if 'button_on' in dict_options['options_enabled'] -%}
         <input onclick="return $(this).turn_on(this, '{{each_output.unique_id}}', '{{each_output_channel}}');"
           class="form-control btn aot-btn-on aot-entry-btn-base"
@@ -59,9 +121,7 @@
         <input onclick="return $(this).turn_off(this, '{{each_output.unique_id}}', '{{each_output_channel}}');"
           class="form-control btn aot-btn-off aot-entry-btn-base"
           name="{{each_output.unique_id}}/{{each_output_channel}}/off/sec/0" type="button" value="Off">
-      </div>
-      <div class="aot-entry-settings">
-        <!-- 설정 버튼을 위한 뒷공간 40px 고정 (헤더와 일치) -->
+        {% endif %}
       </div>
     </div>
     {% endfor %}

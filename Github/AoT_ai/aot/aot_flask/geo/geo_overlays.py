@@ -3,8 +3,12 @@ import json
 from datetime import datetime
 from sqlalchemy.orm.attributes import flag_modified
 from flask import current_app
-from shapely.geometry import shape, Point, Polygon, box
-from shapely import affinity
+try:
+    from shapely.geometry import shape, Point, Polygon, box
+    from shapely import affinity
+    SHAPELY_AVAILABLE = True
+except ImportError:
+    SHAPELY_AVAILABLE = False
 
 from aot.databases.models import GeoShape, Input, Output, OutputChannel, PID, Trigger, Conditional, CustomController, Function, GeoFacility
 from aot.aot_flask.extensions import db

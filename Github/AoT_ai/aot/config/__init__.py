@@ -17,7 +17,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config_translations import TRANSLATIONS as T
 
 MYCODO_VERSION = '8.16.0'
-ALEMBIC_VERSION = 'c7d8e9f0a1b2'
+ALEMBIC_VERSION = 'd0e1f2a3b4c5'
 AOT_VERSION = '26.0.7'
 
 # FORCE UPGRADE MASTER
@@ -173,7 +173,7 @@ LOGIN_BAN_SECONDS = 600  # 10 minutes
 # Check for upgrade every 2 days (if enabled)
 UPGRADE_CHECK_INTERVAL = 172800
 
-TAGS_URL = 'https://api.github.com/repos/aot-inc/AoT/git/refs/tags'
+TAGS_URL = 'https://api.github.com/repos/AoT-inc/AoT-AI/git/refs/tags'
 
 LANGUAGES = {
     'ko': '한국어 (Korean)',

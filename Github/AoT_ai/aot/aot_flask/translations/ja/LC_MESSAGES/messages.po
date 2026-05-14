@@ -188,7 +188,7 @@ msgstr "長さ"
 
 #: config_devices_units.py:173
 msgid "Light"
-msgstr "光"
+msgstr "弱い"
 
 #: config_devices_units.py:177
 msgid "Magnetic Flux Density"
@@ -333,7 +333,7 @@ msgstr "速度"
 
 #: config_devices_units.py:322
 msgid "하늘상태"
-msgstr ""
+msgstr "空の状態"
 
 #: aot_flask/forms/forms_function.py:55 aot_flask/forms/forms_input.py:119
 #: aot_flask/forms/forms_output.py:87 config_devices_units.py:326
@@ -715,7 +715,7 @@ msgstr "ポンド毎平方インチ psi"
 
 #: config_devices_units.py:638
 msgid "Revolutions per minute"
-msgstr ""
+msgstr "毎分回転数"
 
 #: config_devices_units.py:641
 msgid "Second"
@@ -1128,7 +1128,7 @@ msgstr "最後"
 
 #: config_translations.py:108
 msgid "LCD"
-msgstr ""
+msgstr "LCD"
 
 #: aot_flask/static/js/geo/design/aot-geo-ui.js:236
 #: aot_flask/templates/user_templates/widget_template_AoT_graph_configure_options.html:48
@@ -2408,10 +2408,10 @@ msgstr "情報"
 
 #: config_translations_docs.py:56
 msgid ""
-"See the [README](https://github.com/aot-inc/AoT#uses) for features, "
+"See the [README](https://github.com/AoT-inc/AoT-AI#uses) for features, "
 "projects using AoT, screenshots, and other information."
 msgstr ""
-"See the [README](https://github.com/aot-inc/AoT#uses) for features, "
+"See the [README](https://github.com/AoT-inc/AoT-AI#uses) for features, "
 "projects using AoT, screenshots, and other information."
 
 #: config_translations_docs.py:58
@@ -2559,7 +2559,7 @@ msgstr ""
 #: aot_flask/templates/pages/live.html:3 aot_flask/templates/pages/live.html:5
 #: config_translations_docs.py:88
 msgid "Live Measurements"
-msgstr ""
+msgstr "リアルタイム測定"
 
 #: config_translations_docs.py:89
 msgid ""
@@ -2573,11 +2573,11 @@ msgstr ""
 
 #: config_translations_docs.py:91
 msgid "Asynchronous Graphs"
-msgstr ""
+msgstr "非同期グラフ"
 
 #: config_translations_docs.py:92
 msgid "Page"
-msgstr ""
+msgstr "ページ"
 
 #: config_translations_docs.py:94
 msgid ""
@@ -2853,7 +2853,7 @@ msgstr "方程式"
 
 #: actions/input_action_mqtt_publish.py:13
 msgid "MQTT: Publish: Measurement"
-msgstr ""
+msgstr "MQTT: 発行: 測定値"
 
 #: actions/input_action_mqtt_publish.py:44 actions/mqtt_publish.py:39
 #: aot_flask/forms/forms_settings.py:475
@@ -2885,11 +2885,11 @@ msgstr "ユーザー名"
 
 #: actions/led_neopixel_flash_off.py:14
 msgid "LED: Neopixel: Flashing Off"
-msgstr ""
+msgstr "LED: Neopixel: 点滅オフ"
 
 #: actions/led_neopixel_flash_on.py:14
 msgid "LED: Neopixel: Flashing On"
-msgstr ""
+msgstr "LED: Neopixel: 点滅オン"
 
 #: actions/output_on_off.py:26
 msgid "Turn an On/Off Output On, Off, or On for a duration."
@@ -2963,7 +2963,7 @@ msgstr "PIDを再開します"
 
 #: actions/pid_setpoint.py:17
 msgid "PID: Set: Setpoint"
-msgstr ""
+msgstr "PID: 設定: 設定値"
 
 #: actions/pid_setpoint.py:27
 msgid "Set the Setpoint of a PID."
@@ -3294,7 +3294,7 @@ msgstr "露出"
 #: aot_flask/forms/forms_camera.py:61 functions/camera_libcamera.py:319
 #: functions/camera_libcamera.py:327 functions/camera_libcamera.py:335
 msgid "White Balance"
-msgstr ""
+msgstr "ホワイトバランス"
 
 #: aot_flask/forms/forms_camera.py:63
 #: aot_flask/templates/pages/ai/ai_modals.html:86
@@ -3620,12 +3620,12 @@ msgstr "スイッチ"
 #: aot_flask/forms/forms_function.py:57 aot_flask/forms/forms_input.py:121
 #: aot_flask/forms/forms_output.py:89 functions/regulate_ph_ec.py:224
 msgid "pH"
-msgstr ""
+msgstr "pH"
 
 #: aot_flask/forms/forms_function.py:58 aot_flask/forms/forms_input.py:122
 #: aot_flask/forms/forms_output.py:90
 msgid "EC"
-msgstr ""
+msgstr "EC"
 
 #: aot_flask/forms/forms_function.py:59 aot_flask/forms/forms_input.py:123
 #: aot_flask/forms/forms_output.py:91
@@ -3645,7 +3645,7 @@ msgstr "矢印"
 #: aot_flask/forms/forms_function.py:62 aot_flask/forms/forms_input.py:126
 #: aot_flask/forms/forms_output.py:94 widgets/AoT_gauge_angular.py:288
 msgid "VPD"
-msgstr ""
+msgstr "VPD"
 
 #: aot_flask/forms/forms_function.py:65 aot_flask/forms/forms_input.py:129
 #: aot_flask/forms/forms_output.py:97
@@ -3868,11 +3868,11 @@ msgstr "Set Repeat Options"
 
 #: aot_flask/forms/forms_method.py:113
 msgid "HH:MM:SS"
-msgstr ""
+msgstr "HH:MM:SS"
 
 #: aot_flask/forms/forms_method.py:116
 msgid "YYYY-MM-DD HH:MM:SS"
-msgstr ""
+msgstr "YYYY-MM-DD HH:MM:SS"
 
 #: aot_flask/forms/forms_method.py:127
 msgid "End Setpoint"
@@ -4842,7 +4842,7 @@ msgstr "ダッシュボード順序の保存に失敗しました"
 
 #: aot_flask/static/js/components/aot-map-search-fixed.js:365
 msgid "Search service unavailable"
-msgstr ""
+msgstr "検索サービスは利用できません"
 
 #: aot_flask/static/js/components/aot-tabs.js:221
 msgid "order_saved"
@@ -4854,11 +4854,11 @@ msgstr "順序の保存に失敗しました"
 
 #: aot_flask/static/js/geo/aot-geo-design-v3.js:266
 msgid "hide_panel"
-msgstr ""
+msgstr "パネルを非表示"
 
 #: aot_flask/static/js/geo/aot-geo-design-v3.js:272
 msgid "show_panel"
-msgstr ""
+msgstr "パネルを表示"
 
 #: aot_flask/static/js/geo/aot-geo-design-v3.js:417
 msgid "mode_switch_error"
@@ -4870,7 +4870,7 @@ msgstr "メインパイプ"
 
 #: aot_flask/static/js/geo/aot-geo-design-v3.js:501
 msgid "branch_pipe"
-msgstr ""
+msgstr "分岐パイプ"
 
 #: aot_flask/static/js/geo/aot-geo-design-v3.js:509
 msgid "reference_line"
@@ -4885,7 +4885,7 @@ msgstr "基準線が範囲外です"
 #: aot_flask/static/js/geo/aot-geo-design-v3.js:1257
 #: aot_flask/static/js/geo/aot-geo-design-v3.js:1258
 msgid "design_map_new"
-msgstr ""
+msgstr "新規マップ設計"
 
 #: aot_flask/static/js/geo/aot-geo-design-v3.js:1268
 msgid "new_map_autosaved"
@@ -4897,11 +4897,11 @@ msgstr "正常に保存されました"
 
 #: aot_flask/static/js/geo/aot-geo-design-v3.js:1787
 msgid "save_failed"
-msgstr ""
+msgstr "保存に失敗しました"
 
 #: aot_flask/static/js/geo/aot-geo-design-v3.js:1838
 msgid "no_data_table"
-msgstr ""
+msgstr "データテーブルがありません"
 
 #: aot_flask/static/js/geo/aot-geo-design-v3.js:1884
 #: aot_flask/static/js/geo/aot-geo-design-v3.js:2114
@@ -4911,7 +4911,7 @@ msgstr "正常に削除されました"
 #: aot_flask/static/js/geo/aot-geo-design-v3.js:1918
 #: aot_flask/static/js/geo/aot-geo-design-v3.js:2118
 msgid "delete_failed"
-msgstr ""
+msgstr "削除に失敗しました"
 
 #: aot_flask/static/js/geo/aot-geo-design-v3.js:1963
 msgid "polygon_split_feature_coming_soon"
@@ -4944,11 +4944,11 @@ msgstr "テーマをリセットしてもよろしいですか？"
 
 #: aot_flask/static/js/geo/aot-geo-settings.js:391
 msgid "settings_saved"
-msgstr ""
+msgstr "設定が保存されました"
 
 #: aot_flask/static/js/geo/aot-geo-settings.js:393
 msgid "save_error"
-msgstr ""
+msgstr "保存エラー"
 
 #: aot_flask/static/js/geo/aot-geo-settings.js:398
 msgid "save_error_occurred"
@@ -5007,39 +5007,39 @@ msgstr "サイト一覧"
 
 #: aot_flask/static/js/geo/aot-map-custom-controls.js:104
 msgid "No registered sites."
-msgstr ""
+msgstr "登録されたサイトがありません。"
 
 #: aot_flask/static/js/geo/aot-map-custom-controls.js:137
 msgid "Distance measurement"
-msgstr ""
+msgstr "距離測定"
 
 #: aot_flask/static/js/geo/aot-map-custom-controls.js:215
 msgid "Distance"
-msgstr ""
+msgstr "距離"
 
 #: aot_flask/static/js/geo/aot-map-custom-controls.js:231
 msgid "Distance measurement mode active. Click on map."
-msgstr ""
+msgstr "距離測定モード有効。地図をクリックしてください。"
 
 #: aot_flask/static/js/geo/aot-map-custom-controls.js:302
 msgid "Total distance"
-msgstr ""
+msgstr "総距離"
 
 #: aot_flask/static/js/geo/aot-map-custom-controls.js:327
 msgid "Add note"
-msgstr ""
+msgstr "メモを追加"
 
 #: aot_flask/static/js/geo/aot-map-custom-controls.js:955
 msgid "Show panel"
-msgstr ""
+msgstr "パネルを表示"
 
 #: aot_flask/static/js/geo/aot-map-custom-controls.js:962
 msgid "Hide panel"
-msgstr ""
+msgstr "パネルを非表示"
 
 #: aot_flask/static/js/geo/design/aot-geo-events.js:76
 msgid "creating_new_map"
-msgstr ""
+msgstr "新しいマップを作成中"
 
 #: aot_flask/static/js/geo/design/aot-geo-events.js:89
 msgid "confirm_delete_map"
@@ -5055,11 +5055,11 @@ msgstr "保存されていない地図のデータがあります"
 
 #: aot_flask/static/js/geo/design/aot-geo-events.js:113
 msgid "rename_failed"
-msgstr ""
+msgstr "名前変更に失敗しました"
 
 #: aot_flask/static/js/geo/design/aot-geo-events.js:119
 msgid "rename_error"
-msgstr ""
+msgstr "名前変更エラー"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:33
 msgid "extend_only_line"
@@ -5071,80 +5071,80 @@ msgstr "ラインのみトリム可能です"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:50
 msgid "offset_prompt_polygon"
-msgstr ""
+msgstr "ポリゴンオフセット入力"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:51
 msgid "offset_prompt_line"
-msgstr ""
+msgstr "ラインオフセット入力"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:62
 msgid "select_merge_target"
-msgstr ""
+msgstr "マージ対象を選択"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:68
 msgid "select_subtract_target"
-msgstr ""
+msgstr "減算対象を選択"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:103
 msgid "operation_error"
-msgstr ""
+msgstr "操作エラー"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:161
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:182
 msgid "parent_polygon_not_found"
-msgstr ""
+msgstr "親ポリゴンが見つかりません"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:172
 msgid "no_boundary_intersection"
-msgstr ""
+msgstr "境界交差がありません"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:193
 msgid "multiline_not_supported"
-msgstr ""
+msgstr "マルチラインはサポートされていません"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:196
 msgid "trim_error_or_none"
-msgstr ""
+msgstr "トリムエラーまたはなし"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:202
 msgid "merge_self_error"
-msgstr ""
+msgstr "自己マージエラー"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:229
 msgid "merge_failed_turf"
-msgstr ""
+msgstr "マージ失敗 (turf)"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:237
 msgid "merge_error"
-msgstr ""
+msgstr "マージエラー"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:243
 msgid "subtract_self_error"
-msgstr ""
+msgstr "自己減算エラー"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:268
 msgid "subtract_failed_turf"
-msgstr ""
+msgstr "減算失敗 (turf)"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:276
 msgid "subtract_error"
-msgstr ""
+msgstr "減算エラー"
 
 #: aot_flask/static/js/geo/design/aot-geo-label.js:271
 msgid "enter_name_please"
-msgstr ""
+msgstr "名前を入力してください"
 
 #: aot_flask/static/js/geo/design/aot-geo-label.js:283
 msgid "edit_label_name"
-msgstr ""
+msgstr "ラベル名を編集"
 
 #: aot_flask/static/js/geo/design/aot-geo-modules.js:218
 msgid "reference_line_auto_delete_warning"
-msgstr ""
+msgstr "参照線自動削除の警告"
 
 #: aot_flask/static/js/geo/design/aot-geo-modules.js:461
 msgid "session_expired"
-msgstr ""
+msgstr "セッションが期限切れです"
 
 #: aot_flask/static/js/geo/design/aot-geo-stats.js:391
 msgid "Site Common Area"
@@ -5196,7 +5196,7 @@ msgstr "名称未設定のサイト"
 
 #: aot_flask/static/js/widget/AoT_map/aot-map-widget-v3.js:734
 msgid "confirm_remove_pin"
-msgstr ""
+msgstr "ピンの削除を確認"
 
 #: aot_flask/static/js/widget/AoT_map/aot-map-widget-v3.js:1630
 msgid "No notes written"
@@ -5456,7 +5456,7 @@ msgstr "インポート"
 #: aot_flask/templates/layout_default.html:387
 #: aot_flask/templates/pages/ai/ai_scheduler.html:2
 msgid "AI Scheduler"
-msgstr ""
+msgstr "AIスケジューラー"
 
 #: aot_flask/templates/layout.html:391
 #: aot_flask/templates/layout_default.html:391
@@ -5890,7 +5890,7 @@ msgstr "サーバーとの接続が切れました。再起動中は正常な動
 
 #: aot_flask/templates/admin/upgrade.html:109
 msgid "AoT Upgrade"
-msgstr ""
+msgstr "AoTアップグレード"
 
 #: aot_flask/templates/admin/upgrade.html:114
 msgid ""
@@ -6742,7 +6742,7 @@ msgstr "変換"
 #: aot_flask/templates/pages/ai/ai.html:276
 #: aot_flask/templates/pages/ai/ai.html:289
 msgid "New Topic"
-msgstr ""
+msgstr "新しいトピック"
 
 #: aot_flask/templates/pages/ai/ai.html:286
 #: aot_flask/templates/pages/ai/ai.html:469
@@ -6757,7 +6757,7 @@ msgstr "ファイルを追加"
 
 #: aot_flask/templates/pages/ai/ai.html:306
 msgid "Message AI Agent..."
-msgstr ""
+msgstr "AIエージェントにメッセージ..."
 
 #: aot_flask/templates/pages/ai/ai.html:307
 #: aot_flask/templates/pages/ai/ai.html:589
@@ -6774,17 +6774,17 @@ msgstr "基本設定"
 #: aot_flask/templates/pages/ai/ai.html:329
 #: aot_flask/templates/pages/ai/ai_manage.html:24
 msgid "Auto Approve Routine Tasks"
-msgstr ""
+msgstr "ルーティンタスクの自動承認"
 
 #: aot_flask/templates/pages/ai/ai.html:336
 #: aot_flask/templates/pages/ai/ai_manage.html:31
 msgid "Max Impact to Auto Approve"
-msgstr ""
+msgstr "自動承認の最大影響度"
 
 #: aot_flask/templates/pages/ai/ai.html:340
 #: aot_flask/templates/pages/ai/ai_manage.html:35
 msgid "Require Feedback on Fail"
-msgstr ""
+msgstr "失敗時のフィードバック要求"
 
 #: aot_flask/templates/pages/ai/ai.html:349
 #: aot_flask/templates/pages/ai/ai_manage.html:44
@@ -6795,7 +6795,7 @@ msgstr "バックアップ復元"
 #: aot_flask/templates/pages/ai/ai.html:353
 #: aot_flask/templates/pages/ai/ai_manage.html:48
 msgid "Blackout End"
-msgstr ""
+msgstr "ブラックアウト終了"
 
 #: aot_flask/templates/pages/ai/ai.html:357
 #: aot_flask/templates/pages/ai/ai_manage.html:52
@@ -6812,17 +6812,17 @@ msgstr "動作モード"
 #: aot_flask/templates/pages/ai/ai.html:367
 #: aot_flask/templates/pages/ai/ai_manage.html:62
 msgid "Context Scope (Hours)"
-msgstr ""
+msgstr "コンテキスト範囲（時間）"
 
 #: aot_flask/templates/pages/ai/ai.html:371
 #: aot_flask/templates/pages/ai/ai_manage.html:66
 msgid "Max History Context"
-msgstr ""
+msgstr "最大履歴コンテキスト"
 
 #: aot_flask/templates/pages/ai/ai.html:375
 #: aot_flask/templates/pages/ai/ai_manage.html:70
 msgid "Monthly Budget Limit (USD)"
-msgstr ""
+msgstr "月間予算上限（USD）"
 
 #: aot_flask/templates/pages/ai/ai.html:384
 #: aot_flask/templates/pages/ai/ai.html:500
@@ -6837,7 +6837,7 @@ msgstr "表示設定"
 
 #: aot_flask/templates/pages/ai/ai.html:421
 msgid "File upload logic is currently under construction."
-msgstr ""
+msgstr "ファイルアップロード機能は現在構築中です。"
 
 #: aot_flask/templates/pages/ai/ai.html:479
 #: aot_flask/templates/pages/ai/ai_manage.html:495
@@ -6871,69 +6871,69 @@ msgstr "更新"
 
 #: aot_flask/templates/pages/ai/ai.html:762
 msgid "승인 (저장)"
-msgstr ""
+msgstr "承認（保存）"
 
 #: aot_flask/templates/pages/ai/ai.html:767
 msgid "거절 (오답)"
-msgstr ""
+msgstr "拒否（誤答）"
 
 #: aot_flask/templates/pages/ai/ai.html:788
 msgid "네, 그렇게 해주세요"
-msgstr ""
+msgstr "はい、そうしてください"
 
 #: aot_flask/templates/pages/ai/ai.html:791
 msgid "응, 그렇게 해줘"
-msgstr ""
+msgstr "うん、そうして"
 
 #: aot_flask/templates/pages/ai/ai.html:798
 msgid "아니요, 괜찮습니다"
-msgstr ""
+msgstr "いいえ、結構です"
 
 #: aot_flask/templates/pages/ai/ai.html:801
 msgid "아니, 하지마"
-msgstr ""
+msgstr "いや、やめて"
 
 #: aot_flask/templates/pages/ai/ai.html:854
 msgid "AI 작업 제안"
-msgstr ""
+msgstr "AI作業提案"
 
 #: aot_flask/templates/pages/ai/ai.html:854
 msgid "아래 작업을 실행하시겠습니까?"
-msgstr ""
+msgstr "以下の作業を実行しますか？"
 
 #: aot_flask/templates/pages/ai/ai.html:871
 msgid "승인"
-msgstr ""
+msgstr "承認"
 
 #: aot_flask/templates/pages/ai/ai.html:874
 msgid "실행 중..."
-msgstr ""
+msgstr "実行中..."
 
 #: aot_flask/templates/pages/ai/ai.html:882
 msgid "취소"
-msgstr ""
+msgstr "キャンセル"
 
 #: aot_flask/templates/pages/ai/ai.html:884
 msgid "작업이 취소되었습니다."
-msgstr ""
+msgstr "作業がキャンセルされました。"
 
 #: aot_flask/templates/pages/ai/ai.html:911
 msgid "작업이 성공적으로 실행되었습니다."
-msgstr ""
+msgstr "作業が正常に実行されました。"
 
 #: aot_flask/templates/pages/ai/ai.html:916
 msgid "작업 실행 실패"
-msgstr ""
+msgstr "作業実行失敗"
 
 #: aot_flask/templates/pages/ai/ai.html:920
 msgid "연결 오류"
-msgstr ""
+msgstr "接続エラー"
 
 #: aot_flask/templates/pages/ai/ai_agent.html:45
 msgid ""
 "AI Agents orchestration layer. Manage your AI services and agents to "
 "automate complex tasks."
-msgstr ""
+msgstr "AIエージェントオーケストレーションレイヤー。AIサービスとエージェントを管理して複雑なタスクを自動化します。"
 
 #: aot_flask/templates/pages/ai/ai_agent.html:53
 #, fuzzy
@@ -6990,15 +6990,15 @@ msgstr "FTDIデバイス"
 
 #: aot_flask/templates/pages/ai/ai_entry.html:39
 msgid "Back to Portal"
-msgstr ""
+msgstr "ポータルに戻る"
 
 #: aot_flask/templates/pages/ai/ai_entry.html:41
 msgid "AI Service Registry"
-msgstr ""
+msgstr "AIサービスレジストリ"
 
 #: aot_flask/templates/pages/ai/ai_entry.html:42
 msgid "Register and manage AI engine connections (Gemini, OpenAI, Local Proxies)."
-msgstr ""
+msgstr "AIエンジン接続の登録と管理（Gemini、OpenAI、ローカルプロキシ）。"
 
 #: aot_flask/templates/pages/ai/ai_entry.html:45
 #: aot_flask/templates/pages/ai/ai_entry.html:99
@@ -7023,7 +7023,7 @@ msgstr "保存されたAPIキーはまだありません"
 
 #: aot_flask/templates/pages/ai/ai_entry.html:88
 msgid "Connect your first LLM"
-msgstr ""
+msgstr "最初のLLMを接続"
 
 #: aot_flask/templates/pages/ai/ai_entry.html:106
 #: aot_flask/templates/pages/ai/ai_modals.html:50
@@ -7071,11 +7071,11 @@ msgstr "リ셋コード"
 
 #: aot_flask/templates/pages/ai/ai_manage.html:75
 msgid "Base System Prompt"
-msgstr ""
+msgstr "ベースシステムプロンプト"
 
 #: aot_flask/templates/pages/ai/ai_manage.html:78
 msgid "Global Instructions Template (Applied to all agents)"
-msgstr ""
+msgstr "グローバル指示テンプレート（全エージェントに適用）"
 
 #: aot_flask/templates/pages/ai/ai_manage.html:80
 msgid ""
@@ -7085,7 +7085,7 @@ msgstr ""
 
 #: aot_flask/templates/pages/ai/ai_manage.html:93
 msgid "Agent Overview"
-msgstr ""
+msgstr "エージェント概要"
 
 #: aot_flask/templates/pages/ai/ai_manage.html:121
 #: aot_flask/templates/pages/ai/ai_manage.html:208
@@ -7103,11 +7103,11 @@ msgstr "デバイス"
 
 #: aot_flask/templates/pages/ai/ai_manage.html:140
 msgid "No agents registered."
-msgstr ""
+msgstr "登録されたエージェントがありません。"
 
 #: aot_flask/templates/pages/ai/ai_manage.html:147
 msgid "Reasoning History"
-msgstr ""
+msgstr "推論履歴"
 
 #: aot_flask/templates/pages/ai/ai_manage.html:183
 #: aot_flask/templates/pages/ai/scheduler.html:95
@@ -7169,7 +7169,7 @@ msgstr "合計"
 #: aot_flask/templates/pages/ai/ai_manage.html:293
 #: aot_flask/templates/pages/ai/ai_manage.html:442
 msgid "AI Insight"
-msgstr ""
+msgstr "AIインサイト"
 
 #: aot_flask/templates/pages/ai/ai_manage.html:296
 #: aot_flask/templates/pages/ai/ai_manage.html:444
@@ -7237,7 +7237,7 @@ msgstr "あなたは"
 
 #: aot_flask/templates/pages/ai/ai_mcp_entry.html:45
 msgid "Modify MCP Server"
-msgstr ""
+msgstr "MCPサーバーを変更"
 
 #: aot_flask/templates/pages/ai/ai_mcp_entry.html:52
 #, fuzzy
@@ -7256,11 +7256,11 @@ msgstr "コード"
 
 #: aot_flask/templates/pages/ai/ai_mcp_entry.html:65
 msgid "General (Always in Manifest)"
-msgstr ""
+msgstr "一般（マニフェストに常に含まれる）"
 
 #: aot_flask/templates/pages/ai/ai_mcp_entry.html:66
 msgid "Specific (Lazy-loaded)"
-msgstr ""
+msgstr "特定（遅延ロード）"
 
 #: aot_flask/templates/pages/ai/ai_mcp_entry.html:72
 #, fuzzy
@@ -7269,7 +7269,7 @@ msgstr "カスタムオプション"
 
 #: aot_flask/templates/pages/ai/ai_mcp_entry.html:78
 msgid "Environment Variables (JSON)"
-msgstr ""
+msgstr "環境変数（JSON）"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:8
 #, fuzzy
@@ -7309,7 +7309,7 @@ msgstr "Service Options"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:52
 msgid "e.g. My OpenAI"
-msgstr ""
+msgstr "例：My OpenAI"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:65
 #: aot_flask/templates/pages/ai/options/options_llm.html:37
@@ -7320,7 +7320,7 @@ msgstr "デバイス選択"
 #: aot_flask/templates/pages/ai/ai_modals.html:68
 #: aot_flask/templates/pages/ai/options/options_llm.html:45
 msgid "Enter model name manually"
-msgstr ""
+msgstr "モデル名を手動で入力"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:72
 #, fuzzy
@@ -7335,19 +7335,19 @@ msgstr "認証ユーザー名"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:95
 msgid "AI Pipeline & Tool Access"
-msgstr ""
+msgstr "AIパイプライン＆ツールアクセス"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:97
 #: aot_flask/templates/pages/ai/options/options_llm.html:51
 #: aot_flask/templates/pages/ai/options/options_mcp.html:28
 msgid "Pipeline Role"
-msgstr ""
+msgstr "パイプラインの役割"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:100
 #: aot_flask/templates/pages/ai/options/options_llm.html:54
 #: aot_flask/templates/pages/ai/options/options_mcp.html:31
 msgid "Worker (Legacy)"
-msgstr ""
+msgstr "ワーカー（レガシー）"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:101
 #: aot_flask/templates/pages/ai/options/options_llm.html:55
@@ -7374,7 +7374,7 @@ msgstr "実行"
 #: aot_flask/templates/pages/ai/options/options_llm.html:58
 #: aot_flask/templates/pages/ai/options/options_mcp.html:35
 msgid "Synthesizer"
-msgstr ""
+msgstr "シンセサイザー"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:109
 #: aot_flask/templates/pages/ai/options/options_llm.html:64
@@ -7401,7 +7401,7 @@ msgstr "開始"
 #: aot_flask/templates/pages/ai/options/options_llm.html:69
 #: aot_flask/templates/pages/ai/options/options_mcp.html:46
 msgid "Heavy"
-msgstr ""
+msgstr "強い"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:119
 #, fuzzy
@@ -7415,7 +7415,7 @@ msgstr "カスタム"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:124
 msgid "Assigned"
-msgstr ""
+msgstr "割り当て済み"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:125
 #, fuzzy
@@ -7429,16 +7429,16 @@ msgstr "Select GIS Service"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:150
 msgid "e.g. irrigation, climate"
-msgstr ""
+msgstr "例：灌漑、気候"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:154
 #: aot_flask/templates/pages/ai/ai_modals.html:370
 msgid "Agent Rules"
-msgstr ""
+msgstr "エージェントルール"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:161
 msgid "Define how this agent should behave..."
-msgstr ""
+msgstr "このエージェントの動作を定義..."
 
 #: aot_flask/templates/pages/ai/ai_modals.html:183
 #, fuzzy
@@ -7493,7 +7493,7 @@ msgstr "コード"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:354
 msgid "MCP Instructions"
-msgstr ""
+msgstr "MCP指示"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:355
 #, fuzzy
@@ -7502,11 +7502,11 @@ msgstr "システム管理"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:430
 msgid "Classifies intent only. Lightweight model recommended."
-msgstr ""
+msgstr "意図の分類のみ。軽量モデルを推奨。"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:431
 msgid "Creates execution plans. Standard or Heavy model recommended."
-msgstr ""
+msgstr "実行計画を作成。標準またはヘビーモデルを推奨。"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:432
 #, fuzzy
@@ -7515,7 +7515,7 @@ msgstr "予報データを読み込めませんでした。"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:433
 msgid "Synthesizes results into user response."
-msgstr ""
+msgstr "結果をユーザーの応答に統合。"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:434
 #, fuzzy
@@ -7534,7 +7534,7 @@ msgstr "基本設定"
 
 #: aot_flask/templates/pages/ai/ai_option.html:19
 msgid "Configure system-wide parameters for the AI orchestration layer."
-msgstr ""
+msgstr "AIオーケストレーションレイヤーのシステム全体パラメーターを設定。"
 
 #: aot_flask/templates/pages/ai/ai_option.html:26
 #, fuzzy
@@ -7543,11 +7543,11 @@ msgstr "赤外線"
 
 #: aot_flask/templates/pages/ai/ai_option.html:29
 msgid "Master Proxy URL"
-msgstr ""
+msgstr "マスタープロキシURL"
 
 #: aot_flask/templates/pages/ai/ai_option.html:33
 msgid "Global proxy to be used if agent-specific endpoint is empty."
-msgstr ""
+msgstr "エージェント固有のエンドポイントが空の場合に使用するグローバルプロキシ。"
 
 #: aot_flask/templates/pages/ai/ai_option.html:38
 #, fuzzy
@@ -7556,7 +7556,7 @@ msgstr "タイムアウト (秒)"
 
 #: aot_flask/templates/pages/ai/ai_option.html:46
 msgid "User Experience (Toast)"
-msgstr ""
+msgstr "ユーザーエクスペリエンス（トースト）"
 
 #: aot_flask/templates/pages/ai/ai_option.html:49
 #, fuzzy
@@ -7570,27 +7570,27 @@ msgstr "警告メッセージを非表示"
 
 #: aot_flask/templates/pages/ai/ai_scheduler.html:369
 msgid "[거시 뷰]"
-msgstr ""
+msgstr "[マクロビュー]"
 
 #: aot_flask/templates/pages/ai/ai_scheduler.html:373
 msgid "[일]"
-msgstr ""
+msgstr "[日]"
 
 #: aot_flask/templates/pages/ai/ai_scheduler.html:374
 msgid "[주]"
-msgstr ""
+msgstr "[週]"
 
 #: aot_flask/templates/pages/ai/ai_scheduler.html:375
 msgid "[월]"
-msgstr ""
+msgstr "[月]"
 
 #: aot_flask/templates/pages/ai/ai_scheduler.html:376
 msgid "[년]"
-msgstr ""
+msgstr "[年]"
 
 #: aot_flask/templates/pages/ai/ai_scheduler.html:377
 msgid "[오늘]"
-msgstr ""
+msgstr "[今日]"
 
 #: aot_flask/templates/pages/ai/ai_scheduler.html:411
 #, fuzzy
@@ -7637,7 +7637,7 @@ msgstr "ノートタグ一覧"
 
 #: aot_flask/templates/pages/ai/scheduler.html:52
 msgid "AI Proposals"
-msgstr ""
+msgstr "AI提案"
 
 #: aot_flask/templates/pages/ai/scheduler.html:83
 #: aot_flask/templates/pages/ai/scheduler.html:233
@@ -7653,7 +7653,7 @@ msgstr "リセット"
 
 #: aot_flask/templates/pages/ai/scheduler.html:102
 msgid "No pending proposals."
-msgstr ""
+msgstr "保留中の提案がありません。"
 
 #: aot_flask/templates/pages/ai/scheduler.html:109
 #, fuzzy
@@ -7694,7 +7694,7 @@ msgstr "開始"
 
 #: aot_flask/templates/pages/ai/scheduler.html:250
 msgid "Proposed By"
-msgstr ""
+msgstr "提案者"
 
 #: aot_flask/templates/pages/ai/scheduler.html:257
 #: aot_flask/templates/pages/ai/scheduler.html:536
@@ -7722,11 +7722,11 @@ msgstr "作成"
 
 #: aot_flask/templates/pages/ai/scheduler.html:333
 msgid "Job History Details"
-msgstr ""
+msgstr "ジョブ履歴詳細"
 
 #: aot_flask/templates/pages/ai/scheduler.html:359
 msgid "By"
-msgstr ""
+msgstr "作成者"
 
 #: aot_flask/templates/pages/ai/scheduler.html:406
 #, fuzzy
@@ -7735,11 +7735,11 @@ msgstr "開始時刻"
 
 #: aot_flask/templates/pages/ai/scheduler.html:424
 msgid "Auto-Dispatch (AI Multi-Agent)"
-msgstr ""
+msgstr "自動ディスパッチ（AIマルチエージェント）"
 
 #: aot_flask/templates/pages/ai/scheduler.html:436
 msgid "e.g., Water Zone A at 5 PM for 10 seconds"
-msgstr ""
+msgstr "例：午後5時にゾーンAに10秒間給水"
 
 #: aot_flask/templates/pages/ai/scheduler.html:445
 #: aot_flask/templates/pages/function_options/conditional_options.html:119
@@ -7761,7 +7761,7 @@ msgstr "出力制御を有効化"
 
 #: aot_flask/templates/pages/ai/scheduler.html:479
 msgid "PID Adjustment"
-msgstr ""
+msgstr "PID調整"
 
 #: aot_flask/templates/pages/ai/scheduler.html:480
 #, fuzzy
@@ -7837,7 +7837,7 @@ msgstr "再起動"
 
 #: aot_flask/templates/pages/ai/scheduler.html:611
 msgid "Amount (seconds or PWM)"
-msgstr ""
+msgstr "量（秒またはPWM）"
 
 #: aot_flask/templates/pages/ai/scheduler.html:614
 #, fuzzy
@@ -7851,7 +7851,7 @@ msgstr "機能"
 
 #: aot_flask/templates/pages/ai/scheduler.html:621
 msgid "Target Zone/Site"
-msgstr ""
+msgstr "対象ゾーン/サイト"
 
 #: aot_flask/templates/pages/ai/options/options_llm.html:14
 #, fuzzy
@@ -7861,7 +7861,7 @@ msgstr "Select GIS Service"
 #: aot_flask/templates/pages/ai/options/options_llm.html:28
 #: aot_flask/templates/pages/ai/options/options_mcp.html:18
 msgid "Leave blank to keep existing key"
-msgstr ""
+msgstr "既存のキーを維持するには空白のまま"
 
 #: aot_flask/templates/pages/ai/options/options_llm.html:43
 #, fuzzy
@@ -8038,7 +8038,7 @@ msgstr "動作モード"
 
 #: aot_flask/templates/pages/function_options/trigger_sequence_actions.html:18
 msgid "Sec"
-msgstr ""
+msgstr "秒"
 
 #: aot_flask/templates/pages/function_options/trigger_sequence_actions.html:18
 msgid "Default Duration (sec)"
@@ -8911,7 +8911,7 @@ msgstr "プロバイダー"
 
 #: aot_flask/templates/settings/api_key.html:135
 msgid "Key"
-msgstr ""
+msgstr "キー"
 
 #: aot_flask/templates/settings/api_key.html:141
 msgid "URL"
@@ -9567,7 +9567,7 @@ msgstr "このメモを削除しますか？"
 
 #: aot_flask/templates/user_templates/widget_template_AoT_ai_insight_body.html:5
 msgid "Envision a goal (e.g., Save energy in Zone A)"
-msgstr ""
+msgstr "目標を設定（例：ゾーンAのエネルギーを節約）"
 
 #: aot_flask/templates/user_templates/widget_template_AoT_ai_insight_body.html:8
 #, fuzzy
@@ -9576,7 +9576,7 @@ msgstr "角度"
 
 #: aot_flask/templates/user_templates/widget_template_AoT_ai_insight_body.html:23
 msgid "Ready for intelligent analysis."
-msgstr ""
+msgstr "インテリジェント分析の準備完了。"
 
 #: aot_flask/templates/user_templates/widget_template_AoT_controller_act_deact_title_bar.html:5
 msgid "Controller Switch"
@@ -9690,11 +9690,11 @@ msgstr "実際: "
 
 #: aot_flask/templates/user_templates/widget_template_AoT_pid_body.html:131
 msgid "activate"
-msgstr ""
+msgstr "有効化"
 
 #: aot_flask/templates/user_templates/widget_template_AoT_pid_body.html:136
 msgid "deactivate"
-msgstr ""
+msgstr "無効化"
 
 #: aot_flask/templates/user_templates/widget_template_AoT_timer_body.html:93
 msgid "5m"
@@ -9702,7 +9702,7 @@ msgstr "5分"
 
 #: aot_flask/templates/user_templates/widget_template_AoT_timer_body.html:97
 msgid "10m"
-msgstr ""
+msgstr "10分"
 
 #: aot_flask/templates/user_templates/widget_template_AoT_timer_js.html:246
 msgid "Syncing..."
@@ -9711,7 +9711,7 @@ msgstr "同期中..."
 #: aot_flask/templates/user_templates/widget_template_AoT_wind_angular_configure_options.html:29
 #, python-format
 msgid "Data Position Offset (%%)"
-msgstr ""
+msgstr "データ位置オフセット(%%)"
 
 #: aot_flask/templates/user_templates/widget_template_widget_python_code_js.html:10
 msgid "NO DATA ERROR"
@@ -9724,7 +9724,7 @@ msgstr "接続エラー"
 
 #: aot_flask/templates/user_templates/widget_template_widget_trigger_sequence_body.html:57
 msgid "Waiting for data..."
-msgstr ""
+msgstr "データを待機中..."
 
 #: aot_flask/utils/utils_action.py:39
 msgid ""
@@ -9910,7 +9910,7 @@ msgstr "不明な関数タイプ: '{}'"
 
 #: aot_flask/utils/utils_function.py:602
 msgid "Function not found"
-msgstr ""
+msgstr "関数が見つかりません"
 
 #: aot_flask/utils/utils_general.py:725
 msgid "You do not have permission to activate/deactivate controllers."
@@ -10306,55 +10306,55 @@ msgstr "起動遅延"
 
 #: functions/AoT_VPD.py:77
 msgid "첫 번째 동작 전 대기 시간"
-msgstr ""
+msgstr "最初の動作前の待機時間"
 
 #: functions/AoT_VPD.py:96
 msgid "대기 온도"
-msgstr ""
+msgstr "気温"
 
 #: functions/AoT_VPD.py:96 functions/AoT_VPD.py:116
 msgid "최대 사용 연령"
-msgstr ""
+msgstr "最大使用可能な経過時間"
 
 #: functions/AoT_VPD.py:97 functions/AoT_VPD.py:117
 msgid "사용할 측정값의 최대 연령"
-msgstr ""
+msgstr "使用する測定値の最大経過時間"
 
 #: functions/AoT_VPD.py:116
 msgid "습도"
-msgstr ""
+msgstr "湿度"
 
 #: functions/AoT_VPD.py:136
 msgid "잎 온도"
-msgstr ""
+msgstr "葉の温度"
 
 #: functions/AoT_VPD.py:136
 msgid "최대 사용 시간"
-msgstr ""
+msgstr "最大使用時間"
 
 #: functions/AoT_VPD.py:137
 msgid "사용할 측정값의 최대 시간"
-msgstr ""
+msgstr "使用する測定値の最大時間"
 
 #: functions/AoT_average_multi_L.py:50
 msgid "측정 및 계산 주기, 시간(초 단위)"
-msgstr ""
+msgstr "測定と計算のサイクル（秒）"
 
 #: functions/AoT_average_multi_L.py:58
 msgid "첫 측정 전에 대기할 시간(초)"
-msgstr ""
+msgstr "最初の測定前の待機時間（秒）"
 
 #: functions/AoT_average_multi_L.py:65
 msgid "최대 유효 시간"
-msgstr ""
+msgstr "最大有効時間"
 
 #: functions/AoT_average_multi_L.py:66
 msgid " 사용할 측정값의 최대 유효 시간"
-msgstr ""
+msgstr " 使用する測定値の最大有効時間"
 
 #: functions/AoT_average_multi_L.py:77
 msgid "평균을 계산할 측정 값을 선택하세요"
-msgstr ""
+msgstr "平均を計算する測定値を選択してください"
 
 #: functions/average_last_multiple.py:84 functions/average_past_single.py:79
 #: functions/bang_bang.py:54 functions/bang_bang_on_off.py:52
@@ -10468,11 +10468,11 @@ msgstr "湿球"
 
 #: functions/lorawan_mode_manager.py:62
 msgid "판정 및 적용 주기(초)"
-msgstr ""
+msgstr "判定と適用のサイクル（秒）"
 
 #: functions/lorawan_mode_manager.py:142
 msgid "사용할 측정치의 최대 허용 연령(초)"
-msgstr ""
+msgstr "使用する測定値の最大許容経過時間（秒）"
 
 #: functions/pid_autotune.py:103
 msgid "Noise Band"
@@ -10631,43 +10631,43 @@ msgstr "リットルあたりのパルス数"
 
 #: inputs/kma_weather_forecast.py:168
 msgid "nx 좌표"
-msgstr ""
+msgstr "nx座標"
 
 #: inputs/kma_weather_forecast.py:169
 msgid "nx 값을 입력하세요 (숫자)."
-msgstr ""
+msgstr "nx値を入力してください（数値）。"
 
 #: inputs/kma_weather_forecast.py:176
 msgid "ny 좌표"
-msgstr ""
+msgstr "ny座標"
 
 #: inputs/kma_weather_forecast.py:177
 msgid "ny 값을 입력하세요 (숫자)."
-msgstr ""
+msgstr "ny値を入力してください（数値）。"
 
 #: inputs/kma_weather_forecast.py:189
 msgid "몇 시간 뒤 예보"
-msgstr ""
+msgstr "何時間後の予報"
 
 #: inputs/kma_weather_forecast.py:198
 msgid "API 타임아웃(초)"
-msgstr ""
+msgstr "APIタイムアウト（秒）"
 
 #: inputs/kma_weather_forecast.py:207
 msgid "API 재시도 횟수"
-msgstr ""
+msgstr "APIリトライ回数"
 
 #: inputs/kma_weather_forecast.py:216
 msgid "API 재시도 간격(초)"
-msgstr ""
+msgstr "APIリトライ間隔（秒）"
 
 #: inputs/kma_weather_stn_L.py:88
 msgid "stn"
-msgstr ""
+msgstr "気象観測所"
 
 #: inputs/linux_command.py:50
 msgid "Command Timeout"
-msgstr ""
+msgstr "コマンドタイムアウト"
 
 #: inputs/linux_command.py:66
 msgid "Current Working Directory"
@@ -10682,7 +10682,7 @@ msgstr "都市"
 #: outputs/on_off_wireless_rpi_rf.py:61 outputs/pump_gpio.py:84
 #: outputs/pwm_gpio.py:81 outputs/pwm_rpi_gpio.py:79
 msgid "BCM"
-msgstr ""
+msgstr "BCM"
 
 #: inputs/th1x.py:68 inputs/th1x_am2301.py:67 inputs/th1x_ds18b20.py:53
 msgid "IP Address"
@@ -10694,7 +10694,7 @@ msgstr "Sensor Name"
 
 #: inputs_gis/gis_isric.py:8
 msgid "pH (Water)"
-msgstr ""
+msgstr "pH（水質）"
 
 #: inputs_gis/gis_isric.py:40
 msgid "Soil Property"
@@ -11009,7 +11009,7 @@ msgstr "実行設定"
 #: widgets/widget_output_pwm_slider.py:66 widgets/widget_python_code.py:167
 #, python-brace-format
 msgid "{} ({})"
-msgstr ""
+msgstr "{} ({})"
 
 #: widgets/AoT_PID.py:223 widgets/AoT_on_off_counter.py:871
 #: widgets/AoT_timer.py:494
@@ -11023,7 +11023,7 @@ msgstr "ウィジェット更新周波数"
 #: widgets/AoT_PID.py:236 widgets/AoT_on_off_counter.py:875
 #: widgets/AoT_timer.py:498
 msgid "Display Settings"
-msgstr ""
+msgstr "表示設定"
 
 #: widgets/AoT_PID.py:242
 msgid "Timestamp"
@@ -11082,7 +11082,7 @@ msgstr "コントローラーをオン オフするためのスイッチです"
 
 #: widgets/AoT_controller.py:156
 msgid "Select the controller."
-msgstr ""
+msgstr "コントローラーを選択してください。"
 
 #: widgets/AoT_controller.py:165
 msgid "Frequency of widget refresh (seconds)"
@@ -11559,7 +11559,7 @@ msgstr "オーバーレイマップを非表示にしてデータパネルのみ
 
 #: widgets/AoT_on_off_counter.py:72
 msgid "Must be a number."
-msgstr ""
+msgstr "数値でなければなりません。"
 
 #: widgets/AoT_on_off_counter.py:74
 msgid "Allowed range is -12.0 ~ +14.0."
@@ -11568,7 +11568,7 @@ msgstr "許容範囲は -12.0 〜 +14.0 です。"
 #: widgets/AoT_on_off_counter.py:354
 #, python-brace-format
 msgid "ON Failed: {}"
-msgstr ""
+msgstr "起動失敗：{}"
 
 #: widgets/AoT_on_off_counter.py:837
 msgid "AoT On/Off Counter"
@@ -11621,7 +11621,7 @@ msgstr "動作時間のフォントサイズ"
 
 #: widgets/AoT_on_off_counter.py:909
 msgid "Counter Settings"
-msgstr ""
+msgstr "カウンター設定"
 
 #: widgets/AoT_on_off_counter.py:916 widgets/AoT_timer.py:539
 msgid "Enable the timer function."
@@ -11725,11 +11725,11 @@ msgstr "自動サイクルのデフォルト数"
 
 #: widgets/AoT_timer.py:70
 msgid "숫자여야 합니다."
-msgstr ""
+msgstr "数値でなければなりません。"
 
 #: widgets/AoT_timer.py:72
 msgid "허용 범위는 -12.0 ~ +14.0 입니다."
-msgstr ""
+msgstr "許容範囲は-12.0～+14.0です。"
 
 #: widgets/AoT_timer.py:463
 msgid "AoT Timer"
@@ -11876,23 +11876,23 @@ msgstr "Select a Map"
 
 #: widgets/widget_ai_insight.py:74
 msgid "Unique ID of the agent to use. Leave empty for default."
-msgstr ""
+msgstr "使用するエージェントのユニークID。デフォルトは空白。"
 
 #: widgets/widget_ai_insight.py:80
 msgid "Default Analysis Goal"
-msgstr ""
+msgstr "デフォルト分析目標"
 
 #: widgets/widget_ai_insight.py:81
 msgid "Initial goal for AI reasoning when the widget loads."
-msgstr ""
+msgstr "ウィジェット読み込み時のAI推論の初期目標。"
 
 #: widgets/widget_ai_insight.py:87
 msgid "Auto-Analyze Refresh (Minutes)"
-msgstr ""
+msgstr "自動分析更新（分）"
 
 #: widgets/widget_ai_insight.py:88
 msgid "Interval to automatically re-run AI reasoning. Set 0 to disable."
-msgstr ""
+msgstr "AI推論の自動再実行間隔。0で無効化。"
 
 #: widgets/widget_camera.py:244
 msgid "Select the camera to display"
@@ -11916,15 +11916,15 @@ msgstr "最新のタイムラプス画像を表示"
 
 #: widgets/widget_camera.py:256
 msgid "Image Display Type"
-msgstr ""
+msgstr "画像表示タイプ"
 
 #: widgets/widget_camera.py:257
 msgid "Select how to display the image"
-msgstr ""
+msgstr "画像の表示方法を選択"
 
 #: widgets/widget_camera.py:267
 msgid "Streaming Method"
-msgstr ""
+msgstr "ストリーミング方式"
 
 #: widgets/widget_camera.py:268
 msgid "Select the streaming method"
@@ -11970,7 +11970,7 @@ msgstr "値のフォントサイズ em"
 #: widgets/widget_function_status.py:69 widgets/widget_measurement.py:79
 #: widgets/widget_measurement_multi.py:115
 msgid "The font size of the measurement"
-msgstr ""
+msgstr "測定値のフォントサイズ"
 
 #: widgets/widget_gauge_angular.py:150 widgets/widget_gauge_solid.py:174
 #: widgets/widget_indicator.py:57 widgets/widget_measurement.py:53
@@ -12007,7 +12007,7 @@ msgstr "X軸の期間 分"
 
 #: widgets/widget_graph_synchronous.py:268
 msgid "The x-axis duration"
-msgstr ""
+msgstr "X軸の期間"
 
 #: widgets/widget_graph_synchronous.py:275
 msgid ""
@@ -12029,7 +12029,7 @@ msgstr "グラフタイトルを有効化します。"
 
 #: widgets/widget_graph_synchronous.py:302
 msgid "Enable Navbar"
-msgstr ""
+msgstr "ナビゲーションバーを有効化"
 
 #: widgets/widget_graph_synchronous.py:303
 msgid "Enable the graph navigation bar."
@@ -12105,19 +12105,19 @@ msgstr "ノートタグ一覧"
 
 #: widgets/widget_indicator.py:44
 msgid "장치 설정"
-msgstr ""
+msgstr "デバイス設定"
 
 #: widgets/widget_indicator.py:79
 msgid "표시 설정"
-msgstr ""
+msgstr "表示設定"
 
 #: widgets/widget_indicator.py:87 widgets/widget_measurement.py:102
 msgid "The number of measurement decimal places"
-msgstr ""
+msgstr "測定値の小数点以下の桁数"
 
 #: widgets/widget_indicator.py:93
 msgid "Invert Colors"
-msgstr ""
+msgstr "色を反転"
 
 #: widgets/widget_indicator.py:94
 msgid "Invert the indicator colors"
@@ -12322,7 +12322,7 @@ msgstr "ダッシュボード ウィジェットの更新ごとに実行するPy
 
 #: widgets/widget_spacer.py:53
 msgid "Body Text"
-msgstr ""
+msgstr "本文テキスト"
 
 #: widgets/widget_spacer.py:54
 msgid "The body text of the widget"
@@ -12338,15 +12338,15 @@ msgstr "Select the Sequence to control"
 
 #: widgets/widget_trigger_sequence.py:194
 msgid "Refresh (Seconds)"
-msgstr ""
+msgstr "更新（秒）"
 
 #: widgets/widget_trigger_sequence.py:201
 msgid "Show"
-msgstr ""
+msgstr "表示"
 
 #: widgets/widget_trigger_sequence.py:205
 msgid "Show Actions List"
-msgstr ""
+msgstr "アクションリストを表示"
 
 #: widgets/widget_trigger_sequence.py:206
 msgid "Toggle the visibility of the action list by default."
@@ -12359,7 +12359,7 @@ msgstr "Sequence Settings (Synced)"
 #: widgets/widget_trigger_sequence.py:219
 #: widgets/widget_trigger_sequence.py:226
 msgid "HH:MM format"
-msgstr ""
+msgstr "HH:MM形式"
 
 #: widgets/widget_trigger_sequence.py:234
 msgid "Total duration of one cycle"
@@ -12383,12 +12383,11 @@ msgstr "ステップ間のクロッシング時間"
 
 #: widgets/widget_trigger_sequence.py:254
 msgid "Input Validity (s)"
-msgstr ""
+msgstr "入力有効期間（秒）"
 
 #: widgets/widget_trigger_sequence.py:255
 msgid "Input value validity duration"
 msgstr "入力値有効期間"
-
 
 #: aot/services/ai_routing_service.py
 msgid "Hello! I am the AoT AI Assistant. How can I help you today?"
@@ -12421,3 +12420,1254 @@ msgstr "計算結果は %(result)s です。"
 #: aot/services/ai_routing_service.py
 msgid "I'm not sure I understood your request. Could you please clarify?"
 msgstr "リクエストを正確に理解できませんでした。もう少し詳しく教えていただけますか？"
+
+msgid "90 degree"
+msgstr "90度"
+
+msgid "A"
+msgstr "AoTデバイス"
+
+msgid "Adapter valve"
+msgstr "アダプターバルブ"
+
+msgid "Add from Address"
+msgstr "住所から追加"
+
+msgid "AoT Device Count"
+msgstr "AoTデバイス数"
+
+msgid "Apply Filter"
+msgstr "フィルター適用"
+
+msgid "Area"
+msgstr "面積"
+
+msgid "Branch Pipe Count"
+msgstr "分岐パイプ数"
+
+msgid "Branch Pipe Elbow"
+msgstr "分岐パイプエルボ"
+
+msgid "Branch Pipe End"
+msgstr "分岐パイプ端部"
+
+msgid "Branch Pipe Length"
+msgstr "分岐パイプ長さ"
+
+msgid "Branch Pipe Tee"
+msgstr "分岐パイプティー"
+
+msgid "Click on the map to measure"
+msgstr "地図をクリックして測定してください"
+
+msgid "Connection"
+msgstr "接続"
+
+msgid "Current Work Time"
+msgstr "現在の作業時間"
+
+msgid "Data Load Failed"
+msgstr "データ読み込み失敗"
+
+msgid "Design Details"
+msgstr "設計詳細"
+
+msgid "Design Summary"
+msgstr "設計サマリー"
+
+msgid "Disc"
+msgstr "ディスク"
+
+msgid "Drip"
+msgstr "点滴"
+
+msgid "Elbow"
+msgstr "エルボ"
+
+msgid "Equipment"
+msgstr "設備"
+
+msgid "Facility"
+msgstr "施設"
+
+msgid "Facility Design"
+msgstr "施設設計"
+
+msgid "Filter"
+msgstr "フィルター"
+
+msgid "Flow (L/h)"
+msgstr "流量 (L/h)"
+
+msgid "Flow (L/min)"
+msgstr "流量 (L/min)"
+
+msgid "Flow Rate (L/h)"
+msgstr "流量率 (L/h)"
+
+msgid "Flow Rate (L/min)"
+msgstr "流量率 (L/min)"
+
+msgid "Flow rate"
+msgstr "流量"
+
+msgid "Hide joints"
+msgstr "継手を非表示"
+
+msgid "Hide labels"
+msgstr "ラベルを非表示"
+
+msgid "Hide length"
+msgstr "長さを非表示"
+
+msgid "Hide pipe labels"
+msgstr "パイプラベルを非表示"
+
+msgid "Hide sprinklers"
+msgstr "スプリンクラーを非表示"
+
+msgid "Inline valve"
+msgstr "インラインバルブ"
+
+msgid "Input Device Count"
+msgstr "入力デバイス数"
+
+msgid "Irrigation"
+msgstr "灌漑"
+
+msgid "Last Work Time"
+msgstr "最終作業時間"
+
+msgid "Layers"
+msgstr "レイヤー"
+
+msgid "Length (m)"
+msgstr "長さ (m)"
+
+msgid "Load Failed"
+msgstr "読み込み失敗"
+
+msgid "Loading..."
+msgstr "読み込み中..."
+
+msgid "Logic Count"
+msgstr "ロジック数"
+
+msgid "Main Pipe Count"
+msgstr "メインパイプ数"
+
+msgid "Main Pipe Elbow"
+msgstr "メインパイプエルボ"
+
+msgid "Main Pipe End"
+msgstr "メインパイプ端部"
+
+msgid "Main Pipe Length"
+msgstr "メインパイプ長さ"
+
+msgid "Main Pipe Reducing Elbow"
+msgstr "メインパイプ縮小エルボ"
+
+msgid "Main Pipe Reducing Tee"
+msgstr "メインパイプ縮小ティー"
+
+msgid "Main Pipe Tee"
+msgstr "メインパイプティー"
+
+msgid "Main pipe"
+msgstr "メインパイプ"
+
+msgid "New Site"
+msgstr "新規サイト"
+
+msgid "New Zone"
+msgstr "新規ゾーン"
+
+msgid "No Measurements"
+msgstr "測定値なし"
+
+msgid "No Notes"
+msgstr "メモなし"
+
+msgid "No Pipe Data"
+msgstr "パイプデータなし"
+
+msgid "No Sites Found"
+msgstr "サイトが見つかりません"
+
+msgid "No Sites Selected"
+msgstr "サイトが選択されていません"
+
+msgid "No."
+msgstr "No."
+
+msgid "Number of Emitters"
+msgstr "散水器数"
+
+msgid "Number of Emitters (Pipe)"
+msgstr "散水器数（パイプ）"
+
+msgid "Offset"
+msgstr "オフセット"
+
+msgid "Open"
+msgstr "開く"
+
+msgid "Open Notes"
+msgstr "メモを開く"
+
+msgid "Output Device Count"
+msgstr "出力デバイス数"
+
+msgid "Pipe"
+msgstr "パイプ"
+
+msgid "Pipe Details"
+msgstr "パイプ詳細"
+
+msgid "Pipe Length"
+msgstr "パイプ長さ"
+
+msgid "Placement mode"
+msgstr "配置モード"
+
+msgid "Pump"
+msgstr "ポンプ"
+
+msgid "Radius"
+msgstr "半径"
+
+msgid "RainViewer Radar"
+msgstr "RainViewerレーダー"
+
+msgid "Reducer"
+msgstr "リデューサー"
+
+msgid "Reference line"
+msgstr "参照線"
+
+msgid "Remove from Map"
+msgstr "地図から削除"
+
+msgid "River"
+msgstr "川"
+
+msgid "Sand"
+msgstr "砂"
+
+msgid "Screen"
+msgstr "画面"
+
+msgid "Search Device..."
+msgstr "デバイス検索..."
+
+msgid "Select Site"
+msgstr "サイトを選択"
+
+msgid "Selection list"
+msgstr "選択リスト"
+
+msgid "Show joints"
+msgstr "継手を表示"
+
+msgid "Show labels"
+msgstr "ラベルを表示"
+
+msgid "Show length"
+msgstr "長さを表示"
+
+msgid "Show pipe labels"
+msgstr "パイプラベルを表示"
+
+msgid "Show sprinklers"
+msgstr "スプリンクラーを表示"
+
+msgid "Site Area"
+msgstr "サイト面積"
+
+msgid "Site Count"
+msgstr "サイト数"
+
+msgid "Site Pipe Info"
+msgstr "サイトパイプ情報"
+
+msgid "Spacing"
+msgstr "間隔"
+
+msgid "Sprinkler"
+msgstr "スプリンクラー"
+
+msgid "Subtract"
+msgstr "減算"
+
+msgid "Suction"
+msgstr "吸水"
+
+msgid "Tee"
+msgstr "ティー"
+
+msgid "Total Area"
+msgstr "総面積"
+
+msgid "Union"
+msgstr "ユニオン"
+
+msgid "Union valve"
+msgstr "ユニオンバルブ"
+
+msgid "Water supply"
+msgstr "給水"
+
+msgid "Water tank"
+msgstr "貯水タンク"
+
+msgid "Zone"
+msgstr "ゾーン"
+
+msgid "Zone Count"
+msgstr "ゾーン数"
+
+msgid "[Branch Pipe]"
+msgstr "[分岐パイプ]"
+
+msgid "[Main Pipe]"
+msgstr "[メインパイプ]"
+
+msgid "angle"
+msgstr "角度"
+
+msgid "custom_color"
+msgstr "カスタムカラー"
+
+msgid "edit"
+msgstr "編集"
+
+msgid "loading_map"
+msgstr "マップを読み込み中"
+
+msgid "map_not_found"
+msgstr "マップが見つかりません"
+
+msgid "no_content"
+msgstr "コンテンツなし"
+
+msgid "save"
+msgstr "保存"
+
+msgid "save_btn_text"
+msgstr "保存"
+
+msgid "select_color"
+msgstr "カラーを選択"
+
+msgid "spacing"
+msgstr "間隔"
+
+msgid "units"
+msgstr "単位"
+
+msgid "1-3 years"
+msgstr "1〜3年"
+
+msgid "10+ years"
+msgstr "10年以上"
+
+msgid "3-10 years"
+msgstr "3〜10年"
+
+msgid "ACH"
+msgstr "ACH（換気回数/時）"
+msgid "AI Context"
+msgstr "AIコンテキスト"
+
+msgid "AI Error Dashboard"
+msgstr "AIエラーダッシュボード"
+
+msgid "AI Library"
+msgstr "AIライブラリ"
+
+msgid "AI Proposed Tasks Management"
+msgstr "AI提案タスク管理"
+
+msgid "AI Reasoning"
+msgstr "AI推論"
+
+msgid "AI Settings"
+msgstr "AI設定"
+
+msgid "AI Status"
+msgstr "AIステータス"
+
+msgid "AI functionality is currently in experimental stage."
+msgstr "AI機能は現在実験段階です。"
+
+msgid "AI is still learning..."
+msgstr "AIはまだ学習中です..."
+
+msgid "AI learns from your data over time"
+msgstr "AIは時間とともにデータから学習します"
+
+msgid "Action failed"
+msgstr "操作に失敗しました"
+
+msgid "Activate on Save"
+msgstr "保存時に有効化"
+
+msgid "Activation failed"
+msgstr "有効化に失敗しました"
+
+msgid "Actuators (12 slots)"
+msgstr "アクチュエーター（12スロット）"
+
+msgid "Add Server"
+msgstr "サーバーを追加"
+
+msgid "Add specific instructions for your AI (optional)"
+msgstr "AIへの具体的な指示を追加（任意）"
+
+msgid "Adding…"
+msgstr "追加中…"
+
+msgid "Advanced — optional"
+msgstr "詳細設定 — 任意"
+
+msgid "Advice is based on general agricultural knowledge"
+msgstr "アドバイスは一般的な農業知識に基づいています"
+
+msgid "Agree and Start"
+msgstr "同意して開始"
+
+msgid "All Set!"
+msgstr "準備完了！"
+
+msgid "Analyzing error patterns..."
+msgstr "エラーパターンを分析中..."
+
+msgid "AoT MCP Server"
+msgstr "AoT MCPサーバー"
+msgid "Apply to Knowledge"
+msgstr "ナレッジに適用"
+
+msgid "Arch (elliptical)"
+msgstr "アーチ型（楕円）"
+
+msgid "Available Tools"
+msgstr "利用可能なツール"
+
+msgid "Back"
+msgstr "戻る"
+
+msgid "Basic Configuration"
+msgstr "基本設定"
+
+msgid "Bays"
+msgstr "ベイ数"
+
+msgid "Browse Devices"
+msgstr "デバイスを参照"
+
+msgid "Budgets are automatically optimized per Tier."
+msgstr "予算はTierごとに自動最適化されます。"
+
+msgid "CO2"
+msgstr "CO2"
+
+msgid "CSS Selector (optional)"
+msgstr "CSSセレクター（任意）"
+
+msgid "Capacity Preview"
+msgstr "容量プレビュー"
+
+msgid "Configuration"
+msgstr "設定"
+
+msgid "Configure MCP Server"
+msgstr "MCPサーバーを設定"
+
+msgid "Confirmed knowledge items:"
+msgstr "確認済みナレッジ項目："
+
+msgid "Connect external data sources to automatically inject knowledge into AI context records."
+msgstr "外部データソースを接続してAIコンテキストレコードに自動でナレッジを注入します。"
+
+msgid "Connected"
+msgstr "接続済み"
+
+msgid "Context & Budget"
+msgstr "コンテキストと予算"
+
+msgid "Context Broadcast"
+msgstr "コンテキストブロードキャスト"
+
+msgid "Context Layer"
+msgstr "コンテキストレイヤー"
+
+msgid "Continue"
+msgstr "続ける"
+
+msgid "Conversation Management"
+msgstr "会話管理"
+
+msgid "Cooling load"
+msgstr "冷房負荷"
+
+msgid "Critical"
+msgstr "深刻"
+
+msgid "Critical Parameters"
+msgstr "重要パラメーター"
+
+msgid "Crop Type"
+msgstr "作物の種類"
+
+msgid "Custom Source"
+msgstr "カスタムソース"
+
+msgid "Date"
+msgstr "日付"
+
+msgid "Deactivation failed"
+msgstr "無効化に失敗しました"
+
+msgid "Default options for role applied"
+msgstr "役割のデフォルトオプションが適用されました"
+
+msgid "Define how this MCP server should be utilized..."
+msgstr "このMCPサーバーの活用方法を定義..."
+
+msgid "Delete Task"
+msgstr "タスクを削除"
+
+msgid "Delete failed"
+msgstr "削除に失敗しました"
+
+msgid "Delete this source?"
+msgstr "このソースを削除しますか？"
+
+msgid "Deleted."
+msgstr "削除されました。"
+
+msgid "Describe specifically what you need from this AI (optional)"
+msgstr "AIに必要なことを具体的に説明してください（任意）"
+
+msgid "Device Timeline"
+msgstr "デバイスタイムライン"
+
+msgid "Devices"
+msgstr "デバイス"
+
+msgid "Discovering MCP servers..."
+msgstr "MCPサーバーを探索中..."
+
+msgid "Double"
+msgstr "二重"
+
+msgid "Drag to resize"
+msgstr "ドラッグしてサイズ変更"
+
+msgid "During the learning period:"
+msgstr "学習期間中："
+
+msgid "Eave H (m)"
+msgstr "軒高 (m)"
+
+msgid "Edit Proposed Job"
+msgstr "提案ジョブを編集"
+
+msgid "Engine"
+msgstr "エンジン"
+
+msgid "Envelope"
+msgstr "エンベロープ"
+
+msgid "Environment Variables"
+msgstr "環境変数"
+
+msgid "Error Dashboard"
+msgstr "エラーダッシュボード"
+
+msgid "Error Detail & Resolution"
+msgstr "エラー詳細と解決"
+
+msgid "Error loading context"
+msgstr "コンテキスト読み込みエラー"
+
+msgid "Error: Form not found"
+msgstr "エラー：フォームが見つかりません"
+
+msgid "Existing key on file"
+msgstr "既存のキーがファイルにあります"
+
+msgid "Experimental Feature"
+msgstr "実験的機能"
+
+msgid "Facilities"
+msgstr "施設一覧"
+
+msgid "Facility Information"
+msgstr "施設情報"
+
+msgid "Facility Learning Status"
+msgstr "施設学習ステータス"
+
+msgid "Facility Type"
+msgstr "施設タイプ"
+
+msgid "Facility-specific data is still limited"
+msgstr "施設固有データはまだ限られています"
+
+msgid "Failed to add MCP server."
+msgstr "MCPサーバーの追加に失敗しました。"
+
+msgid "Failed to load MCP entries."
+msgstr "MCPエントリーの読み込みに失敗しました。"
+
+msgid "Failed to load devices."
+msgstr "デバイスの読み込みに失敗しました。"
+
+msgid "Failed to save. Please try again."
+msgstr "保存に失敗しました。もう一度お試しください。"
+
+msgid "Failed."
+msgstr "失敗しました。"
+
+msgid "File Path"
+msgstr "ファイルパス"
+
+msgid "Flat (box)"
+msgstr "フラット（ボックス型）"
+
+msgid "Floor"
+msgstr "床"
+
+msgid "Frequently Used Features"
+msgstr "よく使う機能"
+
+msgid "Full Text"
+msgstr "全文"
+
+msgid "Gable"
+msgstr "切妻屋根"
+
+msgid "General (Shared)"
+msgstr "一般（共有）"
+
+msgid "Get API Key / Documentation"
+msgstr "APIキー取得 / ドキュメント"
+
+msgid "Get Started"
+msgstr "始める"
+
+msgid "Getting Started with AI Advisor"
+msgstr "AIアドバイザーを始める"
+
+msgid "Getting to Know Each Other"
+msgstr "お互いを知る"
+
+msgid "Glazing"
+msgstr "グレージング"
+
+msgid "Go to AI Dashboard"
+msgstr "AIダッシュボードへ"
+
+msgid "Greenhouse"
+msgstr "温室"
+
+msgid "Hallucination"
+msgstr "幻覚（ハルシネーション）"
+
+msgid "Heating load"
+msgstr "暖房負荷"
+
+msgid "High"
+msgstr "高"
+
+msgid "I understand and agree to the above terms"
+msgstr "上記の条件を理解し同意します"
+
+msgid "Identity & Service"
+msgstr "アイデンティティとサービス"
+
+msgid "Ignored"
+msgstr "無視"
+
+msgid "Inappropriate Action"
+msgstr "不適切なアクション"
+
+msgid "Inner control mode"
+msgstr "内部制御モード"
+
+msgid "Inner cover"
+msgstr "内部カバー"
+
+msgid "Inner roof vent"
+msgstr "内部屋根ベント"
+
+msgid "Inner side vent"
+msgstr "内部側面ベント"
+
+msgid "Inspect AI context data for individual devices"
+msgstr "個別デバイスのAIコンテキストデータを検査"
+
+msgid "Key Keywords"
+msgstr "キーキーワード"
+
+msgid "Key-Value Extraction"
+msgstr "キーバリュー抽出"
+
+msgid "Large"
+msgstr "大"
+
+msgid "Layer count"
+msgstr "レイヤー数"
+
+msgid "Learning Progress"
+msgstr "学習進捗"
+
+msgid "Leave blank to keep"
+msgstr "維持するには空白のまま"
+
+msgid "Less than 1 year"
+msgstr "1年未満"
+
+msgid "Lighting"
+msgstr "照明"
+msgid "Loading"
+msgstr "読み込み中"
+
+msgid "Loading devices..."
+msgstr "デバイスを読み込み中..."
+
+msgid "Loading proposed tasks..."
+msgstr "提案タスクを読み込み中..."
+
+msgid "Low"
+msgstr "低"
+
+msgid "MCP Entries"
+msgstr "MCPエントリー"
+
+msgid "MCP Server"
+msgstr "MCPサーバー"
+
+msgid "MCP Server Management"
+msgstr "MCPサーバー管理"
+
+msgid "MCP Server added."
+msgstr "MCPサーバーが追加されました。"
+
+msgid "MCP Servers"
+msgstr "MCPサーバー一覧"
+
+msgid "MCP server activated"
+msgstr "MCPサーバーが有効化されました"
+
+msgid "MCP server deactivated"
+msgstr "MCPサーバーが無効化されました"
+
+msgid "Map & Site"
+msgstr "マップとサイト"
+msgid "Medium"
+msgstr "中"
+
+msgid "Misinformation"
+msgstr "誤情報"
+
+msgid "Models"
+msgstr "モデル"
+
+msgid "Monitor and control Model Context Protocol bridge processes"
+msgstr "MCPブリッジプロセスの監視と制御"
+
+msgid "Name and Command are required."
+msgstr "名前とコマンドは必須です。"
+
+msgid "New Facility"
+msgstr "新規施設"
+
+msgid "Next"
+msgstr "次へ"
+
+msgid "No MCP entries configured."
+msgstr "設定されたMCPエントリーがありません。"
+
+msgid "No activity yet"
+msgstr "まだアクティビティなし"
+
+msgid "No devices found."
+msgstr "デバイスが見つかりません。"
+
+msgid "No errors found."
+msgstr "エラーはありません。"
+
+msgid "No facilities yet."
+msgstr "まだ施設がありません。"
+
+msgid "Not Configured"
+msgstr "未設定"
+
+msgid "Not Synced"
+msgstr "未同期"
+
+msgid "Nursery"
+msgstr "育苗施設"
+
+msgid "Nutrients"
+msgstr "栄養素"
+
+msgid "Onboarding Complete"
+msgstr "オンボーディング完了"
+
+msgid "Operating Experience"
+msgstr "運営経験"
+
+msgid "Other"
+msgstr "その他"
+
+msgid "Outdoor Farming"
+msgstr "露地栽培"
+
+msgid "Outer cover"
+msgstr "外部カバー"
+
+msgid "Outer roof vent"
+msgstr "外部屋根ベント"
+
+msgid "Outer side vent"
+msgstr "外部側面ベント"
+
+msgid "Parameter Name (Context Key)"
+msgstr "パラメーター名（コンテキストキー）"
+
+msgid "Park"
+msgstr "公園"
+
+msgid "Parse Mode"
+msgstr "パースモード"
+
+msgid "Pending"
+msgstr "保留中"
+
+msgid "Pending:"
+msgstr "保留中："
+
+msgid "Permission denied"
+msgstr "権限が拒否されました"
+
+msgid "Pest Management"
+msgstr "病害虫管理"
+
+msgid "Pipeline Configuration"
+msgstr "パイプライン設定"
+
+msgid "Place on Map"
+msgstr "地図に配置"
+
+msgid "Plan Tier"
+msgstr "プランTier"
+
+msgid "Please select a facility type to continue."
+msgstr "続けるには施設タイプを選択してください。"
+
+msgid "Please select a source type."
+msgstr "ソースタイプを選択してください。"
+
+msgid "Please select an engine first."
+msgstr "まずエンジンを選択してください。"
+
+msgid "Position & Orientation"
+msgstr "位置と向き"
+
+msgid "Preset"
+msgstr "プリセット"
+
+msgid "Purpose"
+msgstr "目的"
+
+msgid "Query Template"
+msgstr "クエリテンプレート"
+
+msgid "Reason for Deletion"
+msgstr "削除理由"
+
+msgid "Recommendations"
+msgstr "推奨事項"
+
+msgid "Reference values for mechanical equipment sizing"
+msgstr "機械設備のサイジング参考値"
+
+msgid "Refresh All Status"
+msgstr "全ステータスを更新"
+
+msgid "Refresh List"
+msgstr "リストを更新"
+
+msgid "Refresh Patterns"
+msgstr "パターンを更新"
+
+msgid "Request failed"
+msgstr "リクエストに失敗しました"
+
+msgid "Reset AI Status"
+msgstr "AIステータスをリセット"
+
+msgid "Reset AI Status? The snapshot will be recalculated on next load."
+msgstr "AIステータスをリセットしますか？スナップショットは次回ロード時に再計算されます。"
+
+msgid "Resolved"
+msgstr "解決済み"
+
+msgid "Restart required for AI toggle change"
+msgstr "AIトグル変更には再起動が必要です"
+
+msgid "Restarting..."
+msgstr "再起動中..."
+
+msgid "Review"
+msgstr "レビュー"
+
+msgid "Review and manage tasks proposed by AI Agents."
+msgstr "AIエージェントが提案したタスクを確認・管理します。"
+
+msgid "Ridge H (m)"
+msgstr "棟高 (m)"
+
+msgid "Roof type"
+msgstr "屋根タイプ"
+
+msgid "Save Configuration"
+msgstr "設定を保存"
+
+msgid "Save Facility"
+msgstr "施設を保存"
+
+msgid "Save failed"
+msgstr "保存に失敗しました"
+
+msgid "Saved."
+msgstr "保存されました。"
+
+msgid "Scheduled Time"
+msgstr "スケジュール時刻"
+
+msgid "Search tasks..."
+msgstr "タスクを検索..."
+
+msgid "Select Source Type"
+msgstr "ソースタイプを選択"
+
+msgid "Select a Map first"
+msgstr "まずマップを選択してください"
+
+msgid "Sensor"
+msgstr "センサー"
+
+msgid "Server Configuration"
+msgstr "サーバー設定"
+
+msgid "Server Instruction / System Prompt"
+msgstr "サーバー指示 / システムプロンプト"
+
+msgid "Service & Model"
+msgstr "サービスとモデル"
+
+msgid "Settings saved"
+msgstr "設定が保存されました"
+
+msgid "Severity"
+msgstr "重大度"
+
+msgid "Shade curtain"
+msgstr "遮光カーテン"
+
+msgid "Sites belonging to the selected map"
+msgstr "選択されたマップに属するサイト"
+
+msgid "Small"
+msgstr "小"
+
+msgid "Source Name"
+msgstr "ソース名"
+
+msgid "Source Settings"
+msgstr "ソース設定"
+
+msgid "Source added. Configure it via the settings cog."
+msgstr "ソースが追加されました。設定コグから設定してください。"
+
+msgid "Source is not enabled. Activate it before syncing."
+msgstr "ソースが有効化されていません。同期前に有効化してください。"
+
+msgid "Source not found."
+msgstr "ソースが見つかりません。"
+
+msgid "Spacing (m)"
+msgstr "間隔 (m)"
+
+msgid "Span (m)"
+msgstr "スパン (m)"
+
+msgid "Spec"
+msgstr "仕様"
+
+msgid "Specific (Restricted)"
+msgstr "特定（制限）"
+
+msgid "Sports Facility"
+msgstr "スポーツ施設"
+
+msgid "Standard Arch (Vinyl Greenhouse)"
+msgstr "標準アーチ型（ビニールハウス）"
+
+msgid "Start Using AI"
+msgstr "AIを使い始める"
+
+msgid "Starting MCP process..."
+msgstr "MCPプロセスを起動中..."
+
+msgid "Starting..."
+msgstr "起動中..."
+
+msgid "Stopping MCP process..."
+msgstr "MCPプロセスを停止中..."
+
+msgid "Stopping..."
+msgstr "停止中..."
+
+msgid "Structure"
+msgstr "構造"
+
+msgid "Summary"
+msgstr "サマリー"
+
+msgid "Sync Complete"
+msgstr "同期完了"
+
+msgid "Sync Interval (min)"
+msgstr "同期間隔（分）"
+
+msgid "Sync complete"
+msgstr "同期完了"
+
+msgid "Sync failed"
+msgstr "同期に失敗しました"
+
+msgid "Syncing…"
+msgstr "同期中…"
+
+msgid "System Instructions"
+msgstr "システム指示"
+
+msgid "System Library"
+msgstr "システムライブラリ"
+
+msgid "Target ID"
+msgstr "ターゲットID"
+
+msgid "Tell Us About Your Facility"
+msgstr "施設についてお聞かせください"
+
+msgid "Terms of Use"
+msgstr "利用規約"
+
+msgid "The AI advisor will begin learning about this facility. The more feedback you provide on its suggestions, the more accurate and customized the advice becomes."
+msgstr "AIアドバイザーがこの施設について学習を開始します。提案へのフィードバックが多いほど、より正確でカスタマイズされたアドバイスが提供されます。"
+
+msgid "The executable command to start the MCP server process."
+msgstr "MCPサーバープロセスを起動する実行コマンド。"
+
+msgid "The more you interact, the more precise it becomes"
+msgstr "インタラクションが多いほど精度が上がります"
+
+msgid "Thermal curtain"
+msgstr "保温カーテン"
+
+msgid "This AI advisor learns from your facility over time. During the initial learning period, advice is based on general agricultural knowledge and may not be specific to your conditions. Your feedback — confirming, adjusting, or rejecting suggestions — is what calibrates the system to your facility. The system will tell you when it is uncertain and what confirmation would help. You remain in control: no automated actions will be taken without your approval."
+msgstr "AIアドバイザーは時間とともに施設について学習します。初期学習期間は一般的な農業知識に基づいてアドバイスし、お客様の条件に特化していない場合があります。フィードバック（確認・調整・拒否）がシステムを施設に合わせて調整します。不確かな場合はシステムがお知らせします。お客様の承認なしに自動アクションは実行されません。"
+
+msgid "This AI system requires a learning period to provide advice customized to your facility."
+msgstr "AIシステムが施設に合わせたアドバイスを提供するには学習期間が必要です。"
+msgid "Toggle failed"
+msgstr "トグルに失敗しました"
+
+msgid "Toggle which devices are included in AI judgment. Changes are saved immediately."
+msgstr "AI判断に含めるデバイスをトグルしてください。変更は即座に保存されます。"
+
+msgid "Tool Misuse"
+msgstr "ツールの誤用"
+
+msgid "Total Pending"
+msgstr "合計保留数"
+
+msgid "Total:"
+msgstr "合計："
+
+msgid "Transportation"
+msgstr "交通・輸送"
+
+msgid "Update AI Setup"
+msgstr "AIセットアップを更新"
+msgid "User Correction"
+msgstr "ユーザー修正"
+
+msgid "Value (0–359)"
+msgstr "値（0–359）"
+
+msgid "Vent open"
+msgstr "換気口開放"
+
+msgid "Vertical Farm"
+msgstr "垂直農場"
+
+msgid "View Device AI Context"
+msgstr "デバイスAIコンテキストを表示"
+
+msgid "What best describes your facility?"
+msgstr "あなたの施設を最もよく表すものは？"
+
+msgid "Worker"
+msgstr "ワーカー"
+
+msgid "You control what AI focuses on"
+msgstr "AIが注目する内容をコントロールできます"
+
+msgid "You will now see: AI Status, your key keywords, and how the AI is learning about your facility."
+msgstr "AIステータス、キーキーワード、AIが施設について学習する方法が表示されます。"
+
+msgid "Your AI Instructions"
+msgstr "あなたのAI指示"
+
+msgid "Your Instructions"
+msgstr "あなたの指示"
+
+msgid "Your feedback is the key to calibration"
+msgstr "フィードバックがキャリブレーションの鍵です"
+
+msgid "e.g. Energy Analytics, GIS Data"
+msgstr "例：エネルギー分析、GISデータ"
+
+msgid "e.g. I manage a greenhouse and need help with pest management and temperature control"
+msgstr "例：温室を管理しており、病害虫管理と温度制御のサポートが必要です"
+
+msgid "loading..."
+msgstr "読み込み中..."
+
+msgid "running"
+msgstr "実行中"
+
+msgid "select all that apply"
+msgstr "該当するものをすべて選択"
+
+msgid "unknown"
+msgstr "不明"
+
+msgid "AI Assistant"
+msgstr "AIアシスタント"
+
+msgid "Ask AI anything..."
+msgstr "AIに何でも聞いてください..."
+
+msgid "Browser Default"
+msgstr "ブラウザーのデフォルト"
+
+msgid "Manager"
+msgstr "マネージャー"
+
+msgid "Portal"
+msgstr "ポータル"
+
+msgid "Restart System"
+msgstr "システムを再起動"
+
+msgid "Schedule"
+msgstr "スケジュール"
+
+msgid "Wind Speed"
+msgstr "風速"
+
+msgid "Clouds"
+msgstr "雲量"
+
+msgid "Precipitation"
+msgstr "降水量"
+
+msgid "Rain/Snow Intensity"
+msgstr "雨/雪の強度"
+
+msgid "Snow"
+msgstr "雪"
+
+msgid "Rain"
+msgstr "雨"
+
+msgid "Storm"
+msgstr "嵐"
+
+msgid "Soil Moisture (Root Zone)"
+msgstr "土壌水分 (根圏)"
+
+msgid "Dry"
+msgstr "乾燥"
+
+msgid "Wet"
+msgstr "湿潤"
+
+msgid "NDVI"
+msgstr "NDVI"
+
+msgid "Soil pH (0-5cm)"
+msgstr "土壌pH (0-5cm)"
+
+msgid "Clay Content (%)"
+msgstr "粘土含量 (%)"
+
+msgid "Sand Content (%)"
+msgstr "砂含量 (%)"
+
+msgid "Silt Content (%)"
+msgstr "シルト含量 (%)"
+
+msgid "Organic Carbon (dg/kg)"
+msgstr "有機炭素 (dg/kg)"
+
+msgid "Bulk Density (cg/cm³)"
+msgstr "嵩密度 (cg/cm³)"
+
+msgid "Error: API returned"
+msgstr "エラー: APIが返した"
+
+msgid "Legend Error"
+msgstr "凡例エラー"
+
+msgid "Graphs"
+msgstr "グラフ"
+
+msgid "Graphs are useful for visualizing datasets over weeks, months, or years. Displaying such data on synchronous graphs can cause high data processing and computation load."
+msgstr "グラフは、数週間、数ヶ月、または数年にわたるデータセットを視覚化するのに役立ちます。このようなデータを同期グラフで表示すると、データ処理と計算の負荷が高くなる可能性があります。"
+
+msgid "All Data"
+msgstr "全データ"
+
+msgid "Past Period"
+msgstr "過去の期間"
+
+msgid "1 Year"
+msgstr "1年"
+
+msgid "Hold <kbd>Ctrl</kbd> or <kbd>&#8984;</kbd> to select multiple items."
+msgstr "<kbd>Ctrl</kbd> または <kbd>&#8984;</kbd> を押しながら複数の項目を選択してください。"
+
+msgid "1h"
+msgstr "1時"
+
+msgid "1d"
+msgstr "1日"
+
+msgid "1w"
+msgstr "1週"
+
+msgid "1m"
+msgstr "1月"
+
+msgid "1y"
+msgstr "1年"

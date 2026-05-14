@@ -18,6 +18,7 @@ db = SQLAlchemy()
 ma = Marshmallow(app)
 csrf = CSRFProtect()
 cache = Cache(config={
-    'CACHE_TYPE': 'simple',  # In-memory cache
-    'CACHE_DEFAULT_TIMEOUT': 300  # 5 minutes default
+    'CACHE_TYPE': 'FileSystemCache',  # Shared across gunicorn workers
+    'CACHE_DIR': '/tmp/aot_flask_cache',
+    'CACHE_DEFAULT_TIMEOUT': 300
 })

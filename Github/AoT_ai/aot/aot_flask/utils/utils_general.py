@@ -312,6 +312,8 @@ def custom_options_return_json(
                 continue
 
             if request_form:
+                logger.warning("[SAVE_DEBUG] device=%s option=%s form_keys=%s",
+                               device, each_option['id'], list(request_form.keys()))
                 for key in request_form.keys():
                     if each_option['id'] == key:
                         constraints_pass = True
@@ -320,6 +322,7 @@ def custom_options_return_json(
 
                         # [Fix] Pick first non-empty value if multiple entries exist (naming collision handling)
                         raw_val = request_form.get(key)
+                        logger.warning("[SAVE_DEBUG] MATCH device=%s option=%s raw_val=%r", device, each_option['id'], raw_val)
                         if raw_val in [None, '', 'None', 'null']:
                             for val in request_form.getlist(key):
                                 if val not in [None, '', 'None', 'null']:
@@ -458,8 +461,10 @@ def custom_options_return_json(
                 dict_options_return[each_option['id']] = False
 
             elif null_value:
-                # Prioritize default_value over None
-                if 'default_value' in each_option:
+                # Keep existing DB value if present; only fall back to default_value for new entries
+                if each_option['id'] in dict_options_return:
+                    pass  # presave value already in dict — do not overwrite with module default
+                elif 'default_value' in each_option:
                     dict_options_return[each_option['id']] = each_option['default_value']
                 elif use_defaults:
                     # Set type-appropriate defaults when no default_value is specified
@@ -495,9 +500,13 @@ def custom_channel_options_return_json(
         channel,
         mod_dev=None,
         device=None,
-        use_defaults=False):
-    # Custom channel_options
-    dict_options_return = {}
+        use_defaults=False,
+        custom_options=None):
+    # Custom channel_options — seed with presave values so null form fields don't erase DB data
+    if isinstance(custom_options, dict):
+        dict_options_return = copy.deepcopy(custom_options)
+    else:
+        dict_options_return = {}
 
     # TODO: name same name in next major release
     if mod_dev is None:
@@ -521,9 +530,6 @@ def custom_channel_options_return_json(
             if 'id' not in each_option:
                 continue
 
-            if each_option['id'] not in dict_options_return:
-                dict_options_return[each_option['id']] = OrderedDict()
-
             null_value = True
 
             if request_form:
@@ -546,8 +552,8 @@ def custom_channel_options_return_json(
                                         mod_dev, float(raw_val))
                                 if constraints_pass:
                                     value = float(raw_val)
-                            elif 'required' in each_option and not each_option['required']:
-                                value = None
+                            elif raw_val in (None, '', 'None', 'null'):
+                                value = each_option.get('default_value', None)
                             else:
                                 error.append(
                                     "{name} must represent a float/decimal value "
@@ -685,7 +691,9 @@ def custom_channel_options_return_json(
                 dict_options_return[each_option['id']] = False
 
             elif null_value:
-                if use_defaults and 'default_value' in each_option:
+                if each_option['id'] in dict_options_return:
+                    pass  # presave value already in dict — do not overwrite with module default
+                elif use_defaults and 'default_value' in each_option:
                     # If a select type has cast_value set, cast the value as that type
                     if (each_option['type'] in ['select', 'select_custom_choices'] and
                             'cast_value' in each_option and
@@ -1103,10 +1111,22 @@ def choices_outputs_channels(output, output_channel, dict_outputs):
     """populate form multi-select choices from Output entries."""
     choices = []
     for each_output in output:
+        # Skip outputs whose type isn't in dict_outputs (custom modules removed
+        # but DB entries linger) so a single bad row doesn't break the whole list.
+        if each_output.output_type not in dict_outputs:
+            logger.warning(
+                "choices_outputs_channels: output %s has unknown type %r — skipped",
+                each_output.unique_id, each_output.output_type)
+            continue
         for each_channel in output_channel:
             if each_output.unique_id == each_channel.output_id:
-                choices = form_output_channel_choices(
-                    choices, each_output, each_channel, dict_outputs)
+                try:
+                    choices = form_output_channel_choices(
+                        choices, each_output, each_channel, dict_outputs)
+                except Exception as e:
+                    logger.exception(
+                        "choices_outputs_channels: skipping %s/CH%s — %s",
+                        each_output.unique_id, each_channel.channel, e)
     return choices
 
 
@@ -1349,7 +1369,9 @@ def form_output_channel_measurement_choices(
         choices, each_output, output_channels, dict_outputs, dict_units, dict_measurements, include_channel_id_in_value=True,
         prefetched_measurements=None, prefetched_conversions=None):
     for each_channel in output_channels:
-        measurement_channels = dict_outputs[each_output.output_type]['channels_dict'][each_channel.channel]['measurements']
+        ch_dict = dict_outputs[each_output.output_type]['channels_dict']
+        ch_info = ch_dict.get(each_channel.channel, ch_dict.get(0, {}))
+        measurement_channels = ch_info.get('measurements', [])
         for measurement_channel in measurement_channels:
             device_measurement = None
             if prefetched_measurements is not None:
@@ -1407,8 +1429,8 @@ def form_output_channel_measurement_choices(
                 display = f'[Output {each_output.id:02d} CH{each_channel.channel} M{device_measurement.channel}] {each_output.name}{channel_name}{meas_name}{measurement_unit}'
 
                 types = []
-                if 'types' in dict_outputs[each_output.output_type]['channels_dict'][each_channel.channel]:
-                    types = dict_outputs[each_output.output_type]['channels_dict'][each_channel.channel]['types']
+                if 'types' in ch_info:
+                    types = ch_info['types']
 
                 choices.append(
                     {'value': value,
@@ -1428,15 +1450,17 @@ def form_output_channel_choices(choices, each_output, each_channel, dict_outputs
         name=each_output.name,
         ch=each_channel.channel)
 
+    ch_dict_2 = dict_outputs[each_output.output_type]['channels_dict']
+    ch_info_2 = ch_dict_2.get(each_channel.channel, ch_dict_2.get(0, {}))
+
     if each_channel.name:
         display += ': {}'.format(each_channel.name)
-    elif ('name' in dict_outputs[each_output.output_type]['channels_dict'][each_channel.channel] and
-            dict_outputs[each_output.output_type]['channels_dict'][each_channel.channel]['name']):
-        display += ': {}'.format(dict_outputs[each_output.output_type]['channels_dict'][each_channel.channel]['name'])
+    elif 'name' in ch_info_2 and ch_info_2['name']:
+        display += ': {}'.format(ch_info_2['name'])
 
     types = []
-    if 'types' in dict_outputs[each_output.output_type]['channels_dict'][each_channel.channel]:
-        types = dict_outputs[each_output.output_type]['channels_dict'][each_channel.channel]['types']
+    if 'types' in ch_info_2:
+        types = ch_info_2['types']
 
     choices.append({
         'value': value,

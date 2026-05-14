@@ -77,14 +77,14 @@ AoT는 Raspberry Pi OS 12(Bookworm), Lite/데스크탑, 32/64비트와 Debian 12
 
 공식 배포처가 아닌 곳에서 문서를 받았다면 최신 버전이 아닐 수 있습니다. 최신 버전은 아래에서 확인하세요.
 
-https://github.com/aot-inc/AoT
+https://github.com/AoT-inc/AoT-AI
 
 [![광합성 촉진 방법 - 유튜브 영상](https://www.youtube.com/watch?v=q-QhT4KU1Dc)
 
 라이선스
 -------
 
-`License.txt <https://github.com/aot-inc/AoT/blob/master/LICENSE.txt>`__ 참고
+`License.txt <https://github.com/AoT-inc/AoT-AI/blob/master/LICENSE.txt>`__ 참고
 
 AoT는 GNU 일반 공중 사용 허가서(GPL) 3버전 또는 그 이후 버전의 조건에 따라 자유롭게 사용, 수정, 배포할 수 있습니다.
 

@@ -11,13 +11,13 @@
 
 AoT에는 사용자 생성 기능을 AoT 시스템에서 사용할 수 있도록 하는 사용자 정의 기능 가져오기 시스템이 있습니다. 사용자 정의 기능은 `[톱니바퀴 아이콘] -> 구성 -> 사용자 정의 기능` 페이지에서 업로드할 수 있습니다. 가져온 후에는 `설정 -> 기능` 페이지에서 사용할 수 있습니다.
 
-작동하는 기능 모듈을 개발한 경우, [새 GitHub 이슈 생성](https://github.com/aot-inc/AoT/issues/new?assignees=&labels=&template=feature-request.md&title=New%20Module) 또는 풀 리퀘스트를 고려해 보세요. 해당 모듈이 기본 제공 세트에 포함될 수 있습니다.
+작동하는 기능 모듈을 개발한 경우, [새 GitHub 이슈 생성](https://github.com/AoT-inc/AoT-AI/issues/new?assignees=&labels=&template=feature-request.md&title=New%20Module) 또는 풀 리퀘스트를 고려해 보세요. 해당 모듈이 기본 제공 세트에 포함될 수 있습니다.
 
-적절한 포맷팅 예제를 보려면 디렉토리 [AoT/aot/functions](https://github.com/aot-inc/AoT/tree/master/aot/functions/)에 있는 기본 제공 모듈을 열어보세요.
+적절한 포맷팅 예제를 보려면 디렉토리 [AoT/aot/functions](https://github.com/AoT-inc/AoT-AI/tree/master/aot/functions/)에 있는 기본 제공 모듈을 열어보세요.
 
-또한, 디렉토리 [AoT/aot/functions/examples](https://github.com/aot-inc/AoT/tree/master/aot/functions/examples)에는 사용자 정의 기능 예제가 포함되어 있습니다.
+또한, 디렉토리 [AoT/aot/functions/examples](https://github.com/AoT-inc/AoT-AI/tree/master/aot/functions/examples)에는 사용자 정의 기능 예제가 포함되어 있습니다.
 
-기본 제공 세트에 포함되지 않은 사용자 정의 모듈에 전념하는 또 다른 GitHub 저장소는 [aot-inc/AoT-custom](https://github.com/aot-inc/AoT-custom)에서 확인할 수 있습니다.
+기본 제공 세트에 포함되지 않은 사용자 정의 모듈에 전념하는 또 다른 GitHub 저장소는 [aot-inc/AoT-custom](https://github.com/AoT-inc/AoT-AI-custom)에서 확인할 수 있습니다.
 
 새로운 측정값/단위가 필요한 기능의 경우, `[톱니바퀴 아이콘] -> 구성 -> 측정값` 페이지에서 추가할 수 있습니다.
 

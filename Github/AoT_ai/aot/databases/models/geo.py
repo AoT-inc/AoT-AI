@@ -122,6 +122,9 @@ class GeoSetting(CRUDMixin, db.Model):
 
     equipment_cull_zoom = db.Column(db.Integer, default=15)
 
+    # Unit preferences
+    length_unit = db.Column(db.String(8), nullable=False, default='m')  # mm|cm|m|in|ft
+
     # Theme Configuration (JSON)
     # Stores colors for Site, Zone, Facility, Equipment, etc.
     theme_config = db.Column(db.Text, default='{}')
@@ -150,6 +153,7 @@ class GeoSetting(CRUDMixin, db.Model):
             'max_polygons_site': self.max_polygons_site,
             'max_polygons_zone': self.max_polygons_zone,
             'equipment_cull_zoom': self.equipment_cull_zoom if self.equipment_cull_zoom is not None else 15,
+            'length_unit': self.length_unit or 'm',
             'theme_config': self._loads(self.theme_config)
         }
 
@@ -298,6 +302,11 @@ class GeoFacility(CRUDMixin, db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = db.Column(db.String(36), default='')
 
+    # 3D asset override (render_mode='asset' → parametric builder skipped)
+    model_asset_uuid = db.Column(db.String(36), nullable=True, index=True)
+    model_transform = db.Column(JSON, nullable=True)   # {position:[x,y,z], rotation:[rx,ry,rz], scale:[sx,sy,sz]}
+    render_mode = db.Column(db.String(16), nullable=False, default='parametric')  # 'parametric' | 'asset'
+
     # Relationship
     shape = db.relationship(
         "GeoShape",
@@ -308,3 +317,53 @@ class GeoFacility(CRUDMixin, db.Model):
     def __repr__(self):
         return "<GeoFacility(id={0}, name='{1}', shape_uuid='{2}')>".format(
             self.id, self.name, self.shape_uuid)
+
+
+# ------------------------------------------------------------------------------
+# GeoModelAsset
+# User-registered 3D model assets (primitives, extruded polygons, imported GLTF).
+# ------------------------------------------------------------------------------
+class GeoModelAsset(CRUDMixin, db.Model):
+    """
+    User-registered 3D model asset for facility preview override.
+
+    Supports three kinds:
+      - 'primitive'        : parametric box/cylinder/sphere/cone/plane
+      - 'extruded_polygon' : 2-D polygon + extrude height
+      - 'imported_gltf'    : uploaded .glb / .gltf file
+
+    All length values inside spec_json are stored in metres (SI).
+    authored_unit records the unit the user used when creating the asset
+    (reference only — conversions are done in the UI layer).
+
+    @phase active
+    """
+    __tablename__ = "geo_model_asset"
+    __table_args__ = {'extend_existing': True}
+
+    id = db.Column(db.Integer, unique=True, primary_key=True)
+    unique_id = db.Column(db.String(36), nullable=False, unique=True, default=set_uuid)
+    owner_user_id = db.Column(db.Integer, nullable=True, index=True)
+
+    name = db.Column(db.String(128), nullable=False, default='New Asset')
+    kind = db.Column(db.String(32), nullable=False, default='primitive')  # primitive|extruded_polygon|imported_gltf
+    spec_json = db.Column(JSON, nullable=True)
+    authored_unit = db.Column(db.String(8), nullable=False, default='m')  # mm|cm|m|in|ft
+    tags = db.Column(db.Text, nullable=True)          # comma-separated
+
+    # Thumbnail (server-side render)
+    preview_png = db.Column(db.Text, nullable=True)   # relative path under static/
+    preview_status = db.Column(db.String(16), nullable=False, default='pending')  # pending|ok|failed
+
+    # Uploaded file (imported_gltf only)
+    source_file = db.Column(db.Text, nullable=True)   # relative path under static/uploads/model_assets/
+
+    sort_order = db.Column(db.Integer, default=0)
+    notes = db.Column(db.Text, default='')
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return "<GeoModelAsset(id={0}, kind='{1}', name='{2}')>".format(
+            self.id, self.kind, self.name)

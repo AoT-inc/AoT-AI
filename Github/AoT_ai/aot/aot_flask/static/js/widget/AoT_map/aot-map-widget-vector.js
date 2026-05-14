@@ -14,6 +14,14 @@
      * Initialize Pure MapLibre Map Widget
      * @param {string} uniqueId - Widget unique identifier
      */
+    // Inject .aot-type-hidden CSS rule once — independent of Python template caching
+    if (!document.getElementById('aot-type-hidden-style')) {
+        var _styleEl = document.createElement('style');
+        _styleEl.id = 'aot-type-hidden-style';
+        _styleEl.textContent = '.aot-type-hidden { display: none !important; }';
+        document.head.appendChild(_styleEl);
+    }
+
     window.initAoTMapVectorWidget = async function(uniqueId) {
         console.log('[AoT Vector Widget] Initializing for:', uniqueId);
 
@@ -490,15 +498,324 @@
      * Load geo/design label_aux markers and render them as HTML markers
      * matching the geo/design visual style.
      */
+
+    /**
+     * Shared label collision + clustering.
+     * Overlapping markers are hidden and replaced with a cluster badge showing the count.
+     * Clicking the badge flies/fits the map so the individual labels become visible.
+     *
+     * @param {maplibregl.Marker[]} markers  All label markers to process
+     * @param {maplibregl.Map}      map
+     * @param {number}              spacing  Extra padding (px) around each label rect
+     * @param {object}              instance Widget instance
+     * @param {string}              clusterKey  instance[clusterKey] = cluster marker array
+     */
+    // ── Inline hex→rgba (no external dep, hoisted here so all label helpers can use it) ──
+    function _clusterHexRgba(hex, a) {
+        if (!hex || hex[0] !== '#') return 'rgba(153,90,255,' + a + ')';
+        var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+        return 'rgba('+r+','+g+','+b+','+a+')';
+    }
+
+    /**
+     * Single-group collision pass.
+     *
+     * @param {maplibregl.Marker[]} markers      Markers for THIS group only.
+     * @param {maplibregl.Map}      map
+     * @param {number}              spacing      Extra px padding around each label.
+     * @param {object}              instance     Widget instance.
+     * @param {string}              clusterKey   instance[clusterKey] = array of cluster badge markers.
+     * @param {Array}               preOccupied  Rects already taken by higher-priority groups
+     *                                           (same coordinate system as getBoundingClientRect).
+     * @returns {Array} Rects occupied by visible solo labels in this group (for next group's preOccupied).
+     */
+    function runLabelCollisionWithClustering(markers, map, spacing, instance, clusterKey, preOccupied) {
+        preOccupied = preOccupied || [];
+        var placedRects = [];   // rects of solo visible labels → fed to lower-priority groups
+
+        // Remove previous cluster badges
+        if (instance[clusterKey]) {
+            instance[clusterKey].forEach(function(m) { try { m.remove(); } catch(e) {} });
+        }
+        instance[clusterKey] = [];
+
+        if (!markers || markers.length === 0) return placedRects;
+
+        // Reset all to invisible-but-in-layout
+        markers.forEach(function(mk) {
+            var e = mk.getElement();
+            e.style.display = 'block';
+            e.style.opacity = '0';
+            e.style.pointerEvents = 'none';
+        });
+
+        // Sort: highest zIndex first
+        var sorted = markers.slice().sort(function(a, b) {
+            var za = parseInt(a.getElement().style.zIndex) || 0;
+            var zb = parseInt(b.getElement().style.zIndex) || 0;
+            return zb - za;
+        });
+
+        if (sorted.length > 0) void sorted[0].getElement().offsetWidth; // force reflow
+
+        var n = sorted.length;
+        var sp = spacing;
+
+        function _overlaps(ra, rb) {
+            return !(ra.right <= rb.left || ra.left >= rb.right ||
+                     ra.bottom <= rb.top  || ra.top  >= rb.bottom);
+        }
+
+        // Build padded rects + flag markers conflicted by higher-priority groups
+        var rects = sorted.map(function(mk) {
+            var r = mk.getElement().getBoundingClientRect();
+            var padded = {
+                left:   r.left   - sp,
+                right:  r.right  + sp,
+                top:    r.top    - sp,
+                bottom: r.bottom + sp,
+                valid:  r.width > 1,
+                conflicted: false
+            };
+            if (padded.valid) {
+                for (var pi = 0; pi < preOccupied.length; pi++) {
+                    if (_overlaps(padded, preOccupied[pi])) { padded.conflicted = true; break; }
+                }
+            }
+            return padded;
+        });
+
+        // Hide conflicted markers immediately (higher-priority group wins)
+        rects.forEach(function(rect, idx) {
+            if (rect.conflicted) sorted[idx].getElement().style.display = 'none';
+        });
+
+        // Union-Find on non-conflicted, valid markers only
+        var parent = [];
+        for (var ii = 0; ii < n; ii++) parent[ii] = ii;
+        function ufFind(x) { return parent[x] === x ? x : (parent[x] = ufFind(parent[x])); }
+
+        for (var ii = 0; ii < n; ii++) {
+            if (rects[ii].conflicted || !rects[ii].valid) continue;
+            for (var jj = ii + 1; jj < n; jj++) {
+                if (rects[jj].conflicted || !rects[jj].valid) continue;
+                if (_overlaps(rects[ii], rects[jj])) {
+                    var rootI = ufFind(ii), rootJ = ufFind(jj);
+                    if (rootI !== rootJ) parent[rootI] = rootJ;
+                }
+            }
+        }
+
+        // Build groups (non-conflicted only)
+        var groups = {};
+        for (var ii = 0; ii < n; ii++) {
+            if (rects[ii].conflicted) continue;
+            var root = ufFind(ii);
+            if (!groups[root]) groups[root] = [];
+            groups[root].push(ii);
+        }
+
+        // Process each group
+        Object.keys(groups).forEach(function(root) {
+            var group = groups[root];
+
+            if (group.length === 1) {
+                var mk = sorted[group[0]];
+                var e  = mk.getElement();
+                if (!rects[group[0]].valid) {
+                    e.style.display = 'none';
+                } else {
+                    e.style.opacity = '1';
+                    e.style.pointerEvents = 'auto';
+                    placedRects.push(rects[group[0]]); // reserve for lower-priority groups
+                }
+            } else {
+                // Hide all members, show cluster badge
+                var lngLats = [];
+                group.forEach(function(idx) {
+                    sorted[idx].getElement().style.display = 'none';
+                    lngLats.push(sorted[idx].getLngLat());
+                });
+
+                var sumLng = 0, sumLat = 0;
+                lngLats.forEach(function(ll) { sumLng += ll.lng; sumLat += ll.lat; });
+                var cLng = sumLng / lngLats.length;
+                var cLat = sumLat / lngLats.length;
+
+                // Representative: lowest sorted index = highest zIndex
+                var repIdx   = group.reduce(function(a, b) { return a < b ? a : b; });
+                var repEl    = sorted[repIdx].getElement();
+                var repName  = repEl.dataset.labelName  || '';
+                var repColor = repEl.dataset.labelColor || '#995aff';
+                var repLabel = repName.length > 8 ? repName.substring(0, 7) + '…' : repName;
+                var badgeBg     = _clusterHexRgba(repColor, 0.92);
+                var badgeShadow = _clusterHexRgba(repColor, 0.40);
+
+                var clusterEl = document.createElement('div');
+                clusterEl.className = 'aot-label-cluster';
+                clusterEl.style.cssText = [
+                    'background-color:' + badgeBg,
+                    'color:#fff',
+                    'border-radius:14px',
+                    'height:28px',
+                    'padding:0 8px',
+                    'display:inline-flex',
+                    'align-items:center',
+                    'gap:4px',
+                    'font-weight:bold',
+                    'font-size:12px',
+                    'cursor:pointer',
+                    'box-shadow:0 2px 6px ' + badgeShadow,
+                    'border:2px solid #fff',
+                    'z-index:10',
+                    'user-select:none',
+                    'white-space:nowrap',
+                    'max-width:160px'
+                ].join(';');
+                clusterEl.innerHTML =
+                    '<span style="overflow:hidden;text-overflow:ellipsis;max-width:90px">' + repLabel + '</span>' +
+                    '<span style="background:rgba(255,255,255,0.25);border-radius:10px;padding:1px 5px;font-size:11px;flex-shrink:0">+' + (group.length - 1) + '</span>';
+
+                (function(lls, centerLng, centerLat) {
+                    clusterEl.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        var allSame = lls.every(function(ll) {
+                            return Math.abs(ll.lng - lls[0].lng) < 0.000001 &&
+                                   Math.abs(ll.lat - lls[0].lat) < 0.000001;
+                        });
+                        if (allSame) {
+                            map.flyTo({ center: [centerLng, centerLat], zoom: Math.min(map.getZoom() + 4, 22), duration: 600 });
+                        } else {
+                            var minLng = Math.min.apply(null, lls.map(function(l) { return l.lng; }));
+                            var maxLng = Math.max.apply(null, lls.map(function(l) { return l.lng; }));
+                            var minLat = Math.min.apply(null, lls.map(function(l) { return l.lat; }));
+                            var maxLat = Math.max.apply(null, lls.map(function(l) { return l.lat; }));
+                            map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 120, maxZoom: 22, duration: 600 });
+                        }
+                    });
+                })(lngLats, cLng, cLat);
+
+                var clusterMarker = new maplibregl.Marker({ element: clusterEl, anchor: 'center' })
+                    .setLngLat([cLng, cLat])
+                    .addTo(map);
+                instance[clusterKey].push(clusterMarker);
+            }
+        });
+
+        return placedRects;
+    }
+
+    /**
+     * Post-pass: after all group collision runs, deconflict the cluster BADGES themselves.
+     * Priority: siteZone > geoDevice > device.
+     * Lower-priority badges that overlap a higher-priority badge are hidden.
+     */
+    function _deconflictClusterBadges(instance, spacing) {
+        var sp = spacing;
+        var tiers = [
+            instance.siteZoneClusterMarkers  || [],   // priority 1
+            instance.geoDeviceClusterMarkers || [],   // priority 2
+            instance.deviceClusterMarkers    || []    // priority 3
+        ];
+        var placedBadgeRects = [];
+
+        tiers.forEach(function(clusterArr) {
+            clusterArr.forEach(function(cm) {
+                var e = cm.getElement();
+                var r = e.getBoundingClientRect();
+                if (r.width <= 1) { e.style.display = 'none'; return; }
+                var rect = { left: r.left - sp, right: r.right + sp, top: r.top - sp, bottom: r.bottom + sp };
+                var blocked = placedBadgeRects.some(function(pr) {
+                    return !(rect.right <= pr.left || rect.left >= pr.right ||
+                             rect.bottom <= pr.top  || rect.top  >= pr.bottom);
+                });
+                if (blocked) {
+                    e.style.display = 'none';
+                } else {
+                    placedBadgeRects.push(rect);
+                }
+            });
+        });
+    }
+
+    /**
+     * Run all three group passes in priority order, then deconflict badges.
+     * siteZone (1) → geoDevice (2) → pillDevice (3)
+     */
+    function _runUnifiedLabelCollision(instance, map, spacing) {
+        var sp = spacing;
+
+        console.log('[AoT Label] collision spacing=' + sp + 'px' +
+            ' | siteZone=' + (instance.siteZoneLabelMarkers  || []).length +
+            ' geoDevice=' + (instance.geoDeviceLabelMarkers  || []).length +
+            ' device='    + (instance.deviceLabelMarkers     || []).length + ' markers');
+
+        // Pass 1: site + zone (no pre-occupied)
+        var occ1 = runLabelCollisionWithClustering(
+            instance.siteZoneLabelMarkers  || [], map, sp, instance, 'siteZoneClusterMarkers', []
+        );
+
+        // Pass 2: geo aot_device labels (must avoid site+zone areas)
+        var occ2 = runLabelCollisionWithClustering(
+            instance.geoDeviceLabelMarkers || [], map, sp, instance, 'geoDeviceClusterMarkers', occ1
+        );
+
+        // Pass 3: pill device markers (lowest priority)
+        runLabelCollisionWithClustering(
+            instance.deviceLabelMarkers    || [], map, sp, instance, 'deviceClusterMarkers', occ1.concat(occ2)
+        );
+
+        // Badge-level deconfliction in next frame (badges need to be rendered first)
+        requestAnimationFrame(function() {
+            _deconflictClusterBadges(instance, sp);
+        });
+    }
+
+    /**
+     * Register (or replace) the single unified collision handler on the map.
+     * Call this whenever geo-labels or device-labels are refreshed.
+     */
+    function _updateUnifiedCollisionHandler(instance, map, spacing) {
+        var sp = spacing;
+
+        // Remove old handler
+        if (instance._unifiedCollisionHandler) {
+            map.off('moveend', instance._unifiedCollisionHandler);
+            map.off('zoomend', instance._unifiedCollisionHandler);
+            instance._unifiedCollisionHandler = null;
+        }
+
+        var _debounce;
+        function debouncedUnified() {
+            clearTimeout(_debounce);
+            _debounce = setTimeout(function() {
+                requestAnimationFrame(function() { _runUnifiedLabelCollision(instance, map, sp); });
+            }, 150);
+        }
+
+        instance._unifiedCollisionHandler = debouncedUnified;
+        map.on('moveend', debouncedUnified);
+        map.on('zoomend', debouncedUnified);
+    }
+
     async function loadGeoDesignLabels(uniqueId, map, vars) {
         const instance = window.AoTWidgetInstances[uniqueId];
         if (!instance) return;
 
         // Remove old label markers and clean up collision listeners before re-loading
-        if (instance.labelMarkers && instance.labelMarkers.length > 0) {
-            instance.labelMarkers.forEach(function(m) { try { m.remove(); } catch(e) {} });
-            instance.labelMarkers = [];
-        }
+        ['labelMarkers', 'siteZoneLabelMarkers', 'geoDeviceLabelMarkers'].forEach(function(key) {
+            if (instance[key] && instance[key].length > 0) {
+                instance[key].forEach(function(m) { try { m.remove(); } catch(e) {} });
+            }
+            instance[key] = [];
+        });
+        ['labelClusterMarkers', 'siteZoneClusterMarkers', 'geoDeviceClusterMarkers'].forEach(function(key) {
+            if (instance[key] && instance[key].length > 0) {
+                instance[key].forEach(function(m) { try { m.remove(); } catch(e) {} });
+            }
+            instance[key] = [];
+        });
+        // Remove old per-group handler (legacy) and unified handler
         if (instance._collisionHandler) {
             map.off('moveend', instance._collisionHandler);
             map.off('zoomend', instance._collisionHandler);
@@ -513,12 +830,28 @@
         const showZoneLabel    = wOpts.show_zone_label   === true || wOpts.show_zone_label   === 'true';
         const showDeviceLabels = wOpts.show_device_labels === true || wOpts.show_device_labels === 'true';
         const labelCollision   = wOpts.enable_label_collision !== false && wOpts.enable_label_collision !== 'false';
-        const labelSpacing     = parseInt(wOpts.label_spacing) || 10;
+        const _rawSpacing      = parseInt(wOpts.label_spacing);
+        const labelSpacing     = (!isNaN(_rawSpacing) && wOpts.label_spacing !== '' && wOpts.label_spacing !== null && wOpts.label_spacing !== undefined) ? _rawSpacing : 0;
         const globalLabelSize  = parseFloat(wOpts.global_label_size) || 1.0;
         const labelFontPx      = Math.round(globalLabelSize * 14);
 
         // Skip if no label type is enabled
         if (!showSiteLabel && !showZoneLabel && !showDeviceLabels) return;
+
+        // Build allowed device ID set (mirrors addDeviceMarkers) so device labels
+        // only render for devices the widget is configured to display.
+        const allowedDeviceIds = new Set();
+        const _fetchIdsLbl = wOpts.map_device_ids || wOpts.device_ids;
+        if (_fetchIdsLbl && wOpts.include_all_devices !== true) {
+            String(_fetchIdsLbl).split(',').forEach(function(id) {
+                const t = id.trim();
+                if (t) {
+                    allowedDeviceIds.add(t);
+                    if (t.includes('::')) allowedDeviceIds.add(t.split('::')[0]);
+                }
+            });
+        }
+        const isStrictDeviceLabelFilter = (allowedDeviceIds.size > 0 && wOpts.include_all_devices !== true);
 
         const COLOR_MAP = {
             'site':       '#DF5353',
@@ -558,6 +891,13 @@
                 if (pType === 'zone' && !showZoneLabel) return;
                 if (pType === 'aot_device' && !showDeviceLabels) return;
 
+                // Strict device-label filtering: hide labels for devices not in selection
+                if (pType === 'aot_device' && isStrictDeviceLabelFilter) {
+                    const _devLabelId = String(props.device_id || props.parent_id || props.db_id || '');
+                    const _devLabelBase = _devLabelId.split('::')[0];
+                    if (!allowedDeviceIds.has(_devLabelId) && !allowedDeviceIds.has(_devLabelBase)) return;
+                }
+
                 const color  = COLOR_MAP[pType] || '#666';
                 const zIndex = ZINDEX_MAP[pType] || 2;
                 const name   = props.label_name || '';
@@ -565,6 +905,8 @@
 
                 const el = document.createElement('div');
                 el.className = 'geo-label-marker';
+                el.dataset.labelName  = name;
+                el.dataset.labelColor = color;
                 el.style.cssText = [
                     'background-color:' + color,
                     'color:white',
@@ -584,6 +926,15 @@
                 nameDiv.style.fontWeight = 'bold';
                 nameDiv.textContent = name;
                 el.appendChild(nameDiv);
+
+                // [3-way Actuator] Empty value slot for aot_device labels.
+                // Filled in _updateGeoDesignDeviceLabels when device state arrives.
+                if (pType === 'aot_device') {
+                    const valSpan = document.createElement('span');
+                    valSpan.className = 'aot-3way-pct';
+                    valSpan.style.cssText = 'margin-left:4px;font-weight:bold;display:none;';
+                    nameDiv.appendChild(valSpan);
+                }
 
                 const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
                     .setLngLat([coords[0], coords[1]])
@@ -636,96 +987,20 @@
                   props.parent_type || 'site'));
 
                 instance.labelMarkers.push(marker);
+                // Split by group: site+zone vs aot_device
+                if (pType === 'site' || pType === 'zone') {
+                    instance.siteZoneLabelMarkers.push(marker);
+                } else if (pType === 'aot_device') {
+                    instance.geoDeviceLabelMarkers.push(marker);
+                }
             });
 
-            // Label collision prevention — hide lower-priority overlapping labels
-            // Matches AoTMapAlignment._performGlobalCollisionCheck() logic from v3
+            // Unified collision — all groups in priority order via single handler
             if (labelCollision) {
-                instance._labelCollisionEnabled = true;
                 instance._labelSpacing = labelSpacing;
-
-                function runLabelCollision() {
-                    if (!instance._labelCollisionEnabled) return;
-                    var markers = instance.labelMarkers;
-                    if (!markers || markers.length === 0) return;
-
-                    var sp = instance._labelSpacing;
-
-                    // Step 1: Reset all labels to invisible-but-in-layout for measurement
-                    markers.forEach(function(mk) {
-                        var e = mk.getElement();
-                        e.style.display = 'block';
-                        e.style.opacity = '0';
-                        e.style.pointerEvents = 'none';
-                    });
-
-                    // Step 2: Sort by priority — site(5) > zone(3) > device(2)
-                    var sorted = markers.slice().sort(function(a, b) {
-                        var za = parseInt(a.getElement().style.zIndex) || 0;
-                        var zb = parseInt(b.getElement().style.zIndex) || 0;
-                        return zb - za;
-                    });
-
-                    // Step 3: Force reflow so getBoundingClientRect is accurate
-                    void sorted[0].getElement().offsetWidth;
-
-                    // Step 4: Greedy AABB — show first, hide if it overlaps a placed label
-                    var placed = [];
-                    sorted.forEach(function(mk) {
-                        var e = mk.getElement();
-                        var r = e.getBoundingClientRect();
-
-                        if (r.width <= 1) {
-                            // Not rendered yet — hide for now
-                            e.style.display = 'none';
-                            return;
-                        }
-
-                        var rect = {
-                            left:   r.left   - sp,
-                            right:  r.right  + sp,
-                            top:    r.top    - sp,
-                            bottom: r.bottom + sp
-                        };
-
-                        var overlaps = false;
-                        for (var p = 0; p < placed.length; p++) {
-                            var pr = placed[p];
-                            if (!(rect.right  <= pr.left  ||
-                                  rect.left   >= pr.right ||
-                                  rect.bottom <= pr.top   ||
-                                  rect.top    >= pr.bottom)) {
-                                overlaps = true;
-                                break;
-                            }
-                        }
-
-                        if (overlaps) {
-                            e.style.display = 'none';
-                        } else {
-                            e.style.opacity = '1';
-                            e.style.pointerEvents = 'auto';
-                            placed.push(rect);
-                        }
-                    });
-                }
-
-                // Debounced re-run on zoom / pan
-                var _collisionDebounce;
-                function debouncedCollision() {
-                    clearTimeout(_collisionDebounce);
-                    _collisionDebounce = setTimeout(function() {
-                        requestAnimationFrame(runLabelCollision);
-                    }, 150);
-                }
-
-                instance._collisionHandler = debouncedCollision;
-                map.on('moveend', debouncedCollision);
-                map.on('zoomend', debouncedCollision);
-
-                // Initial run after MapLibre finishes rendering (markers have final positions)
+                _updateUnifiedCollisionHandler(instance, map, labelSpacing);
                 map.once('idle', function() {
-                    requestAnimationFrame(runLabelCollision);
+                    _runUnifiedLabelCollision(instance, map, labelSpacing);
                 });
             }
 
@@ -1225,6 +1500,164 @@
                 } catch (e) { console.error('[AoT Map] ' + fn + ' failed:', e); }
             });
         }
+
+        // ---- Custom Options group: device-type label toggles + measurement hide ----
+        (function() {
+            var widgetId = (vars && vars.widgetId) || uniqueId;
+            var innerVars = (vars && vars.vars) || {};
+            var _lsPrefix = 'aot_map_toggle_' + widgetId + '_';
+
+            function _lsGet(key) {
+                try { var v = localStorage.getItem(_lsPrefix + key); return v === 'true' ? true : v === 'false' ? false : null; } catch(e) { return null; }
+            }
+            function _lsSet(key, val) {
+                try { localStorage.setItem(_lsPrefix + key, val ? 'true' : 'false'); } catch(e) {}
+            }
+
+            function _readSaved(saveKey) {
+                // Server-side state takes priority; fall back to localStorage if server returns nothing
+                var sv = innerVars[saveKey];
+                if (sv === true || sv === 'true') return true;
+                if (sv === false || sv === 'false') return false;
+                // sv is undefined/null → server didn't provide it; check localStorage
+                var lv = _lsGet(saveKey);
+                return lv === true;
+            }
+
+            function _saveToggleState(patch) {
+                fetch('/save_widget_custom_options', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ widget_id: widgetId, options: patch })
+                }).catch(function(e) { console.warn('[AoT Map] saveToggle:', e); });
+                // Mirror to localStorage as backup
+                Object.keys(patch).forEach(function(k) { _lsSet(k, patch[k]); });
+            }
+
+            function _applyTypeHide(type, hidden) {
+                var inst = window.AoTWidgetInstances[uniqueId];
+                if (!inst) return;
+
+                // 1. Device markers (pill / dot) stored in instance.markers
+                if (inst.markers) {
+                    inst.markers.forEach(function(marker) {
+                        if (!marker || typeof marker.getElement !== 'function') return;
+                        var el = marker.getElement();
+                        if (!el || el.dataset.deviceType !== type) return;
+                        el.classList.toggle('aot-type-hidden', hidden);
+                    });
+                }
+
+                // 2. Geo-design device labels stored in instance.geoDeviceLabelMarkers
+                //    These have dataset.parentId (device base UUID) — look up via _deviceTypeMap
+                var typeMap = inst._deviceTypeMap || {};
+                (inst.geoDeviceLabelMarkers || []).forEach(function(marker) {
+                    if (!marker || typeof marker.getElement !== 'function') return;
+                    var el = marker.getElement();
+                    if (!el) return;
+                    var parentId = el.dataset.parentId || '';
+                    if (typeMap[parentId] !== type) return;
+                    el.classList.toggle('aot-type-hidden', hidden);
+                });
+
+                // Persist on instance so addDeviceMarkers applies on re-render
+                if (!inst._hiddenTypes) inst._hiddenTypes = {};
+                inst._hiddenTypes[type] = hidden;
+            }
+
+            var customGroup = document.createElement('div');
+            customGroup.className = 'tool-group mt-2';
+
+            var deviceTypes = [
+                { type: 'input',    icon: 'fas fa-thermometer-half', title: 'Input 라벨 켜기/끄기',    saveKey: 'label_hidden_input' },
+                { type: 'output',   icon: 'fas fa-sliders-h',         title: 'Output 라벨 켜기/끄기',   saveKey: 'label_hidden_output' },
+                { type: 'function', icon: 'fas fa-code-branch',        title: 'Function 라벨 켜기/끄기', saveKey: 'label_hidden_function' }
+            ];
+
+            deviceTypes.forEach(function(dt) {
+                // Read saved state (server-side primary, localStorage fallback)
+                var savedHidden = _readSaved(dt.saveKey);
+
+                var btn = _toolBtn('tool-label-' + dt.type + '-' + uniqueId, dt.icon, dt.title);
+                customGroup.appendChild(btn);
+
+                // Apply saved state to button appearance immediately
+                if (savedHidden) btn.style.opacity = '0.4';
+
+                // Store initial state on instance for addDeviceMarkers timing
+                var inst = window.AoTWidgetInstances[uniqueId];
+                if (inst) {
+                    if (!inst._hiddenTypes) inst._hiddenTypes = {};
+                    inst._hiddenTypes[dt.type] = savedHidden;
+                }
+
+                // Apply saved hide state after markers are rendered (delayed to catch async fetch)
+                if (savedHidden) {
+                    setTimeout(function(type) {
+                        return function() { _applyTypeHide(type, true); };
+                    }(dt.type), 500);
+                    setTimeout(function(type) {
+                        return function() { _applyTypeHide(type, true); };
+                    }(dt.type), 1500);
+                    setTimeout(function(type) {
+                        return function() { _applyTypeHide(type, true); };
+                    }(dt.type), 3000);
+                }
+
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var inst2 = window.AoTWidgetInstances[uniqueId];
+                    if (!inst2._hiddenTypes) inst2._hiddenTypes = {};
+                    var hidden = !inst2._hiddenTypes[dt.type];
+                    btn.style.opacity = hidden ? '0.4' : '1';
+                    _applyTypeHide(dt.type, hidden);
+                    var patch = {};
+                    patch[dt.saveKey] = hidden;
+                    _saveToggleState(patch);
+                });
+            });
+
+            // Measurements hide button
+            var savedMeasHidden = _readSaved('label_hidden_meas');
+            var measBtn = _toolBtn('tool-meas-hide-' + uniqueId, 'fas fa-tachometer-alt', '측정값 숨기기');
+            customGroup.appendChild(measBtn);
+            if (savedMeasHidden) measBtn.style.opacity = '0.4';
+
+            // Apply saved meas-hide state after panel is created (slight delay)
+            if (savedMeasHidden) {
+                setTimeout(function() {
+                    var inst = window.AoTWidgetInstances[uniqueId];
+                    if (!inst || !inst.measurementPanel) return;
+                    var handle = inst.measurementPanel;
+                    var panelEl = (handle && handle.panel) ? handle.panel
+                                : (handle instanceof HTMLElement) ? handle : null;
+                    if (panelEl) panelEl.style.display = 'none';
+                }, 300);
+            }
+
+            measBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var inst = window.AoTWidgetInstances[uniqueId];
+                if (!inst) return;
+                inst._measHidden = !inst._measHidden;
+                measBtn.style.opacity = inst._measHidden ? '0.4' : '1';
+                var handle = inst.measurementPanel;
+                if (handle) {
+                    var panelEl = (handle && handle.panel) ? handle.panel
+                                : (handle instanceof HTMLElement) ? handle : null;
+                    if (panelEl) panelEl.style.display = inst._measHidden ? 'none' : '';
+                }
+                _saveToggleState({ label_hidden_meas: inst._measHidden });
+            });
+
+            // Initialise _measHidden on instance
+            var inst0 = window.AoTWidgetInstances[uniqueId];
+            if (inst0) inst0._measHidden = savedMeasHidden;
+
+            toolbar.appendChild(customGroup);
+        })();
 
         // ---- Map-side application helpers ----
         const _baseStyleIds = ((map.getStyle() || {}).layers || []).map(function(l) { return l.id; });
@@ -2049,6 +2482,9 @@
         const wOpts = (vars && vars.vars) || {};
         const showDeviceLabels = wOpts.show_device_labels === true || wOpts.show_device_labels === 'true';
         const globalLabelSize = parseFloat(wOpts.global_label_size) || 1.0;
+        const labelCollision   = wOpts.enable_label_collision !== false && wOpts.enable_label_collision !== 'false';
+        const _rawSpacingD     = parseInt(wOpts.label_spacing);
+        const labelSpacing     = (!isNaN(_rawSpacingD) && wOpts.label_spacing !== '' && wOpts.label_spacing !== null && wOpts.label_spacing !== undefined) ? _rawSpacingD : 0;
 
         // Build allowed ID set for strict filtering (mirrors v3 renderDevices)
         const allowedIds = new Set();
@@ -2064,9 +2500,43 @@
         }
         const isStrictFiltering = (allowedIds.size > 0 && wOpts.include_all_devices !== true);
 
-        // Clear existing device markers before re-rendering
+        // Clear existing device markers and cluster badges before re-rendering
         instance.markers.forEach(function(m) { m.remove(); });
         instance.markers.clear();
+
+        if (instance.deviceClusterMarkers) {
+            instance.deviceClusterMarkers.forEach(function(m) { try { m.remove(); } catch(e) {} });
+        }
+        instance.deviceClusterMarkers = [];
+        instance.deviceLabelMarkers = [];
+
+        if (instance._deviceCollisionHandler) {
+            map.off('moveend', instance._deviceCollisionHandler);
+            map.off('zoomend', instance._deviceCollisionHandler);
+            instance._deviceCollisionHandler = null;
+        }
+
+        // Build deviceTypeMap: baseUUID → device_type ('input'|'output'|'function')
+        // Used by _applyTypeHide to also cover geoDeviceLabelMarkers
+        if (!instance._deviceTypeMap) instance._deviceTypeMap = {};
+        devices.forEach(function(dev) {
+            const baseId = String(dev.device_id || dev.device_unique_id ||
+                (dev.unique_id ? dev.unique_id.split('::')[0] : (dev.id || '').split('::')[0]));
+            if (baseId) instance._deviceTypeMap[baseId] = dev.device_type || dev.type || '';
+        });
+
+        // Apply persisted hide state to geo-device labels now that _deviceTypeMap is built
+        // (loadGeoDesignLabels runs before this, so it can't do this itself)
+        var _hiddenTypes = instance._hiddenTypes || {};
+        (instance.geoDeviceLabelMarkers || []).forEach(function(marker) {
+            if (!marker || typeof marker.getElement !== 'function') return;
+            var el = marker.getElement();
+            if (!el) return;
+            var parentId = el.dataset.parentId || '';
+            var devType = instance._deviceTypeMap[parentId];
+            if (!devType) return;
+            el.classList.toggle('aot-type-hidden', !!_hiddenTypes[devType]);
+        });
 
         devices.forEach(function(dev) {
             const devLat = dev.lat || dev.latitude;
@@ -2080,8 +2550,12 @@
                 if (!allowedIds.has(devId) && !allowedIds.has(baseId)) return;
             }
 
-            const isON = dev.status === 'active' || dev.status === 'on' ||
-                         dev.is_activated === true || dev.is_activated === 'true';
+            // [3-way Actuator] Initial render: always off-style. Motion (detected from
+            // position changes between polls or commandActuator calls) flips it to ON.
+            const isON = (dev.control_kind === 'value_3way')
+                ? false
+                : (dev.status === 'active' || dev.status === 'on' ||
+                   dev.is_activated === true || dev.is_activated === 'true');
 
             const devType2 = dev.device_type || dev.type || '';
             const userColor = getUnifiedDeviceColor(devType2, dev, theme);
@@ -2107,6 +2581,14 @@
                         unit = (window.aotMapUnits && window.aotMapUnits[m.id]) ? window.aotMapUnits[m.id] : (m.unit || '');
                         if (unit === 'bearing') unit = '';
                     }
+                }
+                // [3-way Actuator] Override label value with current position % (and direction arrow)
+                if (dev.control_kind === 'value_3way') {
+                    const p = (typeof dev.position_pct === 'number') ? dev.position_pct : 0;
+                    const dir = dev.motion_dir;
+                    const arrow = (dir === 'open') ? '▲ ' : (dir === 'close') ? '▼ ' : '';
+                    firstVal = arrow + Math.round(p);
+                    unit = '%';
                 }
 
                 let baseSize = globalLabelSize;
@@ -2138,7 +2620,14 @@
 
                 const el = document.createElement('div');
                 el.className = 'aot-device-label-wrapper';
+                el.dataset.labelName  = displayName;
+                el.dataset.labelColor = userColor;
+                el.dataset.deviceType = devType2;
                 el.innerHTML = labelHtml;
+                // Apply persisted hide state immediately on creation
+                if (instance._hiddenTypes && instance._hiddenTypes[devType2]) {
+                    el.classList.add('aot-type-hidden');
+                }
 
                 const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
                     .setLngLat([parseFloat(devLng), parseFloat(devLat)])
@@ -2152,16 +2641,22 @@
 
                 instance.markers.set(dev.unique_id || dev.id, marker);
                 instance.markers.set('__popup__' + (dev.unique_id || dev.id), { remove: function() { popup.remove(); } });
+                instance.deviceLabelMarkers.push(marker);
 
             } else {
                 // Dot style (show_device_labels = false, default)
                 const el = document.createElement('div');
                 el.className = 'map-marker-dot' + (isON ? ' device-on' : '');
+                el.dataset.deviceType = devType2;
                 el.style.cssText =
                     'background-color:' + (isON ? userColor : '#fff') + ';' +
                     'border:2px solid ' + userColor + ';' +
                     'opacity:' + (dev.opacity !== undefined ? dev.opacity : 1) + ';' +
                     'cursor:pointer;';
+                // Apply persisted hide state immediately on creation
+                if (instance._hiddenTypes && instance._hiddenTypes[devType2]) {
+                    el.classList.add('aot-type-hidden');
+                }
 
                 const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
                     .setLngLat([parseFloat(devLng), parseFloat(devLat)])
@@ -2177,6 +2672,15 @@
                 instance.markers.set('__popup__' + (dev.unique_id || dev.id), { remove: function() { popup.remove(); } });
             }
         });
+
+        // Device label collision — joins unified handler (all groups run together in priority order)
+        if (showDeviceLabels && labelCollision && instance.deviceLabelMarkers.length > 0) {
+            instance._labelSpacing = labelSpacing;
+            _updateUnifiedCollisionHandler(instance, map, labelSpacing);
+            map.once('idle', function() {
+                _runUnifiedLabelCollision(instance, map, labelSpacing);
+            });
+        }
 
         // Sync device shape opacity with initial on/off state
         _updateDeviceShapeOpacity(instance, devices);
@@ -2263,6 +2767,37 @@
             html = '<div><div class="aot-popup-title">' + displayName + '</div>' +
                    '<hr style="margin:8px 0">' + bodyHtml + noteSectionHtml + '</div>';
 
+        } else if (dev.control_kind === 'value_3way') {
+            // ----- 3-way Actuator popup: Open/Stop/Close + slider -----
+            const posInit = (typeof dev.position_pct === 'number') ? dev.position_pct : 0;
+            const posRounded = Math.round(posInit);
+            const posDispId = 'pos-disp-' + devId;
+            const sliderId = 'pos-slider-' + devId;
+            const cmd = function(action, valueExpr) {
+                return "window.AoTMapLoader.commandActuator('" + devId + "','" + action + "'," + valueExpr + ",'" + channel + "','" + uniqueId + "')";
+            };
+            const headerHtml3 =
+                '<div class="aot-3way-header">' +
+                '<div class="aot-popup-title">' + displayName + '</div>' +
+                '<div id="' + posDispId + '" class="aot-3way-position">' + posRounded + '%</div></div>';
+            const buttonsHtml =
+                '<div class="aot-3way-buttons">' +
+                '<input type="button" value="' + (window._ ? window._('Close') : 'Close') + '" class="form-control btn aot-btn-on aot-entry-btn-base aot-paired-btn" onclick="' + cmd('close', '0') + '">' +
+                '<input type="button" value="' + (window._ ? window._('Stop') : 'Stop') + '" class="form-control btn aot-btn-off aot-entry-btn-base aot-paired-btn" onclick="' + cmd('stop', 'null') + '">' +
+                '<input type="button" value="' + (window._ ? window._('Open') : 'Open') + '" class="form-control btn aot-btn-on aot-entry-btn-base aot-paired-btn" onclick="' + cmd('open', '100') + '"></div>';
+            const sliderHtml =
+                '<div class="aot-3way-slider-wrap"><input type="range" id="' + sliderId + '" class="aot-3way-slider" min="0" max="100" step="1" value="' + posRounded + '" ' +
+                'style="--aot-3way-fill: ' + posRounded + '%;" ' +
+                'oninput="this.style.setProperty(\'--aot-3way-fill\', this.value + \'%\'); document.getElementById(\'' + posDispId + '\').innerText = this.value + \'%\'" ' +
+                'onchange="' + cmd('goto', 'parseFloat(this.value)') + '"></div>';
+            // [3-way] Only Last Work Time; Current Work Time has no meaningful value at rest.
+            const infoHtml3 =
+                '<div class="aot-3way-info">' +
+                '<div class="aot-3way-info-row">' +
+                '<span class="aot-3way-info-label">' + (window._ ? window._('Last Work Time') : 'Last Work Time') + '</span>' +
+                '<span id="last-dur-' + devId + '" class="aot-3way-info-value">00:00:00</span></div></div>';
+            html = '<div class="aot-3way-popup" style="padding-top:15px">' + headerHtml3 + buttonsHtml + sliderHtml + infoHtml3 + noteSectionHtml + '</div>';
+
         } else {
             // ----- Output / Function popup: name + toggle + timer -----
             const durId = 'dur-' + devId;
@@ -2306,7 +2841,8 @@
             html = '<div style="min-width:180px;padding-top:15px">' + headerHtml + infoHtml + noteSectionHtml + '</div>';
         }
 
-        const popup = new maplibregl.Popup({ offset: 12, maxWidth: '260px', className: 'aot-map-popup' }).setHTML(html);
+        const popupMaxW = (dev.control_kind === 'value_3way') ? '200px' : '260px';
+        const popup = new maplibregl.Popup({ offset: 12, maxWidth: popupMaxW, className: 'aot-map-popup' }).setHTML(html);
 
         // ----- onOpen: fetch fresh values + notes -----
         function onOpen() {
@@ -2392,8 +2928,9 @@
                         fetch('/output_last_duration_public/' + baseDevId + '/' + channel)
                             .then(function(r) { return r.json(); })
                             .then(function(d) {
-                                if (d && d.last_duration_sec !== undefined && lastDurEl) {
+                                if (d && d.last_duration_sec !== undefined && d.last_duration_sec !== null && lastDurEl) {
                                     var s = parseInt(d.last_duration_sec, 10);
+                                    if (isNaN(s)) return;
                                     var h = Math.floor(s / 3600).toString().padStart(2, '0');
                                     var mm = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
                                     var ss = (s % 60).toString().padStart(2, '0');
@@ -2447,6 +2984,13 @@
 
             if (devices.length > 0) {
                 addDeviceMarkers(uniqueId, map, devices, vars.theme, vars);
+                // [3-way Actuator] Immediately reflect initial state on geo-design
+                // labels (parent_type=aot_device). Without this they wait one full
+                // poll cycle before showing the position %.
+                const instance = window.AoTWidgetInstances[uniqueId];
+                if (instance) {
+                    try { _updateGeoDesignDeviceLabels(instance, devices, vars.theme); } catch (e) {}
+                }
             }
         } catch (e) {
             console.warn('[AoT Map] fetchAndRenderDevices failed:', e);
@@ -2474,11 +3018,28 @@
             const marker = instance.markers.get(markerId);
             if (!marker) return;
 
-            const isON = dev.status === 'active' || dev.status === 'on' ||
+            let isON = dev.status === 'active' || dev.status === 'on' ||
                          dev.is_activated === true || dev.is_activated === 'true';
             const devType2 = dev.device_type || dev.type || '';
             const userColor = getUnifiedDeviceColor(devType2, dev, theme);
             const el = marker.getElement();
+
+            // [3-way Actuator] Override "on" semantics: label ON only when MOTION is
+            // happening (transient). Motion is detected via position changes between
+            // polls (or a recent commandActuator call). At rest at any position, the
+            // label renders in the off style — consistent with other outputs.
+            if (dev.control_kind === 'value_3way') {
+                const newPos = (typeof dev.position_pct === 'number') ? dev.position_pct : 0;
+                const prevPos = (typeof marker._prevPosPct === 'number') ? marker._prevPosPct : newPos;
+                if (Math.abs(newPos - prevPos) > 0.5) {
+                    marker._motion_detected_ts = Date.now();
+                }
+                marker._prevPosPct = newPos;
+                const motionTs = marker._motion_detected_ts || 0;
+                const cmdTs = marker._pending_command || 0;
+                const motionWindowMs = 7000; // ~one poll cycle + grace
+                isON = (Date.now() - Math.max(motionTs, cmdTs)) < motionWindowMs;
+            }
 
             if (showDeviceLabels) {
                 // Update pill: measurement value + color
@@ -2492,6 +3053,23 @@
                         firstVal = String(m.last_value);
                         unit = (window.aotMapUnits && window.aotMapUnits[m.id]) ? window.aotMapUnits[m.id] : (m.unit || '');
                         if (unit === 'bearing') unit = '';
+                    }
+                }
+                // [3-way Actuator] Live position % refresh for labels
+                if (dev.control_kind === 'value_3way') {
+                    const p = (typeof dev.position_pct === 'number') ? dev.position_pct : 0;
+                    const dir = dev.motion_dir;
+                    const arrow = (dir === 'open') ? '▲ ' : (dir === 'close') ? '▼ ' : '';
+                    firstVal = arrow + Math.round(p);
+                    unit = '%';
+                    // Also sync open popup's position display + slider (if not focused)
+                    const posDisp = document.getElementById('pos-disp-' + (dev.id || dev.unique_id || ''));
+                    if (posDisp) posDisp.innerText = Math.round(p) + '%';
+                    const slider = document.getElementById('pos-slider-' + (dev.id || dev.unique_id || ''));
+                    if (slider && document.activeElement !== slider) {
+                        const r2 = Math.round(p);
+                        slider.value = r2;
+                        slider.style.setProperty('--aot-3way-fill', r2 + '%');
                     }
                 }
                 const valEl = el.querySelector('.dev-value');
@@ -2583,14 +3161,43 @@
     function _updateGeoDesignDeviceLabels(instance, devices, theme) {
         if (!instance.labelMarkers || !instance.labelMarkers.length) return;
 
-        // Build lookup: base device_id → { isON, devType }
+        // Build lookup: base device_id → { isON, devType, controlKind, positionPct }
+        // [3-way Actuator] For value_3way devices, treat "ON" as motion in progress
+        // (position change since last poll). isActivated alone is position>0, which
+        // is misleading for a resting actuator — at rest it should look like other
+        // outputs in off state.
         const stateMap = {};
         devices.forEach(function(dev) {
-            const isON = dev.status === 'active' || dev.status === 'on' ||
-                         dev.is_activated === true || dev.is_activated === 'true';
+            const devId = String(dev.device_id || (dev.unique_id ? dev.unique_id.split('::')[0] : '') || dev.id || '');
+            if (!devId) return;
             const devType = dev.device_type || dev.type || '';
-            const devId   = String(dev.device_id || (dev.unique_id ? dev.unique_id.split('::')[0] : '') || dev.id || '');
-            if (devId) stateMap[devId] = { isON: isON, devType: devType };
+            const controlKind = dev.control_kind || 'on_off';
+            const positionPct = (typeof dev.position_pct === 'number') ? dev.position_pct : null;
+
+            let isON = dev.status === 'active' || dev.status === 'on' ||
+                       dev.is_activated === true || dev.is_activated === 'true';
+
+            if (controlKind === 'value_3way') {
+                // Track motion per device on the instance state
+                if (!instance._3wayState) instance._3wayState = {};
+                const tracker = instance._3wayState[devId] || {};
+                const prev = (typeof tracker.prevPos === 'number') ? tracker.prevPos : (positionPct || 0);
+                const curr = (positionPct != null) ? positionPct : 0;
+                if (Math.abs(curr - prev) > 0.5) {
+                    tracker.motionTs = Date.now();
+                }
+                tracker.prevPos = curr;
+                instance._3wayState[devId] = tracker;
+                const motionTs = tracker.motionTs || 0;
+                isON = (Date.now() - motionTs) < 7000;
+            }
+
+            stateMap[devId] = {
+                isON: isON,
+                devType: devType,
+                controlKind: controlKind,
+                positionPct: positionPct,
+            };
         });
 
         instance.labelMarkers.forEach(function(marker) {
@@ -2608,6 +3215,17 @@
             } else {
                 el.style.backgroundColor = '#999';
                 el.style.opacity = '0.55';
+            }
+
+            // [3-way Actuator] Update the position % suffix beside the device name.
+            const pctEl = el.querySelector('.aot-3way-pct');
+            if (pctEl) {
+                if (state.controlKind === 'value_3way' && state.positionPct != null) {
+                    pctEl.textContent = ' ' + Math.round(state.positionPct) + '%';
+                    pctEl.style.display = 'inline';
+                } else {
+                    pctEl.style.display = 'none';
+                }
             }
         });
     }
@@ -2705,11 +3323,24 @@
             marker.remove();
         }
 
-        // Remove geo/design label markers
-        if (instance.labelMarkers) {
-            instance.labelMarkers.forEach(function(m) { try { m.remove(); } catch (e) {} });
-            instance.labelMarkers = [];
+        // Remove unified collision handler
+        if (instance._unifiedCollisionHandler && instance.map) {
+            instance.map.off('moveend', instance._unifiedCollisionHandler);
+            instance.map.off('zoomend', instance._unifiedCollisionHandler);
+            instance._unifiedCollisionHandler = null;
         }
+
+        // Remove geo/design label markers and cluster badges
+        [
+            'labelMarkers', 'siteZoneLabelMarkers', 'geoDeviceLabelMarkers',
+            'labelClusterMarkers', 'siteZoneClusterMarkers', 'geoDeviceClusterMarkers',
+            'deviceLabelMarkers', 'deviceClusterMarkers'
+        ].forEach(function(key) {
+            if (instance[key]) {
+                instance[key].forEach(function(m) { try { m.remove(); } catch (e) {} });
+                instance[key] = [];
+            }
+        });
 
         // Tear down restored UI
         if (instance.measurementPanel && typeof instance.measurementPanel.destroy === 'function') {
@@ -2741,6 +3372,6 @@
         delete window.AoTWidgetInstances[uniqueId];
     };
 
-    console.log('[AoT Vector Widget] Script loaded - Pure MapLibre implementation v20260504t');
+    console.log('[AoT Vector Widget] Script loaded - Pure MapLibre implementation v20260512f');
 
 })();

@@ -55,8 +55,9 @@ IMPORTANT: This is the SOURCE TEMPLATE file.
   <link href="{{ url_for('static', filename='css/aot-base.css') }}" rel="stylesheet">
   <link href="{{ url_for('static', filename='css/components/aot-base-ui.css') }}?v=202603041" rel="stylesheet">
   <link href="{{ url_for('static', filename='css/components/aot-toggle.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/components/aot-3way.css') }}" rel="stylesheet">
   <link href="/static/css/fa-svg-with-js.css" rel="stylesheet">
-  <script src="/static/js/fontawesome-all.min.js"></script>
+  <script src="/static/js/fontawesome-all.min.js" defer></script>
   <link href="/static/css/bootstrap-select.min.css" rel="stylesheet">
   <script src="/static/js/bootstrap-select.min.js"></script>
   <!-- [GIS Vector Migration] Pure MapLibre GL (Leaflet Removed) -->
@@ -484,7 +485,7 @@ IMPORTANT: This is the SOURCE TEMPLATE file.
             <a class="dropdown-item" target="_blank" href="https://AoT-inc.github.io/AoT/">{{ _('Online Manual') }}</a>
             <a class="dropdown-item" target="_blank" href="https://AoT-inc.github.io/AoT/API/">{{ _('API Info') }}</a>
             <a class="dropdown-item" target="_blank" href="/api">{{ _('API Documentation') }}</a>
-            <a class="dropdown-item" target="_blank" href="https://github.com/AoT-inc/AoT">{{ _('AoT Github') }}</a>
+            <a class="dropdown-item" target="_blank" href="https://github.com/AoT-inc/AoT-AI">{{ _('AoT Github') }}</a>
           </div>
         </li>
         <li class="nav-item dropdown">
@@ -505,8 +506,7 @@ IMPORTANT: This is the SOURCE TEMPLATE file.
               _('Restart Backend') }}</a>
             <a class="dropdown-item" href="/systemctl/frontend_reload" onclick='return confirm("{{ _("Are you sure you want to reload the frontend?") }}")'>{{
               _('Reload Frontend') }}</a>
-            <a class="dropdown-item" href="/systemctl/restart" onclick='return confirm("{{ _("Are you sure you want to restart the system?") }}")'>{{ _('Restart
-              System') }}</a>
+            <a class="dropdown-item" href="/systemctl/restart" onclick='return confirm("{{ _("Are you sure you want to restart the system?") }}")'>{{ _('Restart System') }}</a>
             <a class="dropdown-item" href="/systemctl/shutdown" onclick='return confirm("{{ _("Are you sure you want to shutdown the system?") }}")'>{{ _('Shutdown System')
               }}</a>
             <div class="dropdown-divider"></div>

@@ -42,10 +42,12 @@ function createNewTab(pageType) {
  * Open tab settings modal
  * @param {string} tabId - Tab unique_id
  */
-function openTabSettings(tabId) {
-    // Get current tab name from DOM
-    const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
-    const tabName = tabElement ? tabElement.textContent.trim() : '';
+function openTabSettings(tabId, tabName, itemLength) {
+    // Fallback: derive from DOM if args not supplied (templates use data-id)
+    if (tabName === undefined || tabName === null) {
+        const tabElement = document.querySelector(`[data-id="${tabId}"]`);
+        tabName = tabElement ? tabElement.textContent.trim() : '';
+    }
 
     // Set modal values
     document.getElementById('tab-settings-tab-id').value = tabId;
@@ -70,7 +72,9 @@ function openTabSettings(tabId) {
         pageDescriptions[pageType] || '';
 
     // Check if this is the last tab (disable delete button)
-    const tabCount = document.querySelectorAll('[data-tab-id]').length;
+    const tabCount = (typeof itemLength === 'number' && itemLength > 0)
+        ? itemLength
+        : document.querySelectorAll('[data-id]').length;
     const deleteBtn = document.getElementById('delete-tab-btn');
     if (deleteBtn) {
         deleteBtn.disabled = tabCount <= 1;
@@ -81,11 +85,9 @@ function openTabSettings(tabId) {
         }
     }
 
-    // Show modal
-    const modalElement = document.getElementById('tabSettingsModal');
-    if (modalElement) {
-        const modal = new bootstrap.Modal(modalElement);
-        modal.show();
+    // Show modal (Bootstrap 4 / jQuery API)
+    if (document.getElementById('tabSettingsModal')) {
+        $('#tabSettingsModal').modal('show');
     }
 }
 
@@ -116,12 +118,8 @@ function renameTab() {
     .then(data => {
         if (data.success) {
             showToast('Tab renamed successfully', 'success');
-            // Close modal
-            const modalElement = document.getElementById('tabSettingsModal');
-            if (modalElement) {
-                const modal = bootstrap.Modal.getInstance(modalElement);
-                if (modal) modal.hide();
-            }
+            // Close modal (Bootstrap 4 / jQuery API)
+            $('#tabSettingsModal').modal('hide');
             // Reload page to show new name
             setTimeout(() => location.reload(), 500);
         } else {
@@ -232,7 +230,18 @@ function getCSRFToken() {
  * @param {string} type - Type of message ('success', 'error', 'info', 'warning')
  */
 function showToast(message, type) {
-    // Check if toastr is available
+    // Delegate to window.showToast if available (respects AoTGlobalSettings hide flags)
+    if (typeof window.showToast === 'function' && window.showToast !== showToast) {
+        window.showToast(message, type);
+        return;
+    }
+
+    // Fallback: respect AoTGlobalSettings directly
+    const settings = window.AoTGlobalSettings || {};
+    if (type === 'success' && settings.hide_success) return;
+    if (type === 'info' && settings.hide_info) return;
+    if ((type === 'warning' || type === 'error') && settings.hide_warning) return;
+
     if (typeof toastr !== 'undefined') {
         toastr.options = {
             "closeButton": true,
@@ -269,9 +278,6 @@ function showToast(message, type) {
                 toastr.info(message);
         }
     } else {
-        // Fallback to console
         console.log(`[${type.toUpperCase()}] ${message}`);
-        // Try alert as last resort
-        alert(message);
     }
 }

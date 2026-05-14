@@ -1865,7 +1865,12 @@
                 const isStatusON = (dev.status === 'active' || dev.status === 'on' || dev.status === 'ON' || dev.is_active === true || dev.is_active === 'true' || dev.is_activated === true || dev.is_activated === 'true');
                 // Output is "Activated" if selected. We only care about is_activated for visibility.
                 const isActivated = (dev.is_activated !== false && dev.is_activated !== 'false');
-                const isON = isStatusON || (dev.type === 'output' || dev.device_type === 'output');
+                // [3-way Actuator] Label "ON" reflects MOTION (transient), not position.
+                // At rest (any position) the label renders in the off style; motion is set
+                // by commandActuator (immediate) or detected from position changes in updateMarkerStatus.
+                const isON = (dev.control_kind === 'value_3way')
+                    ? isStatusON
+                    : (isStatusON || (dev.type === 'output' || dev.device_type === 'output'));
                 
                 // [Req] Exclude Inactive Channels from markers (Strict)
                 if (!isActivated) return;
@@ -1904,10 +1909,18 @@
                     // [Fix] Ghost Label Prevention: Skip if name is missing
                     if (!displayName || displayName.trim() === '') return;
 
+                    // [3-way Actuator] Append current position % to label (right of name).
+                    // Overrides any measurement-derived value so the actuator's live position is authoritative.
+                    if (dev.control_kind === 'value_3way') {
+                        const p = (typeof dev.position_pct === 'number') ? dev.position_pct : 0;
+                        firstVal = Math.round(p);
+                        unit = '%';
+                    }
+
                     // [Req] New Label Format: "Name Value Unit" (Space separated, Unit 0.5x size)
                     // [Refactor] Use Spans for Updateability (applyDeviceStatusStyle)
                     // Structure: <Name> <ValContainer><Val><Unit></ValContainer>
-                    
+
                     const showValue = (firstVal !== undefined && firstVal !== null && firstVal !== 'N/A' && firstVal !== '');
                     const valueDisplay = showValue ? 'inline' : 'none';
                     
@@ -2129,7 +2142,97 @@
                 // 1. Header Row
                 const toggleId = `toggle-${dev.id}`;
                 const durId = `dur-${dev.id}`;
-                
+
+                // [3-way Actuator] Override popup body for Open/Stop/Close + slider control
+                const is3Way = (dev.control_kind === 'value_3way');
+                if (is3Way) {
+                    const posInit = (typeof dev.position_pct === 'number') ? dev.position_pct : 0;
+                    const posRounded = Math.round(posInit);
+                    const posDispId = `pos-disp-${dev.id}`;
+                    const sliderId = `pos-slider-${dev.id}`;
+                    const channelArg = (dev.channel_id && dev.channel_id !== 'undefined') ? dev.channel_id : 0;
+                    const cmdCall = (action, valueExpr) =>
+                        `window.AoTMapLoader.commandActuator('${dev.id}','${action}',${valueExpr},'${channelArg}','${uniqueId}')`;
+
+                    const disabledAttr = canControl ? '' : 'disabled';
+                    const headerHtml3 = `
+                        <div class="aot-3way-header">
+                            <div class="aot-popup-title">${dev.name}</div>
+                            <div id="${posDispId}" class="aot-3way-position">${posRounded}%</div>
+                        </div>
+                    `;
+
+                    const buttonsHtml = `
+                        <div class="aot-3way-buttons">
+                            <input type="button" value="${window._('Close')}" ${disabledAttr}
+                                class="form-control btn aot-btn-on aot-entry-btn-base aot-paired-btn"
+                                onclick="${cmdCall('close', '0')}">
+                            <input type="button" value="${window._('Stop')}" ${disabledAttr}
+                                class="form-control btn aot-btn-off aot-entry-btn-base aot-paired-btn"
+                                onclick="${cmdCall('stop', 'null')}">
+                            <input type="button" value="${window._('Open')}" ${disabledAttr}
+                                class="form-control btn aot-btn-on aot-entry-btn-base aot-paired-btn"
+                                onclick="${cmdCall('open', '100')}">
+                        </div>
+                    `;
+
+                    const sliderHtml = `
+                        <div class="aot-3way-slider-wrap">
+                            <input type="range" id="${sliderId}" class="aot-3way-slider"
+                                min="0" max="100" step="1" value="${posRounded}" ${disabledAttr}
+                                style="--aot-3way-fill: ${posRounded}%;"
+                                oninput="this.style.setProperty('--aot-3way-fill', this.value + '%'); document.getElementById('${posDispId}').innerText = this.value + '%'"
+                                onchange="${cmdCall('goto', 'parseFloat(this.value)')}">
+                        </div>
+                    `;
+
+                    const lastDurStr3 = (function (sec) {
+                        if (sec === undefined || sec === null || isNaN(sec)) return '00:00:00';
+                        const s = parseInt(sec, 10);
+                        const h = Math.floor(s / 3600).toString().padStart(2, '0');
+                        const m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
+                        const ss = (s % 60).toString().padStart(2, '0');
+                        return `${h}:${m}:${ss}`;
+                    })(dev.last_duration);
+
+                    // [3-way] Only Last Work Time. Current Work Time is meaningless for a
+                    // 3-way actuator at rest (motion is transient, position is persistent).
+                    const infoHtml3 = `
+                        <div class="aot-3way-info">
+                            <div class="aot-3way-info-row">
+                                <span class="aot-3way-info-label">${window._('Last Work Time')}</span>
+                                <span id="last-dur-${dev.id}" class="aot-3way-info-value">${lastDurStr3}</span>
+                            </div>
+                        </div>
+                    `;
+
+                    let html3 = `<div class="aot-3way-popup" style="padding-top: 15px;">${headerHtml3}${buttonsHtml}${sliderHtml}${infoHtml3}${noteSectionHtml}</div>`;
+
+                    marker.on('popupopen', function () {
+                        fetchLastNote();
+                        const lastDurEl = document.getElementById(`last-dur-${dev.id}`);
+                        if (lastDurEl) {
+                            const baseId = dev.id.split('::')[0];
+                            fetch(`/output_last_duration_public/${baseId}/${channelArg}`)
+                                .then(r => r.json())
+                                .then(d => {
+                                    if (d && d.last_duration_sec !== undefined) {
+                                        dev.last_duration = d.last_duration_sec;
+                                        const s = parseInt(d.last_duration_sec, 10);
+                                        if (!isNaN(s)) {
+                                            const h = Math.floor(s / 3600).toString().padStart(2, '0');
+                                            const m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
+                                            const ss = (s % 60).toString().padStart(2, '0');
+                                            lastDurEl.innerText = `${h}:${m}:${ss}`;
+                                        }
+                                    }
+                                }).catch(() => {});
+                        }
+                    });
+
+                    return html3 + `</div>`;
+                }
+
                 // Toggle Button HTML (Slide Switch)
                 // Positioned to the right. 
                 // [Fix] Restore original onchange logic + Add _pending_toggle to prevent server overwrite
@@ -2266,10 +2369,18 @@
                         : `background-color: #f8f9fa; color: #000000; border: 2px solid ${uc} !important; box-shadow: 0 2px 5px ${shadowColorOff} !important;`;
                 
                 // Value & Unit Handling
-                const safeVal = (val !== undefined && val !== null && val !== 'N/A') ? val : '';
+                let safeVal = (val !== undefined && val !== null && val !== 'N/A') ? val : '';
+                let unitStr = meta.unit || '';
+                // [3-way Actuator] live label refresh: show current position % regardless of passed val
+                if (dev.control_kind === 'value_3way') {
+                    const livePos = (typeof marker.options.position_pct === 'number')
+                        ? marker.options.position_pct
+                        : (typeof dev.position_pct === 'number' ? dev.position_pct : 0);
+                    safeVal = Math.round(livePos);
+                    unitStr = '%';
+                }
                 const showValue = (safeVal !== '');
                 const valueDisplay = showValue ? 'inline' : 'none';
-                const unitStr = meta.unit || '';
 
                 const finalLabelContent = `
                         <span class="dev-name">${meta.name}</span>
@@ -2359,10 +2470,47 @@
             }
             return fetch(apiPath).then(res => res.status === 204 ? null : res.json()).then(data => {
                 let isActive = false, val = 'N/A';
-                if (isOutput) isActive = (data === 'on' || data === true || data === 1);
-                else if (data && Array.isArray(data) && data.length >= 2) { 
-                    isActive = true; 
-                    val = data[1]; 
+                if (isOutput) {
+                    isActive = (data === 'on' || data === true || data === 1);
+                    // [3-way Actuator] numeric response = current position % (0-100)
+                    if (dev.control_kind === 'value_3way') {
+                        // Normalize incoming response to a numeric position (0..100).
+                        let newPos = null;
+                        if (typeof data === 'number') newPos = data;
+                        else if (data === false || data === 'off' || data === 0) newPos = 0;
+
+                        if (newPos !== null) {
+                            const prevPos = (typeof marker.options.position_pct === 'number')
+                                ? marker.options.position_pct : newPos;
+                            // [3-way] Motion detected when position changes between polls.
+                            if (Math.abs(newPos - prevPos) > 0.5) {
+                                marker.options._motion_detected_ts = Date.now();
+                            }
+                            marker.options.position_pct = newPos;
+                            dev.position_pct = newPos;
+
+                            const r = Math.round(newPos);
+                            const posDisp = document.getElementById(`pos-disp-${dev.id}`);
+                            if (posDisp) posDisp.innerText = r + '%';
+                            const slider = document.getElementById(`pos-slider-${dev.id}`);
+                            if (slider && document.activeElement !== slider) {
+                                slider.value = r;
+                                slider.style.setProperty('--aot-3way-fill', r + '%');
+                            }
+                        }
+
+                        // is_active for 3-way = motion is happening right now (transient).
+                        // Sticky window: recent commandActuator OR recent position change keeps it ON
+                        // for roughly one extra poll, then it returns to the off-style label.
+                        const motionTs = marker.options._motion_detected_ts || 0;
+                        const cmdTs = marker.options._pending_command || 0;
+                        const motionWindowMs = ((refreshSeconds ? parseFloat(refreshSeconds) : 5) + 2) * 1000;
+                        isActive = (Date.now() - Math.max(motionTs, cmdTs)) < motionWindowMs;
+                    }
+                }
+                else if (data && Array.isArray(data) && data.length >= 2) {
+                    isActive = true;
+                    val = data[1];
                 } else if (data && data.value !== undefined && data.value !== null) {
                     isActive = true;
                     val = data.value;
@@ -2392,6 +2540,18 @@
                 }
                 
                 return durationPromise.then(() => {
+                    // [3-way Actuator] Suppress server-driven snapback while a recent command is pending.
+                    // commandActuator() stamps _pending_command; honor it for up to (refresh+5)s so
+                    // the optimistic UI (slider/% display) survives one poll cycle.
+                    if (marker.options._pending_command) {
+                        const elapsedCmd = Date.now() - marker.options._pending_command;
+                        const cmdWindowMs = ((refreshSeconds ? parseFloat(refreshSeconds) : 5) + 5) * 1000;
+                        if (elapsedCmd < cmdWindowMs) {
+                            return;
+                        }
+                        delete marker.options._pending_command;
+                    }
+
                     // [Sync Persistence] Do not let server state overwrite local state if toggle was recent (<10s)
                     // [Sync Persistence] Smart Sync Logic
                     if (marker.options._pending_toggle) {

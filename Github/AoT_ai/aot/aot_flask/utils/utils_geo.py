@@ -48,6 +48,10 @@ _MISC_CACHE = None
 _MISC_CACHE_TS = 0.0
 _MISC_CACHE_TTL = 300
 
+# [3-way Actuator] Output module types that expose Open/Stop/Close + position control.
+# Frontend renders a 3-button + slider popup instead of an on/off toggle.
+THREE_WAY_OUTPUT_TYPES = {'actuator_paired'}
+
 
 def invalidate_geo_config_cache():
     global _GEO_CONFIG_CACHE_MAP
@@ -724,18 +728,20 @@ def collect_devices(device_ids, include_all, default_color='blue', map_uuid=None
     # Helper to define columns to load (Common + Specific)
     def get_load_options(model_cls):
         # Common columns
-        col_names = ['id', 'unique_id', 'name', 'latitude', 'longitude', 
-                'marker_color', 'marker_size', 'marker_icon', 
+        col_names = ['id', 'unique_id', 'name', 'latitude', 'longitude',
+                'marker_color', 'marker_size', 'marker_icon',
                 'map_overlay_id', 'map_config_id', 'custom_options']
-        
+
         # Specific Status Columns
         if hasattr(model_cls, 'is_activated'): col_names.append('is_activated')
         if hasattr(model_cls, 'is_on'): col_names.append('is_on')
         if hasattr(model_cls, 'last_update'): col_names.append('last_update')
-        
+
         # Model specific fields that might be used
         if model_cls.__name__ == 'Input':
              col_names.extend(['label_color', 'font_size', 'label_style'])
+        if model_cls.__name__ == 'Output':
+             col_names.append('output_type')
 
         # Resolve strings to attributes
         attrs = [getattr(model_cls, name) for name in col_names if hasattr(model_cls, name)]
@@ -898,17 +904,29 @@ def collect_devices(device_ids, include_all, default_color='blue', map_uuid=None
             if not channels_to_emit:
                 channels_to_emit = {0}
             
+            # [3-way Actuator] Detect output_type-based control kind once per device
+            control_kind = 'on_off'
+            if dev_type == 'output':
+                ot = getattr(record, 'output_type', None)
+                if ot in THREE_WAY_OUTPUT_TYPES:
+                    control_kind = 'value_3way'
+
             for ch_num in sorted(list(channels_to_emit)):
                 # [Fix] ID Unification: Channel 0 uses base UUID, others use uuid::ch
                 entry_uuid = f"{record.unique_id}::{ch_num}" if ch_num != 0 else record.unique_id
 
                 # Per-channel runtime state for output devices
+                position_pct = None
                 if dev_type == 'output':
                     ch_runtime = output_runtime_states.get(record.unique_id, {}).get(ch_num)
                     if ch_runtime is not None:
                         status_active = ch_runtime == 'on' or (isinstance(ch_runtime, (int, float)) and ch_runtime > 0)
+                        if isinstance(ch_runtime, (int, float)) and not isinstance(ch_runtime, bool):
+                            position_pct = float(ch_runtime)
                     else:
                         status_active = False
+                    if control_kind == 'value_3way' and position_pct is None:
+                        position_pct = 0.0
                     status = 'active' if status_active else 'idle'
                 meas_name = selected_measurement_names_map.get((record.unique_id, ch_num))
                 
@@ -945,9 +963,17 @@ def collect_devices(device_ids, include_all, default_color='blue', map_uuid=None
                 else:
                     entry_name = record.name
 
+                if dev_type == 'output':
+                    output_type_str = getattr(record, 'output_type', None)
+                else:
+                    output_type_str = None
+
                 dev_data = {
                   'id': entry_uuid,
                   'unique_id': entry_uuid, # [Fix] Required by frontend (aot-geo-devices-v3.js)
+                  'output_type': output_type_str, # [3-way] raw output module identifier
+                  'control_kind': control_kind if dev_type == 'output' else None,
+                  'position_pct': position_pct,
                   'int_id': record.id,
                   'device_unique_id': record.unique_id, # [New] Base UUID
                   'channel_id': ch_num,

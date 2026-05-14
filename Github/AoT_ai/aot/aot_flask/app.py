@@ -74,16 +74,31 @@ def create_app(config=ProdConfig):
     # ProxyFix for Docker/Nginx environments
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
     
-    # Enable template auto-reload for development
-    app.config['TEMPLATES_AUTO_RELOAD'] = True
-    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+    app.config['TEMPLATES_AUTO_RELOAD'] = app.debug
+    # 1년 캐시 (버전 쿼리스트링으로 캐시 무효화)
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 31536000
 
-    from sqlalchemy.pool import NullPool
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'connect_args': {'timeout': 30},
-        'pool_pre_ping': True,
-        'poolclass': NullPool,
-    }
+    from sqlalchemy.pool import NullPool, QueuePool
+    # gunicorn multi-worker: NullPool (fork 후 커넥션 공유 방지)
+    # 단일 프로세스(dev/Docker): QueuePool (커넥션 재사용으로 SQLite 락 경합 해소)
+    _is_gunicorn = "gunicorn" in os.environ.get("SERVER_SOFTWARE", "") or \
+                   any("gunicorn" in arg for arg in __import__("sys").argv)
+    if _is_gunicorn:
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'connect_args': {'timeout': 30, 'check_same_thread': False},
+            'pool_pre_ping': True,
+            'poolclass': NullPool,
+        }
+    else:
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'connect_args': {'timeout': 30, 'check_same_thread': False},
+            'pool_pre_ping': True,
+            'poolclass': QueuePool,
+            'pool_size': 5,
+            'max_overflow': 10,
+            'pool_timeout': 30,
+            'pool_recycle': 3600,
+        }
 
     register_extensions(app)
     register_blueprints(app)
@@ -114,8 +129,8 @@ def register_extensions(app):
         @event.listens_for(db.engine, "connect")
         def _set_sqlite_wal(dbapi_connection, connection_record):
             cursor = dbapi_connection.cursor()
-            # Disable WAL mode for better compatibility with network/cloud-synced filesystems
-            # cursor.execute("PRAGMA journal_mode=WAL")
+            cursor.execute("PRAGMA journal_mode=WAL")
+            cursor.execute("PRAGMA busy_timeout=5000")
             cursor.close()
 
     init_api(app)

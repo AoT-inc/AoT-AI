@@ -30,8 +30,8 @@ https://127.0.0.1
 
 ### %%%Support%%%
 
-*   [AoT on GitHub](https://github.com/aot-inc/AoT)
-*   [AoT Wiki](https://github.com/aot-inc/AoT/wiki)
+*   [AoT on GitHub](https://github.com/AoT-inc/AoT-AI)
+*   [AoT Wiki](https://github.com/AoT-inc/AoT-AI/wiki)
 *   [AoT API](https://aot-inc.github.io/AoT/aot-api.html)
 *   [%%%text_5_1%%%](https://forum.radicaldiy.com)
 *   [%%%text_5_2%%%](https://forum.radicaldiy.com/docs?category=23&tags=aot)

@@ -348,32 +348,34 @@ def save_function_layout():
     if not utils_general.user_has_permission('edit_controllers'):
         return redirect(url_for('routes_general.home'))
     data = request.get_json()
-    keys = ('id', 'y')
-    for each_function in data:
-        if all(k in each_function for k in keys):
-            controller_type = determine_controller_type(each_function['id'])
+    # Sort by reported y, then re-rank to sequential ints to eliminate ties
+    # across the 5 controller tables (Conditional/PID/Trigger/Function/CustomController).
+    items = [d for d in data if 'id' in d and 'y' in d]
+    items.sort(key=lambda d: (d['y'], d['id']))
+    for rank, each_function in enumerate(items):
+        controller_type = determine_controller_type(each_function['id'])
 
-            if controller_type == "Conditional":
-                mod_device = Conditional.query.filter(
-                    Conditional.unique_id == each_function['id']).first()
-            elif controller_type == "PID":
-                mod_device = PID.query.filter(
-                    PID.unique_id == each_function['id']).first()
-            elif controller_type == "Trigger":
-                mod_device = Trigger.query.filter(
-                    Trigger.unique_id == each_function['id']).first()
-            elif controller_type == "Function":
-                mod_device = Function.query.filter(
-                    Function.unique_id == each_function['id']).first()
-            elif controller_type == "Function_Custom":
-                mod_device = CustomController.query.filter(
-                    CustomController.unique_id == each_function['id']).first()
-            else:
-                logger.info("Could not find controller with ID {}".format(
-                    each_function['id']))
-                return "error"
-            if mod_device:
-                mod_device.position_y = each_function['y']
+        if controller_type == "Conditional":
+            mod_device = Conditional.query.filter(
+                Conditional.unique_id == each_function['id']).first()
+        elif controller_type == "PID":
+            mod_device = PID.query.filter(
+                PID.unique_id == each_function['id']).first()
+        elif controller_type == "Trigger":
+            mod_device = Trigger.query.filter(
+                Trigger.unique_id == each_function['id']).first()
+        elif controller_type == "Function":
+            mod_device = Function.query.filter(
+                Function.unique_id == each_function['id']).first()
+        elif controller_type == "Function_Custom":
+            mod_device = CustomController.query.filter(
+                CustomController.unique_id == each_function['id']).first()
+        else:
+            logger.info("Could not find controller with ID {}".format(
+                each_function['id']))
+            continue
+        if mod_device:
+            mod_device.position_y = rank
     db.session.commit()
     return "success"
 
@@ -499,7 +501,7 @@ def page_function():
     if not current_tab:
         # Fallback: Tab 테이블이 비어있는 경우
         logger.warning("No default tab found for function page")
-        function_dev = Function.query.order_by(Function.position_y).all()
+        function_dev = Function.query.order_by(Function.position_y, Function.id).all()
     else:
         # ===== FILTER BY TAB (Including Legacy NULL) =====
         function_dev = Function.query.filter(
@@ -507,7 +509,7 @@ def page_function():
                 Function.tab_id == current_tab.unique_id,
                 Function.tab_id.is_(None)
             )
-        ).order_by(Function.position_y).all()
+        ).order_by(Function.position_y, Function.id).all()
     # ==================================
 
     each_function = None
@@ -824,7 +826,7 @@ def page_function():
 
         # 2. List integration and sorting (position_y priority, unique_id secondary)
         all_functions_sorted = conditional + pid + trigger + function_dev + function
-        all_functions_sorted.sort(key=lambda x: (getattr(x, 'position_y', 0) or 0, getattr(x, 'unique_id', '')))
+        all_functions_sorted.sort(key=lambda x: (getattr(x, 'position_y', 0) or 0, getattr(x, 'id', 0) or 0))
 
         return render_template('pages/function.html',
                                # ===== TAB PARAMETERS =====

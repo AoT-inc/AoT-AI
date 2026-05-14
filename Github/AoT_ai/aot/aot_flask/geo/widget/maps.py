@@ -75,17 +75,28 @@ def normalize_layer_name(name):
 
 
 def extract_device_ids(widget_options: dict) -> list:
-    """Robustly extract device IDs from various saved option keys."""
+    """Robustly extract device IDs from saved option keys.
+
+    Source of truth: the three user-facing selection multi-selects
+    (`device_selection_input/output/function`). The merged `device_ids` /
+    `custom_option_device_ids` keys are derived caches written by
+    `execute_at_modification` and can drift stale when the user clears one of
+    the three lists (the form omits empty multi-selects, triggering the
+    presave fallback). Trusting the explicit per-type lists prevents stale
+    entries from leaking into map rendering.
+    """
     if not widget_options:
         return []
     ids = []
-    # Prefer the new key
-    keys = [
-        'custom_option_device_ids', 
-        'device_ids',
+    selection_keys = [
         'device_selection_input',
         'device_selection_output',
         'device_selection_function',
+    ]
+    has_selection_key = any(k in widget_options for k in selection_keys)
+    keys = selection_keys if has_selection_key else [
+        'custom_option_device_ids',
+        'device_ids',
     ]
     for key in keys:
         raw = widget_options.get(key)
@@ -763,6 +774,10 @@ def generate_page_variables_logic(widget_unique_id, widget_options):
         'max_measure_age': int(widget_options.get('max_measure_age', 300)) if widget_options else 300,
         'input_update_interval': int(widget_options.get('input_update_interval', 300)) if widget_options else 300,
         'hide_ui': widget_options.get('hide_ui', False) if widget_options else False,
+        'label_hidden_input': widget_options.get('label_hidden_input', False) if widget_options else False,
+        'label_hidden_output': widget_options.get('label_hidden_output', False) if widget_options else False,
+        'label_hidden_function': widget_options.get('label_hidden_function', False) if widget_options else False,
+        'label_hidden_meas': widget_options.get('label_hidden_meas', False) if widget_options else False,
         'theme_config': theme_config,
         'active_layers': active_layers,
         'geo_config': geo_config,

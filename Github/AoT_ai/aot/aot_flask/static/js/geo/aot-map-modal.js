@@ -446,7 +446,7 @@
             };
 
             if ($modal.length) {
-                $modal.on('shown.bs.modal', resizeMap);
+                $modal.on('shown.bs.modal.aotmap', resizeMap);
                 if ($modal.hasClass('show')) resizeMap();
             }
 
@@ -466,11 +466,42 @@
         }
 
         /**
+         * Release the WebGL context and all bound resources so the browser can
+         * reclaim the GPU slot. Call from the modal's hidden.bs.modal handler
+         * to avoid hitting the per-browser WebGL context cap (~16).
+         */
+        destroy() {
+            try { if (this.resizeObserver) this.resizeObserver.disconnect(); } catch (e) { /* silent */ }
+            this.resizeObserver = null;
+
+            const $el = $('#' + this.mapId);
+            const $modal = $el.closest('.modal');
+            if ($modal.length) {
+                try { $modal.off('.aotmap'); } catch (e) { /* silent */ }
+            }
+
+            try { if (this.marker && typeof this.marker.remove === 'function') this.marker.remove(); } catch (e) { /* silent */ }
+            this.marker = null;
+
+            try { if (this.draw && typeof this.draw.destroy === 'function') this.draw.destroy(); } catch (e) { /* silent */ }
+            this.draw = null;
+
+            try { if (this.map && typeof this.map.remove === 'function') this.map.remove(); } catch (e) { /* silent */ }
+            this.map = null;
+
+            $el.removeClass('aot-map-init-done');
+        }
+
+        /**
          * Scans the document for uninitialized map containers and initializes them.
+         * Skips containers inside Bootstrap modals — those use lazy init bound to
+         * shown.bs.modal so they don't exhaust the WebGL context pool on page load.
          */
         static initAll() {
             $('.map-container').not('.aot-map-init-done').each(function () {
-                const id = $(this).attr('id');
+                const $el = $(this);
+                if ($el.closest('.modal').length) return; // lazy-init owned by macro
+                const id = $el.attr('id');
                 if (id) new AoTMapModalController({ mapId: id });
             });
         }

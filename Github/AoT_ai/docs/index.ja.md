@@ -6,7 +6,7 @@ AoTは[Raspberry Pi](https://en.wikipedia.org/wiki/Raspberry_Pi)やその他の�
 
 ### 情報
 
-See the [README](https://github.com/aot-inc/AoT#uses) for features, projects using AoT, screenshots, and other information.
+See the [README](https://github.com/AoT-inc/AoT-AI#uses) for features, projects using AoT, screenshots, and other information.
 
 ### 必須条件
 
@@ -30,8 +30,8 @@ https://127.0.0.1
 
 ### サポート
 
-*   [AoT on GitHub](https://github.com/aot-inc/AoT)
-*   [AoT Wiki](https://github.com/aot-inc/AoT/wiki)
+*   [AoT on GitHub](https://github.com/AoT-inc/AoT-AI)
+*   [AoT Wiki](https://github.com/AoT-inc/AoT-AI/wiki)
 *   [AoT API](https://aot-inc.github.io/AoT/aot-api.html)
 *   [ディスカッションフォーラム](https://forum.radicaldiy.com)
 *   [よくある質問](https://forum.radicaldiy.com/docs?category=23&tags=aot)

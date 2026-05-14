@@ -2,7 +2,7 @@
 
 Page\: `[Gear Icon] -> Upgrade`
 
-If you already have AoT installed, you can perform an upgrade to the latest [AoT Release](https://github.com/aot-inc/AoT/releases) by either using the Upgrade option in the web interface (recommended) or by issuing the following command in a terminal. A log of the upgrade process is created at ``/var/log/aot/aotupgrade.log`` and is also available from the `[Gear Icon] -> AoT Logs` page.
+If you already have AoT installed, you can perform an upgrade to the latest [AoT Release](https://github.com/AoT-inc/AoT-AI/releases) by either using the Upgrade option in the web interface (recommended) or by issuing the following command in a terminal. A log of the upgrade process is created at ``/var/log/aot/aotupgrade.log`` and is also available from the `[Gear Icon] -> AoT Logs` page.
 
 ```bash
 sudo aot-commands upgrade-aot

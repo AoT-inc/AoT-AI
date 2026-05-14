@@ -6,7 +6,7 @@
         <h5 class="modal-title font-weight-bold" id="tabSettingsModalLabel">{{_('Tab Settings')}}</h5>
         <button type="button" class="close" data-dismiss="modal">&times;</button>
       </div>
-      <form id="tabSettingsForm">
+      <form id="tabSettingsForm" onsubmit="event.preventDefault(); document.getElementById('btnRenameTab').click(); return false;">
         <input type="hidden" id="tabSettingsTabId" name="tab_id">
         <div class="modal-body p-0">
           <div class="aot-modal-container">

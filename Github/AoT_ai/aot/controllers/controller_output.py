@@ -96,8 +96,8 @@ class OutputController(AbstractController, threading.Thread):
                 # Execute if past the time the output was supposed to turn off
                 if (self.output[output_id].output_setup and
                         each_channel in self.output[output_id].output_on_until and
+                        self.output[output_id].output_on_until[each_channel] is not None and
                         self.output[output_id].output_on_until[each_channel] < utc_now() and
-
                         self.output[output_id].output_on_duration[each_channel] and
                         not self.output[output_id].output_off_triggered[each_channel]):
 
@@ -136,6 +136,13 @@ class OutputController(AbstractController, threading.Thread):
                         self.output_unique_id[each_output.unique_id][each_channel] = None
                 else:
                     self.output_unique_id[each_output.unique_id][0] = None
+
+                # Also register channels from DB (for dynamic multi-channel outputs)
+                from aot.databases.models import OutputChannel
+                for db_ch in db_retrieve_table_daemon(OutputChannel).filter(
+                        OutputChannel.output_id == each_output.unique_id).all():
+                    if db_ch.channel not in self.output_unique_id[each_output.unique_id]:
+                        self.output_unique_id[each_output.unique_id][db_ch.channel] = None
 
                 if each_output.output_type in self.dict_outputs:
                     if ('no_run' in self.dict_outputs[each_output.output_type] and
@@ -182,6 +189,13 @@ class OutputController(AbstractController, threading.Thread):
                     self.output_unique_id[output_id][each_channel] = None
             else:
                 self.output_unique_id[output_id][0] = None
+
+            # Also register channels from DB (for dynamic multi-channel outputs)
+            from aot.databases.models import OutputChannel
+            for db_ch in db_retrieve_table_daemon(OutputChannel).filter(
+                    OutputChannel.output_id == output_id).all():
+                if db_ch.channel not in self.output_unique_id[output_id]:
+                    self.output_unique_id[output_id][db_ch.channel] = None
 
             if self.output_type[output_id] in self.dict_outputs:
                 if ('no_run' in self.dict_outputs[output.output_type] and

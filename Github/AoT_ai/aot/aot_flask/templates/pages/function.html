@@ -165,8 +165,11 @@
       }, '.aot-entry-container');
     }
 
-    window.grid.off('change');
-    window.grid.on('change', function (event, items) {
+    // Save only on user-initiated drag completion. 'change' fires during
+    // column transitions / programmatic updates (e.g. window resize) and
+    // would otherwise overwrite the saved order with transient layouts.
+    window.grid.off('dragstop');
+    window.grid.on('dragstop', function (event, el) {
       if (window.grid.getColumn() === 1) return;
 
       let serializedFull = window.grid.save(false);
@@ -579,7 +582,7 @@
                       console.log('GridStack not initialized. Forcing init for ' + gridId);
                       grid = GridStack.init({
                         column: 12,
-                        cellHeight: 48,
+                        cellHeight: 42,
                         animate: true,
                         float: false,
                         disableResize: true,
@@ -592,31 +595,34 @@
                     }
                   }
 
-                  if (grid && grid.addWidget) {
-                    grid.addWidget(new_options);
-                    grid.compact();
-
-                    // [Fix] Force CSS stylesheet update for new row positions
-                    // GridStack uses attribute-selector CSS rules (e.g. [gs-y="3"]) for positioning.
-                    // When a grid starts empty, no row rules exist. After addWidget(), _updateStyles()
-                    // must be called manually so new items get their top/height CSS applied.
-                    try {
-                      if (typeof grid._updateStyles === 'function') {
-                        grid._updateStyles(grid.getRow() + 1);
+                  if (grid && grid.makeWidget) {
+                    // Parse HTML to DOM so gs-h/gs-w/gs-y attributes are honored.
+                    // addWidget(htmlString) drops these attributes in GridStack v6+,
+                    // collapsing multi-row actions (sequence gs_h=3, custom gs_h=4) to h=1.
+                    var tmpWrap = document.createElement('div');
+                    tmpWrap.innerHTML = (new_options || '').trim();
+                    var newItem = tmpWrap.firstElementChild;
+                    if (newItem) {
+                      gridEl.appendChild(newItem);
+                      if (!newItem.gridstackNode) {
+                        grid.makeWidget(newItem);
                       }
-                    } catch (e) {
-                      console.warn('GridStack _updateStyles failed:', e);
-                    }
+                      grid.compact();
 
-                    // [Fix] Manually initialize plugins for the newly added widget
-                    try {
-                        var lastItem = gridEl.querySelector('.grid-stack-item:last-child');
-                        if (lastItem) {
-                            $(lastItem).find('.selectpicker').selectpicker();
-                            $(lastItem).find('.clockpicker').clockpicker();
+                      try {
+                        if (typeof grid._updateStyles === 'function') {
+                          grid._updateStyles(grid.getRow() + 1);
                         }
-                    } catch (e) {
+                      } catch (e) {
+                        console.warn('GridStack _updateStyles failed:', e);
+                      }
+
+                      try {
+                        $(newItem).find('.selectpicker').selectpicker();
+                        $(newItem).find('.clockpicker').clockpicker();
+                      } catch (e) {
                         console.warn('Plugin initialization failed for new widget:', e);
+                      }
                     }
 
                     popup_response(data);

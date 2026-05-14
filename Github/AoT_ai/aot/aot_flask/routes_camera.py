@@ -35,7 +35,7 @@ def page_camera():
     detected_cameras = PlatformDetector.detect_available_cameras()
     
     # 카메라 목록 조회
-    cameras = Camera.query.order_by(Camera.position_y).all()
+    cameras = Camera.query.order_by(Camera.position_y, Camera.id).all()
 
     # POST 요청 처리
     if request.method == 'POST':

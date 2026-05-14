@@ -24,6 +24,62 @@ blueprint = Blueprint('routes_geo', __name__)
 
 from aot.aot_flask.routes_static import inject_variables
 
+# WMS layer info cache: avoids parse_input_information() + module load per tile
+_wms_layer_info_cache = {}  # {unique_id: (base_url, leaflet_opts, expires_at)}
+_WMS_LAYER_INFO_TTL = 60.0
+
+
+def _get_wms_layer_info(unique_id):
+    """Return (base_url, leaflet_opts) for a WMS layer, with per-process TTL cache.
+    Avoids calling parse_input_information() + load_module_from_file() on every tile."""
+    import re as _re
+    import time as _time
+    import json as _json
+    from aot.utils.inputs import parse_input_information
+    from aot.utils.modules import load_module_from_file
+    from aot.aot_flask.utils.utils_geo import MockInputDev
+
+    now = _time.time()
+    cached = _wms_layer_info_cache.get(unique_id)
+    if cached and now < cached[2]:
+        return cached[0], cached[1]
+
+    channel_id = None
+    layer = GeoLayer.query.filter_by(unique_id=unique_id).first()
+    if not layer:
+        m = _re.match(r'^(.+)_(\d+)$', unique_id)
+        if m:
+            base_uid, channel_id = m.group(1), int(m.group(2))
+            layer = GeoLayer.query.filter_by(unique_id=base_uid).first()
+    if not layer:
+        return None, None
+
+    dict_inputs = parse_input_information()
+    layer_def = dict_inputs.get(layer.type, {})
+    if not layer_def.get('file_path'):
+        return None, None
+
+    mod, _ = load_module_from_file(layer_def['file_path'], 'inputs')
+    if not mod or not hasattr(mod, 'InputModule'):
+        return None, None
+
+    inst = mod.InputModule(MockInputDev(layer))
+
+    if channel_id is not None:
+        try:
+            saved_opts = _json.loads(layer.options) if layer.options else {}
+        except Exception:
+            saved_opts = {}
+        saved_opts['active_channels'] = [channel_id]
+        inst.custom_options = saved_opts
+        inst.get_custom_option = lambda opt, default=None: saved_opts.get(opt, default)
+
+    base_url = inst.get_url()
+    leaflet_opts = inst.get_leaflet_options()
+
+    _wms_layer_info_cache[unique_id] = (base_url, leaflet_opts, now + _WMS_LAYER_INFO_TTL)
+    return base_url, leaflet_opts
+
 # Minimal 1×1 transparent PNG — returned by the WMS proxy when the upstream
 # WMS server responds with an XML/HTML service exception so that MapLibre can
 # decode the tile without triggering "source image could not be decoded" errors.
@@ -698,6 +754,7 @@ def api_geo_proxy_rainviewer_timestamps():
 
 @blueprint.route('/api/geo/proxy/wms/<unique_id>', methods=['GET'])
 @login_required
+@cache.cached(timeout=300, query_string=True, unless=lambda: hasattr(g, '_wms_proxy_error') and g._wms_proxy_error)
 def api_geo_proxy_wms(unique_id):
     """
     Server-side WMS tile proxy.
@@ -709,55 +766,17 @@ def api_geo_proxy_wms(unique_id):
         /api/geo/proxy/wms/<unique_id>?BBOX={bbox-epsg-3857}&WIDTH=256&HEIGHT=256
     """
     try:
-        import re as _re
-        from aot.utils.inputs import parse_input_information
-        from aot.utils.modules import load_module_from_file
-        from aot.aot_flask.utils.utils_geo import MockInputDev
+        base_url, leaflet_opts = _get_wms_layer_info(unique_id)
+        if base_url is None:
+            g._wms_proxy_error = True
+            return Response('Layer not found or not configured', status=404)
 
-        # Channel-exploded layer IDs are suffixed with _{channel_id} (e.g. uuid_5).
-        # Strip the suffix to find the base layer, then inject the channel selection.
-        channel_id = None
-        layer = GeoLayer.query.filter_by(unique_id=unique_id).first()
-        if not layer:
-            m = _re.match(r'^(.+)_(\d+)$', unique_id)
-            if m:
-                base_uid, channel_id = m.group(1), int(m.group(2))
-                layer = GeoLayer.query.filter_by(unique_id=base_uid).first()
-        if not layer:
-            return Response('Layer not found', status=404)
-
-        dict_inputs = parse_input_information()
-        layer_def = dict_inputs.get(layer.type, {})
-        if not layer_def.get('file_path'):
-            return Response('Layer type has no InputModule', status=404)
-
-        mod, _ = load_module_from_file(layer_def['file_path'], 'inputs')
-        if not mod or not hasattr(mod, 'InputModule'):
-            return Response('InputModule not found', status=404)
-
-        inst = mod.InputModule(MockInputDev(layer))
-
-        # If a channel suffix was present, override the active channel selection so
-        # get_url() / get_leaflet_options() return the correct LAYERS parameter.
-        if channel_id is not None:
-            try:
-                import json as _json
-                saved_opts = _json.loads(layer.options) if layer.options else {}
-            except Exception:
-                saved_opts = {}
-            saved_opts['active_channels'] = [channel_id]
-            inst.custom_options = saved_opts
-            inst.get_custom_option = lambda opt, default=None: saved_opts.get(opt, default)
-
-        base_url = inst.get_url()
-        leaflet_opts = inst.get_leaflet_options()
-
-        # Build WMS params from InputModule options + browser-forwarded tile params
         bbox = request.args.get('BBOX', '')
         width = request.args.get('WIDTH', '256')
         height = request.args.get('HEIGHT', '256')
 
         if not bbox:
+            g._wms_proxy_error = True
             return Response('Missing BBOX parameter', status=400)
 
         wms_params = {
@@ -773,15 +792,11 @@ def api_geo_proxy_wms(unique_id):
             'BBOX': bbox,
         }
 
-        # CRS/SRS depends on WMS version (1.3.0 uses CRS, 1.1.x uses SRS)
         if wms_params['VERSION'].startswith('1.3'):
             wms_params['CRS'] = 'EPSG:3857'
         else:
             wms_params['SRS'] = 'EPSG:3857'
 
-        # Forward provider-specific params from leaflet_options that are not
-        # standard WMS keys. This covers MapServer's 'map' param (ISRIC SoilGrids),
-        # API keys, domain overrides, etc.
         _WMS_STANDARD = {
             'service', 'request', 'version', 'layers', 'styles', 'format',
             'transparent', 'width', 'height', 'bbox', 'crs', 'srs',
@@ -790,7 +805,6 @@ def api_geo_proxy_wms(unique_id):
             if k.lower() not in _WMS_STANDARD and v not in (None, '', False):
                 wms_params[k] = v
 
-        sep = '&' if '?' in base_url else '?'
         resp = requests.get(base_url, params=wms_params, timeout=15,
                             headers={'Referer': request.host_url})
 
@@ -799,8 +813,7 @@ def api_geo_proxy_wms(unique_id):
             current_app.logger.warning(
                 f'[WMS Proxy] Upstream error {resp.status_code} for {unique_id}: {resp.text[:200]}'
             )
-            # Return a transparent tile so MapLibre does not throw
-            # "source image could not be decoded" errors for WMS exceptions.
+            g._wms_proxy_error = True
             return Response(
                 _TRANSPARENT_1X1_PNG,
                 status=200,
@@ -817,6 +830,7 @@ def api_geo_proxy_wms(unique_id):
 
     except Exception as e:
         current_app.logger.error(f'[WMS Proxy] Exception for {unique_id}: {e}')
+        g._wms_proxy_error = True
         return Response(str(e), status=500)
 
 
@@ -1182,7 +1196,7 @@ def page_layer():
     if not utils_general.user_has_permission('edit_settings'):
         return redirect(url_for('routes_general.home'))
     
-    geo_layers = sorted(GeoLayer.query.all(), key=lambda l: l.position_y)
+    geo_layers = sorted(GeoLayer.query.all(), key=lambda l: (l.position_y, l.id))
     dict_inputs = parse_input_information()
 
     form_add = forms_geo.GISInputAdd()
@@ -1290,23 +1304,21 @@ def page_layer_save_layout():
         
         # Format: [{'id': 'uuid', 'y': 0, 'x': 0, ...}, ...]
         # Note: GridStack serialization returns 'id' if we set gs-id properly.
-        
-        for item in layout_data:
-            layer_id = item.get('id')
-            pos_y = item.get('y')
-            
-            if layer_id is not None and pos_y is not None:
-                layer = GeoLayer.query.filter_by(unique_id=layer_id).first()
-                if layer:
-                    try:
-                        opts = json.loads(layer.options) if layer.options else {}
-                    except:
-                        opts = {}
-                    
-                    if opts.get('position_y') != pos_y:
-                        opts['position_y'] = int(pos_y)
-                        layer.options = json.dumps(opts)
-                        
+        # Sort by reported y, then re-rank to sequential ints to eliminate ties.
+        items = [d for d in layout_data
+                 if d.get('id') is not None and d.get('y') is not None]
+        items.sort(key=lambda d: (d['y'], d['id']))
+        for rank, item in enumerate(items):
+            layer = GeoLayer.query.filter_by(unique_id=item['id']).first()
+            if layer:
+                try:
+                    opts = json.loads(layer.options) if layer.options else {}
+                except:
+                    opts = {}
+                if opts.get('position_y') != rank:
+                    opts['position_y'] = rank
+                    layer.options = json.dumps(opts)
+
         db.session.commit()
         return jsonify(result='success')
 

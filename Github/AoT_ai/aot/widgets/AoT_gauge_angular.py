@@ -593,7 +593,7 @@ WIDGET_INFORMATION = {
 
     credits: {
       enabled: false,
-      href: "https://github.com/aot-inc/aot",
+      href: "https://github.com/AoT-inc/AoT-AI",
       text: "aot"
     }
   });

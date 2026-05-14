@@ -166,23 +166,42 @@
         </div>
     </div>
     {% else %}
-    <div class="d-flex align-items-center flex-nowrap" style="border: 1px solid var(--border-neutral); border-bottom: 1px solid var(--border-neutral); border-radius: 16px; padding: 6px 8px; background-color: var(--bd-primary); overflow: hidden;">
+    <div style="border: 1px solid var(--border-neutral); border-radius: 16px; padding: 6px 8px; background-color: var(--bd-primary);">
+      <!-- Row 1: Drag, Name, Delete, Save -->
+      <div class="d-flex align-items-center flex-nowrap">
         <!-- Drag Handle -->
         <div class="text-center icon-fh my-auto" style="cursor: move; padding-right: 8px; flex: 0 0 auto;">
             <i style="font-size: 1.2em; color: var(--aot-text-secondary);" class="fa fa-grip-lines" title="{{_('Drag')}}"></i>
         </div>
 
         <!-- Action Name -->
-        <div style="flex: 0 1 auto; margin-right: 5px; min-width: 0;">
-             <div class="form-control form-control-sm text-truncate" title="{{dict_options['name']}}" style="background-color: var(--bg-btn-active-light); cursor: default; border: 1px solid var(--border-neutral); border-radius: 14px; height: 28px; padding: 2px 8px; line-height: 22px; max-width: 150px;">
+        <div style="flex: 1 1 auto; margin-right: 5px; min-width: 0;">
+             <div class="form-control form-control-sm text-truncate" title="{{dict_options['name']}}" style="background-color: var(--bg-btn-active-light); cursor: default; border: 1px solid var(--border-neutral); border-radius: 14px; height: 28px; padding: 2px 8px; line-height: 22px; max-width: 240px;">
                  <strong style="font-size: 0.85rem;">{{dict_options["name"]}}</strong>
              </div>
         </div>
 
-        <!-- Action Options (Dynamic Selects/Inputs) -->
-        <div style="flex: 1 1 auto; margin-right: 5px; min-width: 0; overflow: hidden;">
-             {% if 'custom_options' in dict_options and unique_id in custom_options_values %}
-                <div style="display: flex; flex-wrap: nowrap; align-items: center; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+        <!-- Delete Button -->
+        <div style="flex: 0 0 auto; margin-right: 5px;">
+            <button data-form-id="form_action_{{unique_id}}" onclick="return confirm('{{_('Are you sure you want to delete?')}}') && $(this).processRequest(this, 'delete_action');" name="delete_action" class="btn aot-pill-btn" type="button">
+                {{_('Delete')}}
+            </button>
+        </div>
+
+        <!-- Save Button -->
+        <div style="flex: 0 0 auto;">
+            <button data-form-id="form_action_{{unique_id}}" onclick="return $(this).processRequest(this, 'save_action');" name="save_action" class="btn aot-pill-btn aot-pill-btn-primary" type="button">
+                {{_('Save')}}
+            </button>
+        </div>
+      </div>
+
+      <!-- Row 2: Options (wrap) -->
+      {% if 'custom_options' in dict_options and unique_id in custom_options_values %}
+      <div style="margin-top: 6px;">
+        <div style="flex: 1 1 auto; min-width: 0;">
+             {% if true %}
+                <div style="display: flex; flex-wrap: wrap; align-items: center; row-gap: 6px;">
                 {% for each_option in dict_options['custom_options'] %}
                     {% set opt_id = each_option['id'] %}
                     {% set opt_val = action_options.get(opt_id) %}
@@ -261,20 +280,8 @@
                 </div>
              {% endif %}
         </div>
-        
-        <!-- Delete Button -->
-        <div style="flex: 0 0 auto; margin-right: 5px;">
-            <button data-form-id="form_action_{{unique_id}}" onclick="return confirm('{{_('Are you sure you want to delete?')}}') && $(this).processRequest(this, 'delete_action');" name="delete_action" class="btn aot-pill-btn" type="button">
-                {{_('Delete')}}
-            </button>
-        </div>
-
-        <!-- Save Button -->
-        <div style="flex: 0 0 auto;">
-            <button data-form-id="form_action_{{unique_id}}" onclick="return $(this).processRequest(this, 'save_action');" name="save_action" class="btn aot-pill-btn aot-pill-btn-primary" type="button">
-                {{_('Save')}}
-            </button>
-        </div>
+      </div>
+      {% endif %}
     </div>
     {% endif %}
 

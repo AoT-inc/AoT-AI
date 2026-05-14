@@ -251,9 +251,23 @@
       <div id="facility-3d-panel">
         <div id="facility-3d-header">
           <span>§ 3D Preview</span>
-          <button id="btn-3d-refresh" class="btn btn-sm btn-outline-primary">↺ {{ _('Refresh') }}</button>
+          <div style="display:flex;gap:0.3rem;align-items:center;flex-wrap:wrap;">
+            <span id="facility-3d-asset-badge" style="display:none;font-size:0.75rem;background:#e8f0fe;color:#1565c0;padding:0.2rem 0.55rem;border-radius:10px;"></span>
+            <button id="btn-3d-asset-detach" class="btn btn-sm btn-outline-danger" style="display:none;" onclick="facilityDetachAsset()">✕ 자산 해제</button>
+            <button id="btn-3d-asset-lib" class="btn btn-sm btn-outline-secondary" onclick="facilityOpenAssetLib()">📦 자산 라이브러리</button>
+            <span style="color:#ccc;margin:0 0.1rem;">|</span>
+            <button onclick="facilityExportPNG()" class="btn btn-sm btn-outline-secondary" title="PNG 캡처">🖼</button>
+            <button onclick="facilityExportSpec()" class="btn btn-sm btn-outline-secondary" title="Spec JSON 내보내기">📄 Spec</button>
+            <button id="btn-3d-export-glb" onclick="facilityExportGLB()" class="btn btn-sm btn-outline-secondary" title="GLB 3D 내보내기">📤 GLB</button>
+            <button onclick="document.getElementById('import-spec-input').click()" class="btn btn-sm btn-outline-secondary" title="Spec JSON 불러오기">📥 Spec</button>
+            <button onclick="document.getElementById('import-gltf-input').click()" class="btn btn-sm btn-outline-secondary" title="GLB/GLTF 파일 불러오기">📥 GLB</button>
+            <button id="btn-3d-refresh" class="btn btn-sm btn-outline-primary">↺ {{ _('Refresh') }}</button>
+          </div>
         </div>
         <canvas id="facility-3d-canvas"></canvas>
+        <input type="file" id="import-spec-input" accept=".json" style="display:none" onchange="facilityImportSpec(this.files[0]);this.value=''">
+        <input type="file" id="import-gltf-input" accept=".glb,.gltf" style="display:none" onchange="facilityImportGLTF(this.files[0]);this.value=''">
+        <div class="aot-3d-asset-status" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#888;font-size:0.85rem;pointer-events:none;"></div>
         <div id="facility-3d-hint">우클릭: 회전 · 좌클릭: 팬/선택 · 스크롤: 줌</div>
         <div id="facility-3d-resize-handle" title="{{ _('Drag to resize') }}"></div>
       </div>
@@ -394,7 +408,11 @@ window.AOT_GEO_CONFIG = {{ geo_config | tojson | safe }};
 </script>
 
 <!-- Facility 3D overlay (Three.js) — must load before aot-facility-design.js -->
-<script src="/static/js/widget/AoT_facility/aot-facility-3d.js?v=6"></script>
+<script src="/static/js/widget/AoT_facility/core/materials.js?v=1"></script>
+<script src="/static/js/widget/AoT_facility/core/parametric.js?v=1"></script>
+<script src="/static/js/widget/AoT_facility/assets/gltf_loader.js?v=1"></script>
+<script src="/static/js/widget/AoT_facility/ui/asset_library.js?v=1"></script>
+<script src="/static/js/widget/AoT_facility/aot-facility-3d.js?v=7"></script>
 <script src="/static/js/geo/aot-facility-map-3d.js?v=11"></script>
 
 <script src="/static/js/geo/aot-facility-layer-panel.js?v=20260508b"></script>
@@ -539,6 +557,272 @@ window.AOT_GEO_CONFIG = {{ geo_config | tojson | safe }};
     var btn = document.getElementById('btn-3d-refresh');
     if (btn) btn.addEventListener('click', rebuild);
   }
+
+  // ── Asset library integration ─────────────────────────────────────────────────
+  var _attachedAsset = null;  // { unique_id, name, source_file }
+
+  function _syncAssetUI() {
+    var badge   = document.getElementById('facility-3d-asset-badge');
+    var detach  = document.getElementById('btn-3d-asset-detach');
+    if (_attachedAsset) {
+      badge.textContent = '📦 ' + _attachedAsset.name;
+      badge.style.display = '';
+      detach.style.display = '';
+    } else {
+      badge.style.display = 'none';
+      detach.style.display = 'none';
+    }
+  }
+
+  window.facilityOpenAssetLib = function () {
+    if (!window.AoTAssetLibrary) return;
+    AoTAssetLibrary.openModal(function (asset) {
+      _attachedAsset = asset;
+      _syncAssetUI();
+      // Rebuild 3D with asset render mode
+      var fac = _formFacility();
+      fac.render_mode = 'asset';
+      fac.model_asset_uuid = asset.unique_id;
+      fac._asset_source_file = asset.source_file;
+      var canvas = document.getElementById('facility-3d-canvas');
+      if (!canvas || !window.AoTFacility3D) return;
+      if (_ctx) { _ctx.dispose(); _ctx = null; }
+      _ctx = window.AoTFacility3D.buildScene(canvas, fac, null);
+    });
+  };
+
+  window.facilityDetachAsset = function () {
+    _attachedAsset = null;
+    _syncAssetUI();
+    rebuild();  // back to parametric
+  };
+
+  // ── Export / Import ──────────────────────────────────────────────────────────
+
+  window.facilityExportPNG = function () {
+    if (!_ctx || !_ctx.renderer || !_ctx.scene || !_ctx.camera) {
+      alert('3D preview가 준비되지 않았습니다.');
+      return;
+    }
+    // Render one fresh frame then capture (avoids preserveDrawingBuffer overhead)
+    _ctx.renderer.render(_ctx.scene, _ctx.camera);
+    var url = _ctx.renderer.domElement.toDataURL('image/png');
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = (_formFacility().name || 'facility') + '_3d.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  window.facilityExportSpec = function () {
+    var spec = _formFacility();
+    var blob = new Blob([JSON.stringify(spec, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = (spec.name || 'facility') + '_spec.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  };
+
+  window.facilityExportGLB = function () {
+    if (!_ctx || !_ctx.scene) {
+      alert('3D preview가 준비되지 않았습니다.');
+      return;
+    }
+    var scene = _ctx.scene;
+    var name = _formFacility().name || 'facility';
+    var btn = document.getElementById('btn-3d-export-glb');
+    if (btn) { btn.disabled = true; btn.textContent = '내보내는 중…'; }
+    import('https://cdn.jsdelivr.net/npm/three@0.155.0/examples/jsm/exporters/GLTFExporter.js')
+      .then(function (module) {
+        var exporter = new module.GLTFExporter();
+        exporter.parse(
+          scene,
+          function (result) {
+            var blob = new Blob([result], { type: 'application/octet-stream' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = name + '.glb';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+          },
+          function (err) {
+            alert('GLB 내보내기 실패: ' + err);
+          },
+          { binary: true }
+        );
+      })
+      .catch(function (err) {
+        alert('GLTFExporter 로드 실패: ' + err);
+      })
+      .finally(function () {
+        if (btn) { btn.disabled = false; btn.textContent = '📤 GLB'; }
+      });
+  };
+
+  window.facilityImportSpec = function (file) {
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        var spec = JSON.parse(e.target.result);
+        var setVal = function (id, v) {
+          var el = document.getElementById(id);
+          if (el && v != null) el.value = v;
+        };
+        var setChk = function (id, v) {
+          var el = document.getElementById(id);
+          if (el && v != null) el.checked = !!v;
+        };
+        setVal('facility-name',   spec.name);
+        setVal('facility-preset', spec.preset);
+        setVal('bay-count',       spec.bay_count);
+        var g = spec.geometry_3d || {};
+        setVal('span-width',   g.span_width_m);
+        setVal('eave-height',  g.eave_height_m);
+        setVal('ridge-height', g.ridge_height_m);
+        setVal('length-m',     g.length_m);
+        setVal('spacing-m',    g.spacing_m);
+        setVal('roof-type',    g.roof_type);
+        if (g.orientation_deg != null) {
+          setVal('orientation-input',  g.orientation_deg);
+          setVal('orientation-slider', g.orientation_deg);
+        }
+        if (spec.structure) {
+          var r = document.querySelector('input[name="structure"][value="' + spec.structure + '"]');
+          if (r) r.checked = true;
+        }
+        var env = spec.envelope || {};
+        setVal('layer-count', env.layer_count);
+        var outer = env.outer || {};
+        setVal('outer-cover', outer.cover_material);
+        setChk('outer-side-vent', outer.side_vent && outer.side_vent.enabled);
+        setChk('outer-roof-vent', outer.roof_vent && outer.roof_vent.enabled);
+        var inner = env.inner || {};
+        setVal('inner-cover',        inner.cover_material);
+        setVal('inner-control-mode', inner.side_vent && inner.side_vent.control_mode);
+        setChk('inner-side-vent', inner.side_vent && inner.side_vent.enabled);
+        setChk('inner-roof-vent', inner.roof_vent && inner.roof_vent.enabled);
+        var curtain = env.curtain || {};
+        setChk('curtain-thermal', curtain.thermal);
+        setChk('curtain-shade',   curtain.shade);
+        rebuild();
+      } catch (err) {
+        alert('Spec JSON 파싱 오류: ' + err);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  window.facilityImportGLTF = function (file) {
+    if (!file) return;
+    if (!window.THREE || !THREE.GLTFLoader) {
+      alert('THREE.GLTFLoader를 사용할 수 없습니다.');
+      return;
+    }
+    var blobUrl = URL.createObjectURL(file);
+    var canvas = document.getElementById('facility-3d-canvas');
+    if (!canvas) return;
+    if (_ctx) { _ctx.dispose(); _ctx = null; }
+
+    var parent = canvas.parentElement;
+    var W = (parent && parent.clientWidth) || 400;
+    var H = (parent && parent.clientHeight) || 340;
+    var statusEl = parent && parent.querySelector('.aot-3d-asset-status');
+
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(W, H, false);
+
+    var scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf0f4f8);
+
+    var camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 1500);
+    camera.position.set(8, 6, 12);
+    camera.lookAt(0, 1, 0);
+
+    var controls = new THREE.MapControls(camera, renderer.domElement);
+    controls.target.set(0, 1, 0);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.12;
+    controls.update();
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    var sun = new THREE.DirectionalLight(0xfff4d6, 0.85);
+    sun.position.set(10, 20, 10);
+    scene.add(sun);
+    var ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(100, 100),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.01;
+    scene.add(ground);
+    scene.add(new THREE.GridHelper(50, 25, 0xbbbbbb, 0xdddddd));
+
+    if (statusEl) statusEl.textContent = '모델 로딩 중…';
+
+    var loader = new THREE.GLTFLoader();
+    loader.load(
+      blobUrl,
+      function (gltf) {
+        var model = gltf.scene;
+        scene.add(model);
+        var box = new THREE.Box3().setFromObject(model);
+        var center = box.getCenter(new THREE.Vector3());
+        var size = box.getSize(new THREE.Vector3());
+        var maxDim = Math.max(size.x, size.y, size.z) || 5;
+        camera.position.set(
+          center.x + maxDim * 1.2,
+          center.y + maxDim * 0.8,
+          center.z + maxDim * 1.5
+        );
+        camera.lookAt(center);
+        controls.target.copy(center);
+        controls.update();
+        if (statusEl) statusEl.textContent = '';
+        URL.revokeObjectURL(blobUrl);
+      },
+      undefined,
+      function (err) {
+        if (statusEl) statusEl.textContent = '모델 로드 실패';
+        console.error('[facilityImportGLTF]', err);
+        URL.revokeObjectURL(blobUrl);
+      }
+    );
+
+    var resizeObs = new ResizeObserver(function () {
+      var cw = canvas.parentElement ? canvas.parentElement.clientWidth : canvas.clientWidth;
+      var ch = canvas.parentElement ? canvas.parentElement.clientHeight : canvas.clientHeight;
+      if (cw > 0 && ch > 0) {
+        renderer.setSize(cw, ch, false);
+        camera.aspect = cw / ch;
+        camera.updateProjectionMatrix();
+      }
+    });
+    if (canvas.parentElement) resizeObs.observe(canvas.parentElement);
+
+    var animId;
+    function animate() { animId = requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
+    animate();
+
+    _ctx = {
+      renderer: renderer, scene: scene, camera: camera, controls: controls,
+      dispose: function () {
+        cancelAnimationFrame(animId);
+        resizeObs.disconnect();
+        controls.dispose();
+        renderer.dispose();
+      }
+    };
+  };
 
   // ── Init ─────────────────────────────────────────────────────────────────────
   function init() {

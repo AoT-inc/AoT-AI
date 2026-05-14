@@ -5,7 +5,9 @@ import threading
 import time
 
 import requests
+from influxdb_client import InfluxDBClient, Point
 
+from aot.config import DOCKER_CONTAINER
 from aot.databases.models import (Conversion, DeviceMeasurements, Misc,
                                      Output)
 from aot.aot_client import DaemonControl
@@ -13,6 +15,15 @@ from aot.utils.database import db_retrieve_table_daemon
 from aot.utils.system_pi import return_measurement_info
 
 logger = logging.getLogger("aot.influx")
+
+# Maximum lookback range when no time bounds are specified.
+# Covers the full retention period without an unbounded scan.
+INFLUX_FULL_HISTORY_RANGE = '-99999d'
+
+
+def _flux_str(value):
+    """Escape a string value for safe interpolation into a Flux filter expression."""
+    return str(value).replace('\\', '\\\\').replace('"', '\\"')
 
 
 #
@@ -26,15 +37,11 @@ def write_influxdb_value(unique_id, unit, value, measure=None, channel=None, tim
     @stability stable
     @dependency InfluxDBClient, Point, db_retrieve_table_daemon
     """
-    from influxdb_client import InfluxDBClient, Point
-
     settings = db_retrieve_table_daemon(Misc, entry='first')
-    # Correct InfluxDB host for Docker environment (especially for Mac)
-    from aot.config import DOCKER_CONTAINER
     influx_host = settings.measurement_db_host
     if DOCKER_CONTAINER and influx_host in ['localhost', '127.0.0.1']:
         influx_host = 'host.docker.internal'
-        
+
     influxdb_url = f'http://{influx_host}:{settings.measurement_db_port}'
 
     if settings.measurement_db_version == '1':
@@ -93,15 +100,11 @@ def add_measurements_influxdb_flux(unique_id, measurements, use_same_timestamp=T
     :param use_same_timestamp: Allow influxdb to create the timestamp upon storage
     :return:
     """
-    from influxdb_client import InfluxDBClient, Point
-
     settings = db_retrieve_table_daemon(Misc, entry='first')
-    # Correct InfluxDB host for Docker environment (especially for Mac)
-    from aot.config import DOCKER_CONTAINER
     influx_host = settings.measurement_db_host
     if DOCKER_CONTAINER and influx_host in ['localhost', '127.0.0.1']:
         influx_host = 'host.docker.internal'
-        
+
     influxdb_url = f'http://{influx_host}:{settings.measurement_db_port}'
 
     if settings.measurement_db_version == '1':
@@ -176,11 +179,7 @@ def query_flux(unit, unique_id,
                start_str=None, end_str=None, min_value=None, max_value=None, past_sec=None, group_sec=None,
                limit=None):
     """Generate influxdb query string (flux edition, using influxdb_client)."""
-    from influxdb_client import InfluxDBClient
-
     settings = db_retrieve_table_daemon(Misc, entry='first')
-    # Correct InfluxDB host for Docker environment (especially for Mac)
-    from aot.config import DOCKER_CONTAINER
     influx_host = settings.measurement_db_host
     if DOCKER_CONTAINER and influx_host in ['localhost', '127.0.0.1']:
         influx_host = 'host.docker.internal'
@@ -188,22 +187,14 @@ def query_flux(unit, unique_id,
     influxdb_url = f'http://{influx_host}:{settings.measurement_db_port}'
 
     if settings.measurement_db_version == '1':
-        client = InfluxDBClient(
-            url=influxdb_url,
-            token=f'{settings.measurement_db_user}:{settings.measurement_db_password}',
-            org='aot',
-            timeout=60000)
+        token = f'{settings.measurement_db_user}:{settings.measurement_db_password}'
         bucket = f'{settings.measurement_db_dbname}/{settings.measurement_db_retention_policy}'
     elif settings.measurement_db_version == '2':
-        client = InfluxDBClient(
-            url=influxdb_url,
-            token=settings.measurement_db_password,
-            org='aot',
-            timeout=60000)
+        token = settings.measurement_db_password
         bucket = settings.measurement_db_dbname
     else:
         logger.error(f"Unknown Influxdb version: {settings.measurement_db_version}")
-        return
+        return None
 
     query = f'from(bucket: "{bucket}")'
 
@@ -216,22 +207,22 @@ def query_flux(unit, unique_id,
     elif end_str:
         query += f' |> range(stop: {end_str})'
     else:
-        query += f' |> range(start: -99999d)'
+        query += f' |> range(start: {INFLUX_FULL_HISTORY_RANGE})'
 
     if min_value:
         query += f' |> filter(fn: (r) => r._value > {min_value})'
     if max_value:
         query += f' |> filter(fn: (r) => r._value < {max_value})'
 
-    query += f' |> filter(fn: (r) => r["_measurement"] == "{unit}")'
-    query += f' |> filter(fn: (r) => r["device_id"] == "{unique_id}")'
+    query += f' |> filter(fn: (r) => r["_measurement"] == "{_flux_str(unit)}")'
+    query += f' |> filter(fn: (r) => r["device_id"] == "{_flux_str(unique_id)}")'
 
     if channel is not None:
-        query += f' |> filter(fn: (r) => r["channel"] == "{channel}")'
+        query += f' |> filter(fn: (r) => r["channel"] == "{_flux_str(channel)}")'
     if measure:
-        query += f' |> filter(fn: (r) => r["measure"] == "{measure}")'
+        query += f' |> filter(fn: (r) => r["measure"] == "{_flux_str(measure)}")'
     if ts_str:
-        query += " AND time = '{ts}'".format(ts=ts_str)
+        query += f' |> filter(fn: (r) => r._time == {ts_str})'
 
     if group_sec:
         if settings.measurement_db_version == '1':
@@ -282,10 +273,13 @@ def query_flux(unit, unique_id,
 
     logger.debug(f"query_flux() query: '{query}'")
 
-    tables = client.query_api().query(query)
-    client.close()
-
-    return tables
+    try:
+        with InfluxDBClient(url=influxdb_url, token=token, org='aot', timeout=60000) as client:
+            tables = client.query_api().query(query)
+        return tables
+    except Exception as err:
+        logger.error(f"query_flux() InfluxDB query failed: {err}")
+        return None
 
 
 def query_string(unit, unique_id,

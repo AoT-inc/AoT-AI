@@ -988,7 +988,7 @@ WIDGET_INFORMATION = {
 
     credits: {
       enabled: false,
-      href: "https://github.com/aot-inc/AoT",
+      href: "https://github.com/AoT-inc/AoT-AI",
       text: "AoT"
     },
 

@@ -10,8 +10,8 @@ from importlib import import_module
 from io import StringIO
 
 import flask_login
-from flask import (Response, flash, jsonify, redirect, send_file,
-                   send_from_directory, url_for)
+from flask import (Response, flash, jsonify, redirect, render_template, request,
+                   send_file, send_from_directory, url_for)
 from flask.blueprints import Blueprint
 from flask_babel import gettext
 from flask_limiter import Limiter
@@ -492,7 +492,10 @@ def past_data(unique_id, measure_type, measurement_id, past_seconds):
         past_sec_int = int(past_seconds)
     except:
         return '', 204
-        
+
+    if past_sec_int <= 0:
+        return '', 204
+
     start_seconds = datetime.datetime.utcnow().timestamp() - past_sec_int
     return async_data(unique_id, measure_type, measurement_id, str(start_seconds), '0')
 
@@ -571,6 +574,45 @@ def export_data(unique_id, measurement_id, start_seconds, end_seconds):
     return response
 
 
+def _query_count_and_first_point(unit, device_id, measurement, channel, settings,
+                                  start_str=None, end_str=None):
+    """Query COUNT and first data point from InfluxDB for a given time range.
+
+    Returns (count_points, first_point) or (None, None) if no data found.
+    """
+    data = query_string(
+        unit, device_id,
+        measure=measurement,
+        channel=channel,
+        start_str=start_str,
+        end_str=end_str,
+        value='COUNT')
+
+    if not data:
+        return None, None
+
+    count_points = None
+    if settings.measurement_db_name == 'influxdb':
+        count_points = influxdb_get_count_points(data)
+
+    data = query_string(
+        unit, device_id,
+        measure=measurement,
+        channel=channel,
+        start_str=start_str,
+        end_str=end_str,
+        limit=1)
+
+    if not data:
+        return None, None
+
+    first_point = None
+    if settings.measurement_db_name == 'influxdb':
+        first_point = influxdb_get_first_point(data)
+
+    return count_points, first_point
+
+
 @blueprint.route('/async/<device_id>/<device_type>/<measurement_id>/<start_seconds>/<end_seconds>')
 @flask_login.login_required
 def async_data(device_id, device_type, measurement_id, start_seconds, end_seconds):
@@ -624,34 +666,10 @@ def async_data(device_id, device_type, measurement_id, start_seconds, end_second
 
     # Get all data if start/end not specified
     if start_seconds == '0' and end_seconds == '0':
-        # Get how many points there are
-        data = query_string(
-            unit, device_id,
-            measure=measurement,
-            channel=channel,
-            value='COUNT')
-
-        if not data:
-            return '', 204
-
-        if settings.measurement_db_name == 'influxdb':
-            count_points = influxdb_get_count_points(data)
-
-        # Get the timestamp of the first point
-        data = query_string(
-            unit, device_id,
-            measure=measurement,
-            channel=channel,
-            limit=1)
-
-        if not data:
-            return '', 204
-
-        if settings.measurement_db_name == 'influxdb':
-            first_point = influxdb_get_first_point(data)
-
         end = datetime.datetime.utcnow()
         end_str = end.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        count_points, first_point = _query_count_and_first_point(
+            unit, device_id, measurement, channel, settings)
 
     # Set the time frame to the past start epoch to now
     elif start_seconds != '0' and end_seconds == '0':
@@ -659,72 +677,20 @@ def async_data(device_id, device_type, measurement_id, start_seconds, end_second
         start_str = start.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
         end = datetime.datetime.utcnow()
         end_str = end.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        count_points, first_point = _query_count_and_first_point(
+            unit, device_id, measurement, channel, settings,
+            start_str=start_str, end_str=end_str)
 
-        data = query_string(
-            unit, device_id,
-            measure=measurement,
-            channel=channel,
-            start_str=start_str,
-            end_str=end_str,
-            value='COUNT')
-
-        if not data:
-            return '', 204
-
-        if settings.measurement_db_name == 'influxdb':
-            count_points = influxdb_get_count_points(data)
-
-        # Get the timestamp of the first point in the past year
-        data = query_string(
-            unit, device_id,
-            measure=measurement,
-            channel=channel,
-            start_str=start_str,
-            end_str=end_str,
-            limit=1)
-
-        if not data:
-            return '', 204
-
-        if settings.measurement_db_name == 'influxdb':
-            first_point = influxdb_get_first_point(data)
     else:
         start = datetime.datetime.utcfromtimestamp(float(start_seconds))
         start_str = start.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
         end = datetime.datetime.utcfromtimestamp(float(end_seconds))
         end_str = end.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        count_points, first_point = _query_count_and_first_point(
+            unit, device_id, measurement, channel, settings,
+            start_str=start_str, end_str=end_str)
 
-        data = query_string(
-            unit, device_id,
-            measure=measurement,
-            channel=channel,
-            start_str=start_str,
-            end_str=end_str,
-            value='COUNT')
-
-        if not data:
-            return '', 204
-
-        if settings.measurement_db_name == 'influxdb':
-            count_points = influxdb_get_count_points(data)
-
-        # Get the timestamp of the first point in the past year
-        data = query_string(
-            unit, device_id,
-            measure=measurement,
-            channel=channel,
-            start_str=start_str,
-            end_str=end_str,
-            limit=1)
-
-        if not data:
-            return '', 204
-
-        if settings.measurement_db_name == 'influxdb':
-            first_point = influxdb_get_first_point(data)
-
-    if not first_point:
-        logger.error("No first point")
+    if count_points is None or first_point is None:
         return '', 204
 
     start_str = first_point.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
@@ -1138,3 +1104,152 @@ def output_started_at_public(device_unique_id, channel_id):
     except Exception as e:
         logger.debug(f"output_started_at_public error: {e}")
         return '', 204
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Geo / Facility — Model Asset API (Phase 1)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@blueprint.route('/geo/model_assets')
+@flask_login.login_required
+def geo_model_assets_page():
+    """Asset library page (D-plan main entry)."""
+    from aot.aot_flask.routes_static import inject_variables
+    from aot.databases.models import GeoSetting
+    setting = GeoSetting.query.first()
+    return render_template(
+        'pages/geo_model_assets.html',
+        length_unit=(setting.length_unit if setting else 'm'),
+        **inject_variables(),
+    )
+
+
+@blueprint.route('/api/geo/model_assets', methods=['GET'])
+@flask_login.login_required
+def api_geo_model_assets_list():
+    from aot.aot_flask.geo.model_asset_io import ModelAssetManager
+    kind = request.args.get('kind')
+    tag = request.args.get('tag')
+    uid = flask_login.current_user.id if flask_login.current_user.is_authenticated else None
+    assets, err = ModelAssetManager.list_assets(owner_user_id=uid, kind=kind, tag=tag)
+    if err:
+        return jsonify({'error': err}), 500
+    return jsonify(assets)
+
+
+@blueprint.route('/api/geo/model_assets', methods=['POST'])
+@flask_login.login_required
+def api_geo_model_assets_create():
+    from aot.aot_flask.geo.model_asset_io import ModelAssetManager
+    file_storage = request.files.get('file')
+    if request.is_json:
+        data = request.get_json(force=True) or {}
+    else:
+        data = request.form.to_dict()
+        import json as _json
+        if 'spec_json' in data:
+            try:
+                data['spec_json'] = _json.loads(data['spec_json'])
+            except Exception:
+                pass
+
+    uid = flask_login.current_user.id if flask_login.current_user.is_authenticated else None
+    asset, err = ModelAssetManager.create_asset(data, file_storage=file_storage, owner_user_id=uid)
+    if err:
+        return jsonify({'error': err}), 400
+    return jsonify(asset), 201
+
+
+@blueprint.route('/api/geo/model_assets/<string:asset_uuid>', methods=['GET'])
+@flask_login.login_required
+def api_geo_model_asset_get(asset_uuid):
+    from aot.aot_flask.geo.model_asset_io import ModelAssetManager
+    asset, err = ModelAssetManager.get_asset(asset_uuid)
+    if err:
+        return jsonify({'error': err}), 404
+    return jsonify(asset)
+
+
+@blueprint.route('/api/geo/model_assets/<string:asset_uuid>', methods=['PUT'])
+@flask_login.login_required
+def api_geo_model_asset_update(asset_uuid):
+    from aot.aot_flask.geo.model_asset_io import ModelAssetManager
+    data = request.get_json(force=True) or {}
+    asset, err = ModelAssetManager.update_asset(asset_uuid, data)
+    if err:
+        return jsonify({'error': err}), 400
+    return jsonify(asset)
+
+
+@blueprint.route('/api/geo/model_assets/<string:asset_uuid>', methods=['DELETE'])
+@flask_login.login_required
+def api_geo_model_asset_delete(asset_uuid):
+    from aot.aot_flask.geo.model_asset_io import ModelAssetManager
+    _, err, ref_names = ModelAssetManager.delete_asset(asset_uuid)
+    if err:
+        if ref_names:
+            return jsonify({'error': err, 'referencing_facilities': ref_names}), 409
+        return jsonify({'error': err}), 404
+    return jsonify({'deleted': asset_uuid}), 200
+
+
+@blueprint.route('/api/geo/model_assets/<string:asset_uuid>/regenerate_preview', methods=['POST'])
+@flask_login.login_required
+def api_geo_model_asset_preview(asset_uuid):
+    from aot.aot_flask.geo.model_asset_io import ModelAssetManager
+    from aot.aot_flask.geo.preview_renderer import render_preview
+    from aot.databases.models import GeoModelAsset
+    row = GeoModelAsset.query.filter_by(unique_id=asset_uuid).first()
+    if not row:
+        return jsonify({'error': 'Asset not found'}), 404
+    try:
+        render_preview(row)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    return jsonify({'preview_png': row.preview_png, 'preview_status': row.preview_status})
+
+
+@blueprint.route('/api/geo/facility/<string:facility_uuid>/attach_model', methods=['POST'])
+@flask_login.login_required
+def api_geo_facility_attach_model(facility_uuid):
+    from aot.aot_flask.geo.model_asset_io import ModelAssetManager
+    data = request.get_json(force=True) or {}
+    asset_uuid = data.get('asset_uuid')
+    if not asset_uuid:
+        return jsonify({'error': 'asset_uuid required'}), 400
+    result, err = ModelAssetManager.attach_to_facility(facility_uuid, asset_uuid, data.get('transform'))
+    if err:
+        return jsonify({'error': err}), 400
+    return jsonify(result)
+
+
+@blueprint.route('/api/geo/facility/<string:facility_uuid>/attach_model', methods=['DELETE'])
+@flask_login.login_required
+def api_geo_facility_detach_model(facility_uuid):
+    from aot.aot_flask.geo.model_asset_io import ModelAssetManager
+    result, err = ModelAssetManager.detach_from_facility(facility_uuid)
+    if err:
+        return jsonify({'error': err}), 400
+    return jsonify(result)
+
+
+@blueprint.route('/api/geo/settings/length_unit', methods=['GET', 'PUT'])
+@flask_login.login_required
+def api_geo_length_unit():
+    from aot.databases.models import GeoSetting
+    from aot.aot_flask.geo.units import SUPPORTED_UNITS
+    setting = GeoSetting.query.first()
+    if not setting:
+        return jsonify({'error': 'GeoSetting not initialized'}), 500
+
+    if request.method == 'GET':
+        return jsonify({'length_unit': setting.length_unit or 'm', 'supported': list(SUPPORTED_UNITS)})
+
+    data = request.get_json(force=True) or {}
+    unit = data.get('length_unit', 'm')
+    if unit not in SUPPORTED_UNITS:
+        return jsonify({'error': f"Invalid unit '{unit}'. Supported: {SUPPORTED_UNITS}"}), 400
+    setting.length_unit = unit
+    from aot.aot_flask.extensions import db
+    db.session.commit()
+    return jsonify({'length_unit': setting.length_unit})

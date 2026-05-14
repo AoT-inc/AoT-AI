@@ -20,7 +20,7 @@
 </style>
 <link rel="stylesheet" href="/static/css/gridstack.css" />
 <link rel="stylesheet" href="/static/css/gridstack-custom.css" />
-<link rel="stylesheet" href="/static/css/aot-entry-ui.css?v=phase9.1" />
+<link rel="stylesheet" href="/static/css/aot-entry-ui.css?v=phase9.2" />
 <script src="/static/js/gridstack-all.js"></script>
 
 
@@ -48,6 +48,20 @@
   // Output Off Button
   jQuery.fn.turn_off = function (button, output_id, channel_id) {
     getAjax(output_id + '/' + channel_id + '/off/sec/0');
+  }
+
+  // Actuator Paired: Open / Stop / Close.
+  // Sends to the paired output itself so its position-aware logic decides
+  // whether to actually move (delta check) or skip. This avoids re-firing
+  // a full travel_time cycle when the actuator is already at the target.
+  jQuery.fn.actuator_paired_cmd = function (cmd, paired_id, paired_ch) {
+    if (cmd === 'open') {
+      getAjax(paired_id + '/' + paired_ch + '/on/value/100');
+    } else if (cmd === 'close') {
+      getAjax(paired_id + '/' + paired_ch + '/on/value/0');
+    } else { // stop
+      getAjax(paired_id + '/' + paired_ch + '/off/sec/0');
+    }
   }
 
   // Output Send Amount Input/Button
@@ -79,10 +93,17 @@
             function (output_id, states) {
               for (let i = 0; i < Object.keys(states).length; i++) {
                 if (states[i] !== null && document.getElementById(output_id + "-" + i + "-output-state") != null) {
-                  // Element IDs 
+                  // Element IDs
                   const rowId = output_id + "-" + i + "-output-state";
                   const inputId = output_id + "-" + i + "-input-output-state";
                   const toggleId = output_id + "-" + i + "-toggle";
+
+                  // Actuator paired rows are handled in a dedicated post-pass below.
+                  // Skip standard row/button styling for them — otherwise the row's
+                  // active-background would light up BOTH paired buttons together.
+                  if (document.getElementById(rowId).getAttribute('data-paired') === '1') {
+                    continue;
+                  }
 
                   // Force Row to stay clean (fix layout breakage)
                   document.getElementById(rowId).className = "item_channel row small-gutters aot-entry-item-channel";
@@ -118,6 +139,44 @@
                 }
               }
             });
+
+          // Actuator Paired: row gets active-background when any direction is moving
+          // (like other outputs), but the non-moving direction button is forced gray
+          // via the .aot-paired-inactive class so the two directions remain visually distinct.
+          document.querySelectorAll('[data-paired="1"]').forEach(function (row) {
+            var openId = row.getAttribute('data-open-id') || '';
+            var openCh = row.getAttribute('data-open-ch') || '0';
+            var closeId = row.getAttribute('data-close-id') || '';
+            var closeCh = row.getAttribute('data-close-ch') || '0';
+            var openSt = openId && data[openId] ? data[openId][openCh] : null;
+            var closeSt = closeId && data[closeId] ? data[closeId][closeCh] : null;
+            var openActive = openSt !== null && openSt !== undefined && openSt !== 'off';
+            var closeActive = closeSt !== null && closeSt !== undefined && closeSt !== 'off';
+            var anyActive = openActive || closeActive;
+
+            row.className = "item_channel row small-gutters aot-entry-item-channel aot-paired-row " +
+              (anyActive ? "active-background" : "inactive-background");
+
+            var parts = row.id.split('-');
+            var ch = parts[parts.length - 3];
+            var oid = parts.slice(0, parts.length - 3).join('-');
+
+            var openBtn = document.getElementById(oid + '-' + ch + '-paired-open-btn');
+            var closeBtn = document.getElementById(oid + '-' + ch + '-paired-close-btn');
+            // Active direction button: no extra class, picks up row's active-background cascade.
+            // Inactive direction button: aot-paired-inactive class forces it back to off color.
+            if (openBtn) openBtn.classList.toggle('aot-paired-inactive', anyActive && !openActive);
+            if (closeBtn) closeBtn.classList.toggle('aot-paired-inactive', anyActive && !closeActive);
+
+            // Position label — paired output state is numeric percent during motion
+            // and at rest. 'off' is treated as fully closed (0%).
+            var posEl = document.getElementById(oid + '-' + ch + '-paired-pos');
+            if (posEl && data[oid] && data[oid][ch] !== undefined && data[oid][ch] !== null) {
+              var v = data[oid][ch];
+              if (typeof v === 'number') posEl.textContent = ' ' + Math.round(v) + '%';
+              else if (v === 'off') posEl.textContent = ' 0%';
+            }
+          });
         } else {
           {% for each_output in output %}
           {% for each_output_channel in dict_outputs[each_output.output_type]['channels_dict'] %}
@@ -183,8 +242,14 @@
 
   <div class="grid-stack aot-entry-container">
     {% for each_output in output -%}
+    {% if each_output.output_type == 'output_spacer' %}
+      {% set gs_h = each_output.size_y %}
+    {% else %}
+      {% set ch_count = custom_options_values_output_channels[each_output.unique_id]|length if each_output.unique_id in custom_options_values_output_channels else 1 %}
+      {% set gs_h = [ch_count + 1, 2]|max %}
+    {% endif %}
     <div id="gridstack_output_{{each_output.unique_id}}" class="grid-stack-item" gs-id="{{each_output.unique_id}}"
-      gs-x="0" gs-y="{{each_output.position_y}}" gs-w="24" gs-h="{{each_output.size_y}}" data-gs-no-resize="true">
+      gs-x="0" gs-y="{{each_output.position_y}}" gs-w="24" gs-h="{{gs_h}}" data-gs-no-resize="true">
       {% include 'pages/output_entry.html' %}
     </div> <!-- grid-stack-item -->
     {%- endfor -%}
@@ -215,12 +280,13 @@
       
       window.grid.batchUpdate(false);
     } else {
-      // Updated to 52: Fixed cellHeight to prevent multiplying gaps in multi-channel items
+      // cellHeight=48, margin=4: last channel 40px in CSS absorbs the 2*margin overhead
+      // → exact content fit for all N, with 8px visual gap between entries
       window.grid = GridStack.init({
         animate: true,
-        cellHeight: 52,
+        cellHeight: 48,
         column: targetColumn,
-        margin: 2, // Int integer for 2px all-around margin 
+        margin: 4,
         handle: '.aot-entry-drag-handle',
         resizable: false,
         float: false,
@@ -229,8 +295,12 @@
       });
     }
 
-    window.grid.off('change');
-    window.grid.on('change', function (event, items) {
+    // Save only on user-initiated drag completion. Avoid 'change' here:
+    // 'change' fires during column transitions / programmatic updates (e.g.,
+    // window resize crossing the 768px breakpoint), and those transient layouts
+    // would otherwise overwrite the saved order with garbage.
+    window.grid.off('dragstop');
+    window.grid.on('dragstop', function (event, el) {
       if (window.grid.getColumn() === 1) return;
 
       let serializedFull = window.grid.save(false);
@@ -289,6 +359,7 @@
     if (action === 'output_add' ||
       action === 'output_mod' ||
       action === 'output_delete' ||
+      action === 'output_duplicate' ||
       action.startsWith('custom_button_')) {
       window.showToast('Command sent. Please wait...', 'info');
       
@@ -303,7 +374,7 @@
         headers: { "X-CSRFToken": "{{form_mod_output.csrf_token._value()}}" },
         data: $form.serialize() + '&' + action + '=1',
         success: function (data) {
-          if (action === 'output_add' && 'output_id' in data.data) {
+          if ((action === 'output_add' || action === 'output_duplicate') && 'output_id' in data.data) {
             if ('dep_unmet' in data.data && data.data.dep_unmet.length > 0) {
               $(".dependencies_device_name").text(data.data.dep_name);
               $(".dependencies_device").text(data.data.dep_unmet);
@@ -363,15 +434,26 @@
               window.grid.removeWidget('#gridstack_output_' + data.data.output_id);
             }
             if ('page_refresh' in data.data && data.data.page_refresh) {
+              var refreshOutputId = data.data.output_id;
+              var newH = data.data.size_y || 2;
+              var $oldItem = $('#gridstack_output_' + refreshOutputId);
+              var oldY = parseInt($oldItem.attr('gs-y')) || 0;
               $.ajax({
                 type: "GET",
-                url: '/output?output_type=options&output_id=' + data.data.output_id,
-                success: function (new_options) {
-                  $('#mod_output_' + data.data.output_id).html(new_options);
+                url: '/output?output_type=entry&output_id=' + refreshOutputId,
+                success: function (new_entry) {
+                  $('#modal_config_' + refreshOutputId).modal('hide');
+                  $('.modal-backdrop').remove();
+                  $(document.body).removeClass("modal-open");
+                  window.grid.removeWidget($oldItem[0], false);
+                  window.grid.addWidget(
+                    '<div class="grid-stack-item" id="gridstack_output_' + refreshOutputId + '" gs-id="' + refreshOutputId + '">' + new_entry + '</div>',
+                    { x: 0, y: oldY, w: 24, h: newH }
+                  );
                   popup_response(data);
                 },
                 error: function () {
-                  window.showToast('Error: Could not get new output options', 'error');
+                  window.showToast('Error: Could not refresh output entry', 'error');
                 }
               });
             } else {

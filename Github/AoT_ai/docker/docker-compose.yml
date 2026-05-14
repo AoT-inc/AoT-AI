@@ -6,7 +6,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    command: python aot/start_flask_ui.py -s -p 80
+    command: gunicorn --bind 0.0.0.0:80 --workers 2 --threads 2 --timeout 120 --worker-class=sync aot.start_flask_ui:app
     ports:
       - "8084:80"
     volumes:
@@ -23,8 +23,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 512M
+          cpus: '2.0'
+          memory: 1G
     depends_on:
       - aot_daemon
       - influxdb

@@ -189,7 +189,7 @@ msgstr "길이"
 
 #: config_devices_units.py:173
 msgid "Light"
-msgstr "빛"
+msgstr "약함"
 
 #: config_devices_units.py:177
 msgid "Magnetic Flux Density"
@@ -335,7 +335,7 @@ msgstr "속도"
 
 #: config_devices_units.py:322
 msgid "하늘상태"
-msgstr ""
+msgstr "하늘상태"
 
 #: aot_flask/forms/forms_function.py:55 aot_flask/forms/forms_input.py:119
 #: aot_flask/forms/forms_output.py:87 config_devices_units.py:326
@@ -717,7 +717,7 @@ msgstr "파운드/제곱인치"
 
 #: config_devices_units.py:638
 msgid "Revolutions per minute"
-msgstr ""
+msgstr "분당 회전수"
 
 #: config_devices_units.py:641
 msgid "Second"
@@ -1130,7 +1130,7 @@ msgstr "마지막"
 
 #: config_translations.py:108
 msgid "LCD"
-msgstr ""
+msgstr "LCD"
 
 #: aot_flask/static/js/geo/design/aot-geo-ui.js:236
 #: aot_flask/templates/user_templates/widget_template_AoT_graph_configure_options.html:48
@@ -2415,10 +2415,10 @@ msgstr "정보"
 
 #: config_translations_docs.py:56
 msgid ""
-"See the [README](https://github.com/aot-inc/AoT#uses) for features, "
+"See the [README](https://github.com/AoT-inc/AoT-AI#uses) for features, "
 "projects using AoT, screenshots, and other information."
 msgstr ""
-"[README](https://github.com/aot-inc/AoT#uses)에서 기능, AoT를 사용하는 프로젝트, 스크린샷 "
+"[README](https://github.com/AoT-inc/AoT-AI#uses)에서 기능, AoT를 사용하는 프로젝트, 스크린샷 "
 "및 기타 정보를 확인하십시오."
 
 #: config_translations_docs.py:58
@@ -2566,7 +2566,7 @@ msgstr ""
 #: aot_flask/templates/pages/live.html:3 aot_flask/templates/pages/live.html:5
 #: config_translations_docs.py:88
 msgid "Live Measurements"
-msgstr ""
+msgstr "실시간 측정"
 
 #: config_translations_docs.py:89
 msgid ""
@@ -2580,7 +2580,7 @@ msgstr ""
 
 #: config_translations_docs.py:91
 msgid "Asynchronous Graphs"
-msgstr ""
+msgstr "비동기 그래프"
 
 #: config_translations_docs.py:92
 #, fuzzy
@@ -2912,11 +2912,11 @@ msgstr "사용자명"
 
 #: actions/led_neopixel_flash_off.py:14
 msgid "LED: Neopixel: Flashing Off"
-msgstr ""
+msgstr "LED: Neopixel: 점멸 끄기"
 
 #: actions/led_neopixel_flash_on.py:14
 msgid "LED: Neopixel: Flashing On"
-msgstr ""
+msgstr "LED: Neopixel: 점멸 켜기"
 
 #: actions/output_on_off.py:26
 msgid "Turn an On/Off Output On, Off, or On for a duration."
@@ -3649,13 +3649,13 @@ msgstr "스위치"
 #: aot_flask/forms/forms_function.py:57 aot_flask/forms/forms_input.py:121
 #: aot_flask/forms/forms_output.py:89 functions/regulate_ph_ec.py:224
 msgid "pH"
-msgstr ""
+msgstr "pH"
 
 #: aot_flask/forms/forms_function.py:58 aot_flask/forms/forms_input.py:122
 #: aot_flask/forms/forms_output.py:90
 #, fuzzy
 msgid "EC"
-msgstr ""
+msgstr "EC"
 
 #: aot_flask/forms/forms_function.py:59 aot_flask/forms/forms_input.py:123
 #: aot_flask/forms/forms_output.py:91
@@ -3675,7 +3675,7 @@ msgstr "화살표"
 #: aot_flask/forms/forms_function.py:62 aot_flask/forms/forms_input.py:126
 #: aot_flask/forms/forms_output.py:94 widgets/AoT_gauge_angular.py:288
 msgid "VPD"
-msgstr ""
+msgstr "VPD"
 
 #: aot_flask/forms/forms_function.py:65 aot_flask/forms/forms_input.py:129
 #: aot_flask/forms/forms_output.py:97
@@ -3898,11 +3898,11 @@ msgstr "반복 설정"
 
 #: aot_flask/forms/forms_method.py:113
 msgid "HH:MM:SS"
-msgstr ""
+msgstr "HH:MM:SS"
 
 #: aot_flask/forms/forms_method.py:116
 msgid "YYYY-MM-DD HH:MM:SS"
-msgstr ""
+msgstr "YYYY-MM-DD HH:MM:SS"
 
 #: aot_flask/forms/forms_method.py:127
 msgid "End Setpoint"
@@ -4872,7 +4872,7 @@ msgstr "대시보드 순서 저장 실패"
 
 #: aot_flask/static/js/components/aot-map-search-fixed.js:365
 msgid "Search service unavailable"
-msgstr ""
+msgstr "검색 서비스를 사용할 수 없습니다"
 
 #: aot_flask/static/js/components/aot-tabs.js:221
 msgid "order_saved"
@@ -5050,7 +5050,7 @@ msgstr "사이트 목록"
 
 #: aot_flask/static/js/geo/aot-map-custom-controls.js:104
 msgid "No registered sites."
-msgstr ""
+msgstr "등록된 사이트가 없습니다."
 
 #: aot_flask/static/js/geo/aot-map-custom-controls.js:137
 #, fuzzy
@@ -5064,7 +5064,7 @@ msgstr "저항"
 
 #: aot_flask/static/js/geo/aot-map-custom-controls.js:231
 msgid "Distance measurement mode active. Click on map."
-msgstr ""
+msgstr "거리 측정 모드 활성화. 지도를 클릭하세요."
 
 #: aot_flask/static/js/geo/aot-map-custom-controls.js:302
 #, fuzzy
@@ -5123,11 +5123,11 @@ msgstr "선만 잘라내기 가능"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:50
 msgid "offset_prompt_polygon"
-msgstr ""
+msgstr "다각형 오프셋 입력"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:51
 msgid "offset_prompt_line"
-msgstr ""
+msgstr "선 오프셋 입력"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:62
 #, fuzzy
@@ -5136,7 +5136,7 @@ msgstr "구역(Zone)을 먼저 선택해주세요."
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:68
 msgid "select_subtract_target"
-msgstr ""
+msgstr "빼기 대상 선택"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:103
 #, fuzzy
@@ -5146,27 +5146,27 @@ msgstr "연결 오류"
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:161
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:182
 msgid "parent_polygon_not_found"
-msgstr ""
+msgstr "상위 다각형을 찾을 수 없습니다"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:172
 msgid "no_boundary_intersection"
-msgstr ""
+msgstr "경계 교차점이 없습니다"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:193
 msgid "multiline_not_supported"
-msgstr ""
+msgstr "다중 선은 지원되지 않습니다"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:196
 msgid "trim_error_or_none"
-msgstr ""
+msgstr "자르기 오류 또는 없음"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:202
 msgid "merge_self_error"
-msgstr ""
+msgstr "자신과 병합 오류"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:229
 msgid "merge_failed_turf"
-msgstr ""
+msgstr "병합 실패 (turf)"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:237
 #, fuzzy
@@ -5175,11 +5175,11 @@ msgstr "오류"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:243
 msgid "subtract_self_error"
-msgstr ""
+msgstr "자신에서 빼기 오류"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:268
 msgid "subtract_failed_turf"
-msgstr ""
+msgstr "빼기 실패 (turf)"
 
 #: aot_flask/static/js/geo/design/aot-geo-geometry.js:276
 #, fuzzy
@@ -5188,7 +5188,7 @@ msgstr "빼기"
 
 #: aot_flask/static/js/geo/design/aot-geo-label.js:271
 msgid "enter_name_please"
-msgstr ""
+msgstr "이름을 입력해 주세요"
 
 #: aot_flask/static/js/geo/design/aot-geo-label.js:283
 #, fuzzy
@@ -5197,11 +5197,11 @@ msgstr "데이터베이스명"
 
 #: aot_flask/static/js/geo/design/aot-geo-modules.js:218
 msgid "reference_line_auto_delete_warning"
-msgstr ""
+msgstr "참조선 자동 삭제 경고"
 
 #: aot_flask/static/js/geo/design/aot-geo-modules.js:461
 msgid "session_expired"
-msgstr ""
+msgstr "세션이 만료되었습니다"
 
 #: aot_flask/static/js/geo/design/aot-geo-stats.js:391
 msgid "Site Common Area"
@@ -5254,7 +5254,7 @@ msgstr "이름 없는 대지"
 
 #: aot_flask/static/js/widget/AoT_map/aot-map-widget-v3.js:734
 msgid "confirm_remove_pin"
-msgstr ""
+msgstr "핀 제거 확인"
 
 #: aot_flask/static/js/widget/AoT_map/aot-map-widget-v3.js:1630
 msgid "No notes written"
@@ -5522,7 +5522,7 @@ msgstr "가져오기"
 #: aot_flask/templates/layout_default.html:387
 #: aot_flask/templates/pages/ai/ai_scheduler.html:2
 msgid "AI Scheduler"
-msgstr ""
+msgstr "AI 스케줄러"
 
 #: aot_flask/templates/layout.html:391
 #: aot_flask/templates/layout_default.html:391
@@ -6829,7 +6829,7 @@ msgstr "변환"
 #: aot_flask/templates/pages/ai/ai.html:276
 #: aot_flask/templates/pages/ai/ai.html:289
 msgid "New Topic"
-msgstr ""
+msgstr "새 주제"
 
 #: aot_flask/templates/pages/ai/ai.html:286
 #: aot_flask/templates/pages/ai/ai.html:469
@@ -6844,7 +6844,7 @@ msgstr "더 많은 파일 추가"
 
 #: aot_flask/templates/pages/ai/ai.html:306
 msgid "Message AI Agent..."
-msgstr ""
+msgstr "AI 에이전트에게 메시지..."
 
 #: aot_flask/templates/pages/ai/ai.html:307
 #: aot_flask/templates/pages/ai/ai.html:589
@@ -6861,17 +6861,17 @@ msgstr "기본 설정"
 #: aot_flask/templates/pages/ai/ai.html:329
 #: aot_flask/templates/pages/ai/ai_manage.html:24
 msgid "Auto Approve Routine Tasks"
-msgstr ""
+msgstr "루틴 작업 자동 승인"
 
 #: aot_flask/templates/pages/ai/ai.html:336
 #: aot_flask/templates/pages/ai/ai_manage.html:31
 msgid "Max Impact to Auto Approve"
-msgstr ""
+msgstr "자동 승인 최대 영향도"
 
 #: aot_flask/templates/pages/ai/ai.html:340
 #: aot_flask/templates/pages/ai/ai_manage.html:35
 msgid "Require Feedback on Fail"
-msgstr ""
+msgstr "실패 시 피드백 요구"
 
 #: aot_flask/templates/pages/ai/ai.html:349
 #: aot_flask/templates/pages/ai/ai_manage.html:44
@@ -6882,7 +6882,7 @@ msgstr "백업 복원"
 #: aot_flask/templates/pages/ai/ai.html:353
 #: aot_flask/templates/pages/ai/ai_manage.html:48
 msgid "Blackout End"
-msgstr ""
+msgstr "블랙아웃 종료"
 
 #: aot_flask/templates/pages/ai/ai.html:357
 #: aot_flask/templates/pages/ai/ai_manage.html:52
@@ -6899,17 +6899,17 @@ msgstr "동작 모드"
 #: aot_flask/templates/pages/ai/ai.html:367
 #: aot_flask/templates/pages/ai/ai_manage.html:62
 msgid "Context Scope (Hours)"
-msgstr ""
+msgstr "컨텍스트 범위 (시간)"
 
 #: aot_flask/templates/pages/ai/ai.html:371
 #: aot_flask/templates/pages/ai/ai_manage.html:66
 msgid "Max History Context"
-msgstr ""
+msgstr "최대 히스토리 컨텍스트"
 
 #: aot_flask/templates/pages/ai/ai.html:375
 #: aot_flask/templates/pages/ai/ai_manage.html:70
 msgid "Monthly Budget Limit (USD)"
-msgstr ""
+msgstr "월간 예산 한도 (USD)"
 
 #: aot_flask/templates/pages/ai/ai.html:384
 #: aot_flask/templates/pages/ai/ai.html:500
@@ -6924,7 +6924,7 @@ msgstr "설정 보기"
 
 #: aot_flask/templates/pages/ai/ai.html:421
 msgid "File upload logic is currently under construction."
-msgstr ""
+msgstr "파일 업로드 기능은 현재 구축 중입니다."
 
 #: aot_flask/templates/pages/ai/ai.html:479
 #: aot_flask/templates/pages/ai/ai_manage.html:495
@@ -6962,69 +6962,69 @@ msgstr "업데이트"
 
 #: aot_flask/templates/pages/ai/ai.html:762
 msgid "승인 (저장)"
-msgstr ""
+msgstr "승인 (저장)"
 
 #: aot_flask/templates/pages/ai/ai.html:767
 msgid "거절 (오답)"
-msgstr ""
+msgstr "거절 (오답)"
 
 #: aot_flask/templates/pages/ai/ai.html:788
 msgid "네, 그렇게 해주세요"
-msgstr ""
+msgstr "네, 그렇게 해주세요"
 
 #: aot_flask/templates/pages/ai/ai.html:791
 msgid "응, 그렇게 해줘"
-msgstr ""
+msgstr "응, 그렇게 해줘"
 
 #: aot_flask/templates/pages/ai/ai.html:798
 msgid "아니요, 괜찮습니다"
-msgstr ""
+msgstr "아니요, 괜찮습니다"
 
 #: aot_flask/templates/pages/ai/ai.html:801
 msgid "아니, 하지마"
-msgstr ""
+msgstr "아니, 하지마"
 
 #: aot_flask/templates/pages/ai/ai.html:854
 msgid "AI 작업 제안"
-msgstr ""
+msgstr "AI 작업 제안"
 
 #: aot_flask/templates/pages/ai/ai.html:854
 msgid "아래 작업을 실행하시겠습니까?"
-msgstr ""
+msgstr "아래 작업을 실행하시겠습니까?"
 
 #: aot_flask/templates/pages/ai/ai.html:871
 msgid "승인"
-msgstr ""
+msgstr "승인"
 
 #: aot_flask/templates/pages/ai/ai.html:874
 msgid "실행 중..."
-msgstr ""
+msgstr "실행 중..."
 
 #: aot_flask/templates/pages/ai/ai.html:882
 msgid "취소"
-msgstr ""
+msgstr "취소"
 
 #: aot_flask/templates/pages/ai/ai.html:884
 msgid "작업이 취소되었습니다."
-msgstr ""
+msgstr "작업이 취소되었습니다."
 
 #: aot_flask/templates/pages/ai/ai.html:911
 msgid "작업이 성공적으로 실행되었습니다."
-msgstr ""
+msgstr "작업이 성공적으로 실행되었습니다."
 
 #: aot_flask/templates/pages/ai/ai.html:916
 msgid "작업 실행 실패"
-msgstr ""
+msgstr "작업 실행 실패"
 
 #: aot_flask/templates/pages/ai/ai.html:920
 msgid "연결 오류"
-msgstr ""
+msgstr "연결 오류"
 
 #: aot_flask/templates/pages/ai/ai_agent.html:45
 msgid ""
 "AI Agents orchestration layer. Manage your AI services and agents to "
 "automate complex tasks."
-msgstr ""
+msgstr "AI 에이전트 오케스트레이션 레이어. AI 서비스와 에이전트를 관리하여 복잡한 작업을 자동화하세요."
 
 #: aot_flask/templates/pages/ai/ai_agent.html:53
 #, fuzzy
@@ -7081,15 +7081,15 @@ msgstr "FTDI 장치"
 
 #: aot_flask/templates/pages/ai/ai_entry.html:39
 msgid "Back to Portal"
-msgstr ""
+msgstr "포털로 돌아가기"
 
 #: aot_flask/templates/pages/ai/ai_entry.html:41
 msgid "AI Service Registry"
-msgstr ""
+msgstr "AI 서비스 레지스트리"
 
 #: aot_flask/templates/pages/ai/ai_entry.html:42
 msgid "Register and manage AI engine connections (Gemini, OpenAI, Local Proxies)."
-msgstr ""
+msgstr "AI 엔진 연결 등록 및 관리 (Gemini, OpenAI, 로컬 프록시)."
 
 #: aot_flask/templates/pages/ai/ai_entry.html:45
 #: aot_flask/templates/pages/ai/ai_entry.html:99
@@ -7114,7 +7114,7 @@ msgstr "아직 저장된 API 키가 없습니다."
 
 #: aot_flask/templates/pages/ai/ai_entry.html:88
 msgid "Connect your first LLM"
-msgstr ""
+msgstr "첫 번째 LLM 연결"
 
 #: aot_flask/templates/pages/ai/ai_entry.html:106
 #: aot_flask/templates/pages/ai/ai_modals.html:50
@@ -7162,11 +7162,11 @@ msgstr "재설정 코드"
 
 #: aot_flask/templates/pages/ai/ai_manage.html:75
 msgid "Base System Prompt"
-msgstr ""
+msgstr "기본 시스템 프롬프트"
 
 #: aot_flask/templates/pages/ai/ai_manage.html:78
 msgid "Global Instructions Template (Applied to all agents)"
-msgstr ""
+msgstr "전역 지침 템플릿 (모든 에이전트에 적용)"
 
 #: aot_flask/templates/pages/ai/ai_manage.html:80
 msgid ""
@@ -7176,7 +7176,7 @@ msgstr ""
 
 #: aot_flask/templates/pages/ai/ai_manage.html:93
 msgid "Agent Overview"
-msgstr ""
+msgstr "에이전트 개요"
 
 #: aot_flask/templates/pages/ai/ai_manage.html:121
 #: aot_flask/templates/pages/ai/ai_manage.html:208
@@ -7194,11 +7194,11 @@ msgstr "보조 장치"
 
 #: aot_flask/templates/pages/ai/ai_manage.html:140
 msgid "No agents registered."
-msgstr ""
+msgstr "등록된 에이전트가 없습니다."
 
 #: aot_flask/templates/pages/ai/ai_manage.html:147
 msgid "Reasoning History"
-msgstr ""
+msgstr "추론 히스토리"
 
 #: aot_flask/templates/pages/ai/ai_manage.html:183
 #: aot_flask/templates/pages/ai/scheduler.html:95
@@ -7322,7 +7322,7 @@ msgstr "당신은"
 
 #: aot_flask/templates/pages/ai/ai_mcp_entry.html:45
 msgid "Modify MCP Server"
-msgstr ""
+msgstr "MCP 서버 수정"
 
 #: aot_flask/templates/pages/ai/ai_mcp_entry.html:52
 #, fuzzy
@@ -7341,11 +7341,11 @@ msgstr "코드"
 
 #: aot_flask/templates/pages/ai/ai_mcp_entry.html:65
 msgid "General (Always in Manifest)"
-msgstr ""
+msgstr "일반 (매니페스트에 항상 포함)"
 
 #: aot_flask/templates/pages/ai/ai_mcp_entry.html:66
 msgid "Specific (Lazy-loaded)"
-msgstr ""
+msgstr "특정 (지연 로드)"
 
 #: aot_flask/templates/pages/ai/ai_mcp_entry.html:72
 #, fuzzy
@@ -7354,7 +7354,7 @@ msgstr "사용자 정의"
 
 #: aot_flask/templates/pages/ai/ai_mcp_entry.html:78
 msgid "Environment Variables (JSON)"
-msgstr ""
+msgstr "환경 변수 (JSON)"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:8
 #, fuzzy
@@ -7394,7 +7394,7 @@ msgstr "서비스 옵션"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:52
 msgid "e.g. My OpenAI"
-msgstr ""
+msgstr "예: My OpenAI"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:65
 #: aot_flask/templates/pages/ai/options/options_llm.html:37
@@ -7405,7 +7405,7 @@ msgstr "장치 선택"
 #: aot_flask/templates/pages/ai/ai_modals.html:68
 #: aot_flask/templates/pages/ai/options/options_llm.html:45
 msgid "Enter model name manually"
-msgstr ""
+msgstr "모델명 수동 입력"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:72
 #, fuzzy
@@ -7420,19 +7420,19 @@ msgstr "인증 사용자 이름"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:95
 msgid "AI Pipeline & Tool Access"
-msgstr ""
+msgstr "AI 파이프라인 및 도구 접근"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:97
 #: aot_flask/templates/pages/ai/options/options_llm.html:51
 #: aot_flask/templates/pages/ai/options/options_mcp.html:28
 msgid "Pipeline Role"
-msgstr ""
+msgstr "파이프라인 역할"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:100
 #: aot_flask/templates/pages/ai/options/options_llm.html:54
 #: aot_flask/templates/pages/ai/options/options_mcp.html:31
 msgid "Worker (Legacy)"
-msgstr ""
+msgstr "워커 (레거시)"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:101
 #: aot_flask/templates/pages/ai/options/options_llm.html:55
@@ -7459,7 +7459,7 @@ msgstr "실행"
 #: aot_flask/templates/pages/ai/options/options_llm.html:58
 #: aot_flask/templates/pages/ai/options/options_mcp.html:35
 msgid "Synthesizer"
-msgstr ""
+msgstr "합성기"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:109
 #: aot_flask/templates/pages/ai/options/options_llm.html:64
@@ -7486,7 +7486,7 @@ msgstr "시작"
 #: aot_flask/templates/pages/ai/options/options_llm.html:69
 #: aot_flask/templates/pages/ai/options/options_mcp.html:46
 msgid "Heavy"
-msgstr ""
+msgstr "강함"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:119
 #, fuzzy
@@ -7500,7 +7500,7 @@ msgstr "사용자 정의"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:124
 msgid "Assigned"
-msgstr ""
+msgstr "할당됨"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:125
 #, fuzzy
@@ -7514,16 +7514,16 @@ msgstr "GIS 서비스 선택"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:150
 msgid "e.g. irrigation, climate"
-msgstr ""
+msgstr "예: 관개, 기후"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:154
 #: aot_flask/templates/pages/ai/ai_modals.html:370
 msgid "Agent Rules"
-msgstr ""
+msgstr "에이전트 규칙"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:161
 msgid "Define how this agent should behave..."
-msgstr ""
+msgstr "이 에이전트의 동작 방식 정의..."
 
 #: aot_flask/templates/pages/ai/ai_modals.html:183
 #, fuzzy
@@ -7578,7 +7578,7 @@ msgstr "코드"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:354
 msgid "MCP Instructions"
-msgstr ""
+msgstr "MCP 지침"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:355
 #, fuzzy
@@ -7587,11 +7587,11 @@ msgstr "시스템 관리자"
 
 #: aot_flask/templates/pages/ai/ai_modals.html:430
 msgid "Classifies intent only. Lightweight model recommended."
-msgstr ""
+msgstr "의도 분류만 수행. 경량 모델 권장."
 
 #: aot_flask/templates/pages/ai/ai_modals.html:431
 msgid "Creates execution plans. Standard or Heavy model recommended."
-msgstr ""
+msgstr "실행 계획 생성. 표준 또는 헤비 모델 권장."
 
 #: aot_flask/templates/pages/ai/ai_modals.html:432
 #, fuzzy
@@ -7600,7 +7600,7 @@ msgstr "예보 데이터를 불러올 수 없습니다."
 
 #: aot_flask/templates/pages/ai/ai_modals.html:433
 msgid "Synthesizes results into user response."
-msgstr ""
+msgstr "결과를 사용자 응답으로 합성."
 
 #: aot_flask/templates/pages/ai/ai_modals.html:434
 #, fuzzy
@@ -7619,7 +7619,7 @@ msgstr "기본 설정"
 
 #: aot_flask/templates/pages/ai/ai_option.html:19
 msgid "Configure system-wide parameters for the AI orchestration layer."
-msgstr ""
+msgstr "AI 오케스트레이션 레이어의 시스템 전체 파라미터 설정."
 
 #: aot_flask/templates/pages/ai/ai_option.html:26
 #, fuzzy
@@ -7628,11 +7628,11 @@ msgstr "적외선"
 
 #: aot_flask/templates/pages/ai/ai_option.html:29
 msgid "Master Proxy URL"
-msgstr ""
+msgstr "마스터 프록시 URL"
 
 #: aot_flask/templates/pages/ai/ai_option.html:33
 msgid "Global proxy to be used if agent-specific endpoint is empty."
-msgstr ""
+msgstr "에이전트별 엔드포인트가 비어 있을 때 사용할 전역 프록시."
 
 #: aot_flask/templates/pages/ai/ai_option.html:38
 #, fuzzy
@@ -7641,7 +7641,7 @@ msgstr "타임아웃 (초)"
 
 #: aot_flask/templates/pages/ai/ai_option.html:46
 msgid "User Experience (Toast)"
-msgstr ""
+msgstr "사용자 경험 (토스트)"
 
 #: aot_flask/templates/pages/ai/ai_option.html:49
 #, fuzzy
@@ -7655,27 +7655,27 @@ msgstr "경고 메시지 숨기기"
 
 #: aot_flask/templates/pages/ai/ai_scheduler.html:369
 msgid "[거시 뷰]"
-msgstr ""
+msgstr "[거시 뷰]"
 
 #: aot_flask/templates/pages/ai/ai_scheduler.html:373
 msgid "[일]"
-msgstr ""
+msgstr "[일]"
 
 #: aot_flask/templates/pages/ai/ai_scheduler.html:374
 msgid "[주]"
-msgstr ""
+msgstr "[주]"
 
 #: aot_flask/templates/pages/ai/ai_scheduler.html:375
 msgid "[월]"
-msgstr ""
+msgstr "[월]"
 
 #: aot_flask/templates/pages/ai/ai_scheduler.html:376
 msgid "[년]"
-msgstr ""
+msgstr "[년]"
 
 #: aot_flask/templates/pages/ai/ai_scheduler.html:377
 msgid "[오늘]"
-msgstr ""
+msgstr "[오늘]"
 
 #: aot_flask/templates/pages/ai/ai_scheduler.html:411
 #, fuzzy
@@ -7722,7 +7722,7 @@ msgstr "노트 태그"
 
 #: aot_flask/templates/pages/ai/scheduler.html:52
 msgid "AI Proposals"
-msgstr ""
+msgstr "AI 제안"
 
 #: aot_flask/templates/pages/ai/scheduler.html:83
 #: aot_flask/templates/pages/ai/scheduler.html:233
@@ -7738,7 +7738,7 @@ msgstr "돌아가기"
 
 #: aot_flask/templates/pages/ai/scheduler.html:102
 msgid "No pending proposals."
-msgstr ""
+msgstr "대기 중인 제안이 없습니다."
 
 #: aot_flask/templates/pages/ai/scheduler.html:109
 #, fuzzy
@@ -7779,7 +7779,7 @@ msgstr "시작"
 
 #: aot_flask/templates/pages/ai/scheduler.html:250
 msgid "Proposed By"
-msgstr ""
+msgstr "제안자"
 
 #: aot_flask/templates/pages/ai/scheduler.html:257
 #: aot_flask/templates/pages/ai/scheduler.html:536
@@ -7807,11 +7807,11 @@ msgstr "원격"
 
 #: aot_flask/templates/pages/ai/scheduler.html:333
 msgid "Job History Details"
-msgstr ""
+msgstr "작업 이력 세부 정보"
 
 #: aot_flask/templates/pages/ai/scheduler.html:359
 msgid "By"
-msgstr ""
+msgstr "작성자"
 
 #: aot_flask/templates/pages/ai/scheduler.html:406
 #, fuzzy
@@ -7820,11 +7820,11 @@ msgstr "시작 시간"
 
 #: aot_flask/templates/pages/ai/scheduler.html:424
 msgid "Auto-Dispatch (AI Multi-Agent)"
-msgstr ""
+msgstr "자동 배포 (AI 멀티에이전트)"
 
 #: aot_flask/templates/pages/ai/scheduler.html:436
 msgid "e.g., Water Zone A at 5 PM for 10 seconds"
-msgstr ""
+msgstr "예: 오후 5시에 Zone A 10초 급수"
 
 #: aot_flask/templates/pages/ai/scheduler.html:445
 #: aot_flask/templates/pages/function_options/conditional_options.html:119
@@ -7846,7 +7846,7 @@ msgstr "출력 컨트롤 사용"
 
 #: aot_flask/templates/pages/ai/scheduler.html:479
 msgid "PID Adjustment"
-msgstr ""
+msgstr "PID 조정"
 
 #: aot_flask/templates/pages/ai/scheduler.html:480
 #, fuzzy
@@ -7922,7 +7922,7 @@ msgstr "재시작"
 
 #: aot_flask/templates/pages/ai/scheduler.html:611
 msgid "Amount (seconds or PWM)"
-msgstr ""
+msgstr "양 (초 또는 PWM)"
 
 #: aot_flask/templates/pages/ai/scheduler.html:614
 #, fuzzy
@@ -7936,7 +7936,7 @@ msgstr "함수"
 
 #: aot_flask/templates/pages/ai/scheduler.html:621
 msgid "Target Zone/Site"
-msgstr ""
+msgstr "대상 구역/사이트"
 
 #: aot_flask/templates/pages/ai/options/options_llm.html:14
 #, fuzzy
@@ -7946,7 +7946,7 @@ msgstr "GIS 서비스 선택"
 #: aot_flask/templates/pages/ai/options/options_llm.html:28
 #: aot_flask/templates/pages/ai/options/options_mcp.html:18
 msgid "Leave blank to keep existing key"
-msgstr ""
+msgstr "기존 키를 유지하려면 비워두세요"
 
 #: aot_flask/templates/pages/ai/options/options_llm.html:43
 #, fuzzy
@@ -9025,7 +9025,7 @@ msgstr "공급자"
 
 #: aot_flask/templates/settings/api_key.html:135
 msgid "Key"
-msgstr ""
+msgstr "키"
 
 #: aot_flask/templates/settings/api_key.html:141
 msgid "URL"
@@ -9682,7 +9682,7 @@ msgstr "이 노트를 삭제할까요?"
 
 #: aot_flask/templates/user_templates/widget_template_AoT_ai_insight_body.html:5
 msgid "Envision a goal (e.g., Save energy in Zone A)"
-msgstr ""
+msgstr "목표 설정 (예: Zone A 에너지 절약)"
 
 #: aot_flask/templates/user_templates/widget_template_AoT_ai_insight_body.html:8
 #, fuzzy
@@ -9691,7 +9691,7 @@ msgstr "각도"
 
 #: aot_flask/templates/user_templates/widget_template_AoT_ai_insight_body.html:23
 msgid "Ready for intelligent analysis."
-msgstr ""
+msgstr "지능형 분석 준비 완료."
 
 #: aot_flask/templates/user_templates/widget_template_AoT_controller_act_deact_title_bar.html:5
 msgid "Controller Switch"
@@ -10425,55 +10425,55 @@ msgstr "시작 지연"
 
 #: functions/AoT_VPD.py:77
 msgid "첫 번째 동작 전 대기 시간"
-msgstr ""
+msgstr "첫 번째 동작 전 대기 시간"
 
 #: functions/AoT_VPD.py:96
 msgid "대기 온도"
-msgstr ""
+msgstr "대기 온도"
 
 #: functions/AoT_VPD.py:96 functions/AoT_VPD.py:116
 msgid "최대 사용 연령"
-msgstr ""
+msgstr "최대 사용 연령"
 
 #: functions/AoT_VPD.py:97 functions/AoT_VPD.py:117
 msgid "사용할 측정값의 최대 연령"
-msgstr ""
+msgstr "사용할 측정값의 최대 연령"
 
 #: functions/AoT_VPD.py:116
 msgid "습도"
-msgstr ""
+msgstr "습도"
 
 #: functions/AoT_VPD.py:136
 msgid "잎 온도"
-msgstr ""
+msgstr "잎 온도"
 
 #: functions/AoT_VPD.py:136
 msgid "최대 사용 시간"
-msgstr ""
+msgstr "최대 사용 시간"
 
 #: functions/AoT_VPD.py:137
 msgid "사용할 측정값의 최대 시간"
-msgstr ""
+msgstr "사용할 측정값의 최대 시간"
 
 #: functions/AoT_average_multi_L.py:50
 msgid "측정 및 계산 주기, 시간(초 단위)"
-msgstr ""
+msgstr "측정 및 계산 주기, 시간(초 단위)"
 
 #: functions/AoT_average_multi_L.py:58
 msgid "첫 측정 전에 대기할 시간(초)"
-msgstr ""
+msgstr "첫 측정 전에 대기할 시간(초)"
 
 #: functions/AoT_average_multi_L.py:65
 msgid "최대 유효 시간"
-msgstr ""
+msgstr "최대 유효 시간"
 
 #: functions/AoT_average_multi_L.py:66
 msgid " 사용할 측정값의 최대 유효 시간"
-msgstr ""
+msgstr " 사용할 측정값의 최대 유효 시간"
 
 #: functions/AoT_average_multi_L.py:77
 msgid "평균을 계산할 측정 값을 선택하세요"
-msgstr ""
+msgstr "평균을 계산할 측정 값을 선택하세요"
 
 #: functions/average_last_multiple.py:84 functions/average_past_single.py:79
 #: functions/bang_bang.py:54 functions/bang_bang_on_off.py:52
@@ -10587,11 +10587,11 @@ msgstr "습구계"
 
 #: functions/lorawan_mode_manager.py:62
 msgid "판정 및 적용 주기(초)"
-msgstr ""
+msgstr "판정 및 적용 주기(초)"
 
 #: functions/lorawan_mode_manager.py:142
 msgid "사용할 측정치의 최대 허용 연령(초)"
-msgstr ""
+msgstr "사용할 측정치의 최대 허용 연령(초)"
 
 #: functions/pid_autotune.py:103
 msgid "Noise Band"
@@ -10750,39 +10750,39 @@ msgstr "리터 당 펄스"
 
 #: inputs/kma_weather_forecast.py:168
 msgid "nx 좌표"
-msgstr ""
+msgstr "nx 좌표"
 
 #: inputs/kma_weather_forecast.py:169
 msgid "nx 값을 입력하세요 (숫자)."
-msgstr ""
+msgstr "nx 값을 입력하세요 (숫자)."
 
 #: inputs/kma_weather_forecast.py:176
 msgid "ny 좌표"
-msgstr ""
+msgstr "ny 좌표"
 
 #: inputs/kma_weather_forecast.py:177
 msgid "ny 값을 입력하세요 (숫자)."
-msgstr ""
+msgstr "ny 값을 입력하세요 (숫자)."
 
 #: inputs/kma_weather_forecast.py:189
 msgid "몇 시간 뒤 예보"
-msgstr ""
+msgstr "몇 시간 뒤 예보"
 
 #: inputs/kma_weather_forecast.py:198
 msgid "API 타임아웃(초)"
-msgstr ""
+msgstr "API 타임아웃(초)"
 
 #: inputs/kma_weather_forecast.py:207
 msgid "API 재시도 횟수"
-msgstr ""
+msgstr "API 재시도 횟수"
 
 #: inputs/kma_weather_forecast.py:216
 msgid "API 재시도 간격(초)"
-msgstr ""
+msgstr "API 재시도 간격(초)"
 
 #: inputs/kma_weather_stn_L.py:88
 msgid "stn"
-msgstr ""
+msgstr "기상 관측소"
 
 #: inputs/linux_command.py:50
 #, fuzzy
@@ -10802,7 +10802,7 @@ msgstr "도시"
 #: outputs/on_off_wireless_rpi_rf.py:61 outputs/pump_gpio.py:84
 #: outputs/pwm_gpio.py:81 outputs/pwm_rpi_gpio.py:79
 msgid "BCM"
-msgstr ""
+msgstr "BCM"
 
 #: inputs/th1x.py:68 inputs/th1x_am2301.py:67 inputs/th1x_ds18b20.py:53
 msgid "IP Address"
@@ -10814,7 +10814,7 @@ msgstr "센서 이름"
 
 #: inputs_gis/gis_isric.py:8
 msgid "pH (Water)"
-msgstr ""
+msgstr "pH (수질)"
 
 #: inputs_gis/gis_isric.py:40
 msgid "Soil Property"
@@ -11129,7 +11129,7 @@ msgstr "실행 설정"
 #: widgets/widget_output_pwm_slider.py:66 widgets/widget_python_code.py:167
 #, python-brace-format
 msgid "{} ({})"
-msgstr ""
+msgstr "{} ({})"
 
 #: widgets/AoT_PID.py:223 widgets/AoT_on_off_counter.py:871
 #: widgets/AoT_timer.py:494
@@ -11854,11 +11854,11 @@ msgstr "자동 반복 기본 횟수"
 
 #: widgets/AoT_timer.py:70
 msgid "숫자여야 합니다."
-msgstr ""
+msgstr "숫자여야 합니다."
 
 #: widgets/AoT_timer.py:72
 msgid "허용 범위는 -12.0 ~ +14.0 입니다."
-msgstr ""
+msgstr "허용 범위는 -12.0 ~ +14.0 입니다."
 
 #: widgets/AoT_timer.py:463
 msgid "AoT Timer"
@@ -12007,23 +12007,23 @@ msgstr "지도 선택"
 
 #: widgets/widget_ai_insight.py:74
 msgid "Unique ID of the agent to use. Leave empty for default."
-msgstr ""
+msgstr "사용할 에이전트의 고유 ID. 기본값은 비워두세요."
 
 #: widgets/widget_ai_insight.py:80
 msgid "Default Analysis Goal"
-msgstr ""
+msgstr "기본 분석 목표"
 
 #: widgets/widget_ai_insight.py:81
 msgid "Initial goal for AI reasoning when the widget loads."
-msgstr ""
+msgstr "위젯 로드 시 AI 추론의 초기 목표."
 
 #: widgets/widget_ai_insight.py:87
 msgid "Auto-Analyze Refresh (Minutes)"
-msgstr ""
+msgstr "자동 분석 갱신 (분)"
 
 #: widgets/widget_ai_insight.py:88
 msgid "Interval to automatically re-run AI reasoning. Set 0 to disable."
-msgstr ""
+msgstr "AI 추론 자동 재실행 간격. 0으로 설정하면 비활성화."
 
 #: widgets/widget_camera.py:244
 msgid "Select the camera to display"
@@ -12242,11 +12242,11 @@ msgstr "노트 태그"
 
 #: widgets/widget_indicator.py:44
 msgid "장치 설정"
-msgstr ""
+msgstr "장치 설정"
 
 #: widgets/widget_indicator.py:79
 msgid "표시 설정"
-msgstr ""
+msgstr "표시 설정"
 
 #: widgets/widget_indicator.py:87 widgets/widget_measurement.py:102
 #, fuzzy
@@ -12502,7 +12502,7 @@ msgstr "시퀀스 설정 (동기화)"
 #: widgets/widget_trigger_sequence.py:219
 #: widgets/widget_trigger_sequence.py:226
 msgid "HH:MM format"
-msgstr ""
+msgstr "HH:MM 형식"
 
 #: widgets/widget_trigger_sequence.py:234
 msgid "Total duration of one cycle"
@@ -12532,7 +12532,6 @@ msgstr "입력 유효성 (초)"
 #: widgets/widget_trigger_sequence.py:255
 msgid "Input value validity duration"
 msgstr "입력값 유효 시간"
-
 
 #: aot/services/ai_routing_service.py
 msgid "Hello! I am the AoT AI Assistant. How can I help you today?"
@@ -12565,3 +12564,1254 @@ msgstr "계산 결과는 %(result)s 입니다."
 #: aot/services/ai_routing_service.py
 msgid "I'm not sure I understood your request. Could you please clarify?"
 msgstr "요청을 정확히 이해하지 못했습니다. 조금 더 자세히 말씀해 주시겠어요?"
+
+msgid "90 degree"
+msgstr "90도"
+
+msgid "A"
+msgstr "AoT 장치"
+
+msgid "Adapter valve"
+msgstr "어댑터 밸브"
+
+msgid "Add from Address"
+msgstr "주소로 추가"
+
+msgid "AoT Device Count"
+msgstr "AoT 장치 수"
+
+msgid "Apply Filter"
+msgstr "필터 적용"
+
+msgid "Area"
+msgstr "면적"
+
+msgid "Branch Pipe Count"
+msgstr "분기 배관 수"
+
+msgid "Branch Pipe Elbow"
+msgstr "분기 배관 엘보"
+
+msgid "Branch Pipe End"
+msgstr "분기 배관 끝"
+
+msgid "Branch Pipe Length"
+msgstr "분기 배관 길이"
+
+msgid "Branch Pipe Tee"
+msgstr "분기 배관 티"
+
+msgid "Click on the map to measure"
+msgstr "지도를 클릭하여 측정하세요"
+
+msgid "Connection"
+msgstr "연결"
+
+msgid "Current Work Time"
+msgstr "현재 작업 시간"
+
+msgid "Data Load Failed"
+msgstr "데이터 로드 실패"
+
+msgid "Design Details"
+msgstr "설계 세부 정보"
+
+msgid "Design Summary"
+msgstr "설계 요약"
+
+msgid "Disc"
+msgstr "디스크"
+
+msgid "Drip"
+msgstr "점적"
+
+msgid "Elbow"
+msgstr "엘보"
+
+msgid "Equipment"
+msgstr "장비"
+
+msgid "Facility"
+msgstr "시설"
+
+msgid "Facility Design"
+msgstr "시설 설계"
+
+msgid "Filter"
+msgstr "필터"
+
+msgid "Flow (L/h)"
+msgstr "유량 (L/h)"
+
+msgid "Flow (L/min)"
+msgstr "유량 (L/min)"
+
+msgid "Flow Rate (L/h)"
+msgstr "유속 (L/h)"
+
+msgid "Flow Rate (L/min)"
+msgstr "유속 (L/min)"
+
+msgid "Flow rate"
+msgstr "유량"
+
+msgid "Hide joints"
+msgstr "연결부 숨기기"
+
+msgid "Hide labels"
+msgstr "레이블 숨기기"
+
+msgid "Hide length"
+msgstr "길이 숨기기"
+
+msgid "Hide pipe labels"
+msgstr "배관 레이블 숨기기"
+
+msgid "Hide sprinklers"
+msgstr "스프링클러 숨기기"
+
+msgid "Inline valve"
+msgstr "인라인 밸브"
+
+msgid "Input Device Count"
+msgstr "입력 장치 수"
+
+msgid "Irrigation"
+msgstr "관개"
+
+msgid "Last Work Time"
+msgstr "마지막 작업 시간"
+
+msgid "Layers"
+msgstr "레이어"
+
+msgid "Length (m)"
+msgstr "길이 (m)"
+
+msgid "Load Failed"
+msgstr "로드 실패"
+
+msgid "Loading..."
+msgstr "로딩 중..."
+
+msgid "Logic Count"
+msgstr "로직 수"
+
+msgid "Main Pipe Count"
+msgstr "주 배관 수"
+
+msgid "Main Pipe Elbow"
+msgstr "주 배관 엘보"
+
+msgid "Main Pipe End"
+msgstr "주 배관 끝"
+
+msgid "Main Pipe Length"
+msgstr "주 배관 길이"
+
+msgid "Main Pipe Reducing Elbow"
+msgstr "주 배관 축소 엘보"
+
+msgid "Main Pipe Reducing Tee"
+msgstr "주 배관 축소 티"
+
+msgid "Main Pipe Tee"
+msgstr "주 배관 티"
+
+msgid "Main pipe"
+msgstr "주 배관"
+
+msgid "New Site"
+msgstr "새 사이트"
+
+msgid "New Zone"
+msgstr "새 구역"
+
+msgid "No Measurements"
+msgstr "측정값 없음"
+
+msgid "No Notes"
+msgstr "메모 없음"
+
+msgid "No Pipe Data"
+msgstr "배관 데이터 없음"
+
+msgid "No Sites Found"
+msgstr "사이트를 찾을 수 없습니다"
+
+msgid "No Sites Selected"
+msgstr "선택된 사이트 없음"
+
+msgid "No."
+msgstr "번호"
+
+msgid "Number of Emitters"
+msgstr "방출구 수"
+
+msgid "Number of Emitters (Pipe)"
+msgstr "방출구 수 (배관)"
+
+msgid "Offset"
+msgstr "오프셋"
+
+msgid "Open"
+msgstr "열기"
+
+msgid "Open Notes"
+msgstr "메모 열기"
+
+msgid "Output Device Count"
+msgstr "출력 장치 수"
+
+msgid "Pipe"
+msgstr "배관"
+
+msgid "Pipe Details"
+msgstr "배관 세부 정보"
+
+msgid "Pipe Length"
+msgstr "배관 길이"
+
+msgid "Placement mode"
+msgstr "배치 모드"
+
+msgid "Pump"
+msgstr "펌프"
+
+msgid "Radius"
+msgstr "반경"
+
+msgid "RainViewer Radar"
+msgstr "RainViewer 레이더"
+
+msgid "Reducer"
+msgstr "리듀서"
+
+msgid "Reference line"
+msgstr "참조선"
+
+msgid "Remove from Map"
+msgstr "지도에서 제거"
+
+msgid "River"
+msgstr "강"
+
+msgid "Sand"
+msgstr "모래"
+
+msgid "Screen"
+msgstr "화면"
+
+msgid "Search Device..."
+msgstr "장치 검색..."
+
+msgid "Select Site"
+msgstr "사이트 선택"
+
+msgid "Selection list"
+msgstr "선택 목록"
+
+msgid "Show joints"
+msgstr "연결부 표시"
+
+msgid "Show labels"
+msgstr "레이블 표시"
+
+msgid "Show length"
+msgstr "길이 표시"
+
+msgid "Show pipe labels"
+msgstr "배관 레이블 표시"
+
+msgid "Show sprinklers"
+msgstr "스프링클러 표시"
+
+msgid "Site Area"
+msgstr "사이트 면적"
+
+msgid "Site Count"
+msgstr "사이트 수"
+
+msgid "Site Pipe Info"
+msgstr "사이트 배관 정보"
+
+msgid "Spacing"
+msgstr "간격"
+
+msgid "Sprinkler"
+msgstr "스프링클러"
+
+msgid "Subtract"
+msgstr "빼기"
+
+msgid "Suction"
+msgstr "흡입"
+
+msgid "Tee"
+msgstr "티"
+
+msgid "Total Area"
+msgstr "총 면적"
+
+msgid "Union"
+msgstr "유니온"
+
+msgid "Union valve"
+msgstr "유니온 밸브"
+
+msgid "Water supply"
+msgstr "급수"
+
+msgid "Water tank"
+msgstr "물탱크"
+
+msgid "Zone"
+msgstr "구역"
+
+msgid "Zone Count"
+msgstr "구역 수"
+
+msgid "[Branch Pipe]"
+msgstr "[분기 배관]"
+
+msgid "[Main Pipe]"
+msgstr "[주 배관]"
+
+msgid "angle"
+msgstr "각도"
+
+msgid "custom_color"
+msgstr "사용자 정의 색상"
+
+msgid "edit"
+msgstr "편집"
+
+msgid "loading_map"
+msgstr "지도 로딩 중"
+
+msgid "map_not_found"
+msgstr "지도를 찾을 수 없습니다"
+
+msgid "no_content"
+msgstr "콘텐츠 없음"
+
+msgid "save"
+msgstr "저장"
+
+msgid "save_btn_text"
+msgstr "저장"
+
+msgid "select_color"
+msgstr "색상 선택"
+
+msgid "spacing"
+msgstr "간격"
+
+msgid "units"
+msgstr "단위"
+
+msgid "1-3 years"
+msgstr "1-3년"
+
+msgid "10+ years"
+msgstr "10년 이상"
+
+msgid "3-10 years"
+msgstr "3-10년"
+
+msgid "ACH"
+msgstr "ACH (시간당 환기 횟수)"
+msgid "AI Context"
+msgstr "AI 컨텍스트"
+
+msgid "AI Error Dashboard"
+msgstr "AI 오류 대시보드"
+
+msgid "AI Library"
+msgstr "AI 라이브러리"
+
+msgid "AI Proposed Tasks Management"
+msgstr "AI 제안 작업 관리"
+
+msgid "AI Reasoning"
+msgstr "AI 추론"
+
+msgid "AI Settings"
+msgstr "AI 설정"
+
+msgid "AI Status"
+msgstr "AI 상태"
+
+msgid "AI functionality is currently in experimental stage."
+msgstr "AI 기능은 현재 실험 단계입니다."
+
+msgid "AI is still learning..."
+msgstr "AI가 아직 학습 중입니다..."
+
+msgid "AI learns from your data over time"
+msgstr "AI가 시간이 지남에 따라 데이터를 학습합니다"
+
+msgid "Action failed"
+msgstr "작업 실패"
+
+msgid "Activate on Save"
+msgstr "저장 시 활성화"
+
+msgid "Activation failed"
+msgstr "활성화 실패"
+
+msgid "Actuators (12 slots)"
+msgstr "액추에이터 (12슬롯)"
+
+msgid "Add Server"
+msgstr "서버 추가"
+
+msgid "Add specific instructions for your AI (optional)"
+msgstr "AI에 대한 구체적인 지침 추가 (선택)"
+
+msgid "Adding…"
+msgstr "추가 중…"
+
+msgid "Advanced — optional"
+msgstr "고급 설정 — 선택"
+
+msgid "Advice is based on general agricultural knowledge"
+msgstr "조언은 일반 농업 지식을 바탕으로 합니다"
+
+msgid "Agree and Start"
+msgstr "동의하고 시작"
+
+msgid "All Set!"
+msgstr "준비 완료!"
+
+msgid "Analyzing error patterns..."
+msgstr "오류 패턴 분석 중..."
+
+msgid "AoT MCP Server"
+msgstr "AoT MCP 서버"
+msgid "Apply to Knowledge"
+msgstr "지식에 적용"
+
+msgid "Arch (elliptical)"
+msgstr "아치형 (타원)"
+
+msgid "Available Tools"
+msgstr "사용 가능한 도구"
+
+msgid "Back"
+msgstr "뒤로"
+
+msgid "Basic Configuration"
+msgstr "기본 설정"
+
+msgid "Bays"
+msgstr "베이 수"
+
+msgid "Browse Devices"
+msgstr "장치 검색"
+
+msgid "Budgets are automatically optimized per Tier."
+msgstr "예산은 Tier별로 자동 최적화됩니다."
+
+msgid "CO2"
+msgstr "CO2"
+
+msgid "CSS Selector (optional)"
+msgstr "CSS 선택자 (선택)"
+
+msgid "Capacity Preview"
+msgstr "수용량 미리보기"
+
+msgid "Configuration"
+msgstr "설정"
+
+msgid "Configure MCP Server"
+msgstr "MCP 서버 설정"
+
+msgid "Confirmed knowledge items:"
+msgstr "확인된 지식 항목:"
+
+msgid "Connect external data sources to automatically inject knowledge into AI context records."
+msgstr "외부 데이터 소스를 연결하여 AI 컨텍스트 레코드에 지식을 자동으로 주입하세요."
+
+msgid "Connected"
+msgstr "연결됨"
+
+msgid "Context & Budget"
+msgstr "컨텍스트 및 예산"
+
+msgid "Context Broadcast"
+msgstr "컨텍스트 브로드캐스트"
+
+msgid "Context Layer"
+msgstr "컨텍스트 레이어"
+
+msgid "Continue"
+msgstr "계속"
+
+msgid "Conversation Management"
+msgstr "대화 관리"
+
+msgid "Cooling load"
+msgstr "냉방 부하"
+
+msgid "Critical"
+msgstr "심각"
+
+msgid "Critical Parameters"
+msgstr "핵심 파라미터"
+
+msgid "Crop Type"
+msgstr "작물 유형"
+
+msgid "Custom Source"
+msgstr "사용자 정의 소스"
+
+msgid "Date"
+msgstr "날짜"
+
+msgid "Deactivation failed"
+msgstr "비활성화 실패"
+
+msgid "Default options for role applied"
+msgstr "역할 기본 옵션이 적용되었습니다"
+
+msgid "Define how this MCP server should be utilized..."
+msgstr "MCP 서버 활용 방법을 정의하세요..."
+
+msgid "Delete Task"
+msgstr "작업 삭제"
+
+msgid "Delete failed"
+msgstr "삭제 실패"
+
+msgid "Delete this source?"
+msgstr "이 소스를 삭제하시겠습니까?"
+
+msgid "Deleted."
+msgstr "삭제되었습니다."
+
+msgid "Describe specifically what you need from this AI (optional)"
+msgstr "AI에게 필요한 것을 구체적으로 설명하세요 (선택)"
+
+msgid "Device Timeline"
+msgstr "장치 타임라인"
+
+msgid "Devices"
+msgstr "장치"
+
+msgid "Discovering MCP servers..."
+msgstr "MCP 서버 검색 중..."
+
+msgid "Double"
+msgstr "이중"
+
+msgid "Drag to resize"
+msgstr "드래그하여 크기 조정"
+
+msgid "During the learning period:"
+msgstr "학습 기간 중:"
+
+msgid "Eave H (m)"
+msgstr "처마 높이 (m)"
+
+msgid "Edit Proposed Job"
+msgstr "제안 작업 편집"
+
+msgid "Engine"
+msgstr "엔진"
+
+msgid "Envelope"
+msgstr "외피"
+
+msgid "Environment Variables"
+msgstr "환경 변수"
+
+msgid "Error Dashboard"
+msgstr "오류 대시보드"
+
+msgid "Error Detail & Resolution"
+msgstr "오류 세부 정보 및 해결"
+
+msgid "Error loading context"
+msgstr "컨텍스트 로드 오류"
+
+msgid "Error: Form not found"
+msgstr "오류: 폼을 찾을 수 없습니다"
+
+msgid "Existing key on file"
+msgstr "기존 키가 파일에 있습니다"
+
+msgid "Experimental Feature"
+msgstr "실험적 기능"
+
+msgid "Facilities"
+msgstr "시설 목록"
+
+msgid "Facility Information"
+msgstr "시설 정보"
+
+msgid "Facility Learning Status"
+msgstr "시설 학습 상태"
+
+msgid "Facility Type"
+msgstr "시설 유형"
+
+msgid "Facility-specific data is still limited"
+msgstr "시설 고유 데이터가 아직 제한적입니다"
+
+msgid "Failed to add MCP server."
+msgstr "MCP 서버 추가 실패."
+
+msgid "Failed to load MCP entries."
+msgstr "MCP 항목 로드 실패."
+
+msgid "Failed to load devices."
+msgstr "장치 로드 실패."
+
+msgid "Failed to save. Please try again."
+msgstr "저장 실패. 다시 시도해 주세요."
+
+msgid "Failed."
+msgstr "실패했습니다."
+
+msgid "File Path"
+msgstr "파일 경로"
+
+msgid "Flat (box)"
+msgstr "플랫 (박스형)"
+
+msgid "Floor"
+msgstr "바닥"
+
+msgid "Frequently Used Features"
+msgstr "자주 사용하는 기능"
+
+msgid "Full Text"
+msgstr "전체 텍스트"
+
+msgid "Gable"
+msgstr "박공 지붕"
+
+msgid "General (Shared)"
+msgstr "일반 (공유)"
+
+msgid "Get API Key / Documentation"
+msgstr "API 키 발급 / 문서"
+
+msgid "Get Started"
+msgstr "시작하기"
+
+msgid "Getting Started with AI Advisor"
+msgstr "AI 어드바이저 시작하기"
+
+msgid "Getting to Know Each Other"
+msgstr "상호 학습"
+
+msgid "Glazing"
+msgstr "유리 피복"
+
+msgid "Go to AI Dashboard"
+msgstr "AI 대시보드로 이동"
+
+msgid "Greenhouse"
+msgstr "온실"
+
+msgid "Hallucination"
+msgstr "환각 (할루시네이션)"
+
+msgid "Heating load"
+msgstr "난방 부하"
+
+msgid "High"
+msgstr "높음"
+
+msgid "I understand and agree to the above terms"
+msgstr "위 조건을 이해하고 동의합니다"
+
+msgid "Identity & Service"
+msgstr "신원 및 서비스"
+
+msgid "Ignored"
+msgstr "무시됨"
+
+msgid "Inappropriate Action"
+msgstr "부적절한 동작"
+
+msgid "Inner control mode"
+msgstr "내부 제어 모드"
+
+msgid "Inner cover"
+msgstr "내부 피복"
+
+msgid "Inner roof vent"
+msgstr "내부 천창 환기"
+
+msgid "Inner side vent"
+msgstr "내부 측면 환기"
+
+msgid "Inspect AI context data for individual devices"
+msgstr "개별 장치의 AI 컨텍스트 데이터 검사"
+
+msgid "Key Keywords"
+msgstr "핵심 키워드"
+
+msgid "Key-Value Extraction"
+msgstr "키-값 추출"
+
+msgid "Large"
+msgstr "대형"
+
+msgid "Layer count"
+msgstr "레이어 수"
+
+msgid "Learning Progress"
+msgstr "학습 진행도"
+
+msgid "Leave blank to keep"
+msgstr "유지하려면 비워두세요"
+
+msgid "Less than 1 year"
+msgstr "1년 미만"
+
+msgid "Lighting"
+msgstr "조명"
+msgid "Loading"
+msgstr "로딩 중"
+
+msgid "Loading devices..."
+msgstr "장치 로딩 중..."
+
+msgid "Loading proposed tasks..."
+msgstr "제안 작업 로딩 중..."
+
+msgid "Low"
+msgstr "낮음"
+
+msgid "MCP Entries"
+msgstr "MCP 항목"
+
+msgid "MCP Server"
+msgstr "MCP 서버"
+
+msgid "MCP Server Management"
+msgstr "MCP 서버 관리"
+
+msgid "MCP Server added."
+msgstr "MCP 서버가 추가되었습니다."
+
+msgid "MCP Servers"
+msgstr "MCP 서버 목록"
+
+msgid "MCP server activated"
+msgstr "MCP 서버 활성화됨"
+
+msgid "MCP server deactivated"
+msgstr "MCP 서버 비활성화됨"
+
+msgid "Map & Site"
+msgstr "지도 및 사이트"
+msgid "Medium"
+msgstr "중간"
+
+msgid "Misinformation"
+msgstr "잘못된 정보"
+
+msgid "Models"
+msgstr "모델"
+
+msgid "Monitor and control Model Context Protocol bridge processes"
+msgstr "MCP 브리지 프로세스 모니터링 및 제어"
+
+msgid "Name and Command are required."
+msgstr "이름과 명령어는 필수입니다."
+
+msgid "New Facility"
+msgstr "새 시설"
+
+msgid "Next"
+msgstr "다음"
+
+msgid "No MCP entries configured."
+msgstr "설정된 MCP 항목이 없습니다."
+
+msgid "No activity yet"
+msgstr "아직 활동 없음"
+
+msgid "No devices found."
+msgstr "장치를 찾을 수 없습니다."
+
+msgid "No errors found."
+msgstr "오류가 없습니다."
+
+msgid "No facilities yet."
+msgstr "아직 시설이 없습니다."
+
+msgid "Not Configured"
+msgstr "설정되지 않음"
+
+msgid "Not Synced"
+msgstr "동기화되지 않음"
+
+msgid "Nursery"
+msgstr "육묘장"
+
+msgid "Nutrients"
+msgstr "영양소"
+
+msgid "Onboarding Complete"
+msgstr "온보딩 완료"
+
+msgid "Operating Experience"
+msgstr "운영 경험"
+
+msgid "Other"
+msgstr "기타"
+
+msgid "Outdoor Farming"
+msgstr "노지 재배"
+
+msgid "Outer cover"
+msgstr "외부 피복"
+
+msgid "Outer roof vent"
+msgstr "외부 천창 환기"
+
+msgid "Outer side vent"
+msgstr "외부 측면 환기"
+
+msgid "Parameter Name (Context Key)"
+msgstr "파라미터 이름 (컨텍스트 키)"
+
+msgid "Park"
+msgstr "공원"
+
+msgid "Parse Mode"
+msgstr "파싱 모드"
+
+msgid "Pending"
+msgstr "대기 중"
+
+msgid "Pending:"
+msgstr "대기 중:"
+
+msgid "Permission denied"
+msgstr "권한 거부"
+
+msgid "Pest Management"
+msgstr "병해충 관리"
+
+msgid "Pipeline Configuration"
+msgstr "파이프라인 설정"
+
+msgid "Place on Map"
+msgstr "지도에 배치"
+
+msgid "Plan Tier"
+msgstr "플랜 등급"
+
+msgid "Please select a facility type to continue."
+msgstr "계속하려면 시설 유형을 선택하세요."
+
+msgid "Please select a source type."
+msgstr "소스 유형을 선택해 주세요."
+
+msgid "Please select an engine first."
+msgstr "먼저 엔진을 선택해 주세요."
+
+msgid "Position & Orientation"
+msgstr "위치 및 방향"
+
+msgid "Preset"
+msgstr "프리셋"
+
+msgid "Purpose"
+msgstr "목적"
+
+msgid "Query Template"
+msgstr "쿼리 템플릿"
+
+msgid "Reason for Deletion"
+msgstr "삭제 이유"
+
+msgid "Recommendations"
+msgstr "권장 사항"
+
+msgid "Reference values for mechanical equipment sizing"
+msgstr "기계 장비 규격 산정 참고값"
+
+msgid "Refresh All Status"
+msgstr "전체 상태 새로고침"
+
+msgid "Refresh List"
+msgstr "목록 새로고침"
+
+msgid "Refresh Patterns"
+msgstr "패턴 새로고침"
+
+msgid "Request failed"
+msgstr "요청 실패"
+
+msgid "Reset AI Status"
+msgstr "AI 상태 초기화"
+
+msgid "Reset AI Status? The snapshot will be recalculated on next load."
+msgstr "AI 상태를 초기화하시겠습니까? 스냅샷은 다음 로드 시 재계산됩니다."
+
+msgid "Resolved"
+msgstr "해결됨"
+
+msgid "Restart required for AI toggle change"
+msgstr "AI 토글 변경 시 재시작이 필요합니다"
+
+msgid "Restarting..."
+msgstr "재시작 중..."
+
+msgid "Review"
+msgstr "검토"
+
+msgid "Review and manage tasks proposed by AI Agents."
+msgstr "AI 에이전트가 제안한 작업을 검토하고 관리하세요."
+
+msgid "Ridge H (m)"
+msgstr "용마루 높이 (m)"
+
+msgid "Roof type"
+msgstr "지붕 유형"
+
+msgid "Save Configuration"
+msgstr "설정 저장"
+
+msgid "Save Facility"
+msgstr "시설 저장"
+
+msgid "Save failed"
+msgstr "저장 실패"
+
+msgid "Saved."
+msgstr "저장되었습니다."
+
+msgid "Scheduled Time"
+msgstr "예약 시간"
+
+msgid "Search tasks..."
+msgstr "작업 검색..."
+
+msgid "Select Source Type"
+msgstr "소스 유형 선택"
+
+msgid "Select a Map first"
+msgstr "먼저 지도를 선택하세요"
+
+msgid "Sensor"
+msgstr "센서"
+
+msgid "Server Configuration"
+msgstr "서버 설정"
+
+msgid "Server Instruction / System Prompt"
+msgstr "서버 지침 / 시스템 프롬프트"
+
+msgid "Service & Model"
+msgstr "서비스 및 모델"
+
+msgid "Settings saved"
+msgstr "설정이 저장되었습니다"
+
+msgid "Severity"
+msgstr "심각도"
+
+msgid "Shade curtain"
+msgstr "차광 커튼"
+
+msgid "Sites belonging to the selected map"
+msgstr "선택된 지도에 속한 사이트"
+
+msgid "Small"
+msgstr "소형"
+
+msgid "Source Name"
+msgstr "소스 이름"
+
+msgid "Source Settings"
+msgstr "소스 설정"
+
+msgid "Source added. Configure it via the settings cog."
+msgstr "소스가 추가되었습니다. 설정 아이콘으로 구성하세요."
+
+msgid "Source is not enabled. Activate it before syncing."
+msgstr "소스가 활성화되지 않았습니다. 동기화 전에 활성화하세요."
+
+msgid "Source not found."
+msgstr "소스를 찾을 수 없습니다."
+
+msgid "Spacing (m)"
+msgstr "간격 (m)"
+
+msgid "Span (m)"
+msgstr "경간 (m)"
+
+msgid "Spec"
+msgstr "규격"
+
+msgid "Specific (Restricted)"
+msgstr "특정 (제한)"
+
+msgid "Sports Facility"
+msgstr "스포츠 시설"
+
+msgid "Standard Arch (Vinyl Greenhouse)"
+msgstr "표준 아치형 (비닐하우스)"
+
+msgid "Start Using AI"
+msgstr "AI 사용 시작"
+
+msgid "Starting MCP process..."
+msgstr "MCP 프로세스 시작 중..."
+
+msgid "Starting..."
+msgstr "시작 중..."
+
+msgid "Stopping MCP process..."
+msgstr "MCP 프로세스 중지 중..."
+
+msgid "Stopping..."
+msgstr "중지 중..."
+
+msgid "Structure"
+msgstr "구조"
+
+msgid "Summary"
+msgstr "요약"
+
+msgid "Sync Complete"
+msgstr "동기화 완료"
+
+msgid "Sync Interval (min)"
+msgstr "동기화 간격 (분)"
+
+msgid "Sync complete"
+msgstr "동기화 완료"
+
+msgid "Sync failed"
+msgstr "동기화 실패"
+
+msgid "Syncing…"
+msgstr "동기화 중…"
+
+msgid "System Instructions"
+msgstr "시스템 지침"
+
+msgid "System Library"
+msgstr "시스템 라이브러리"
+
+msgid "Target ID"
+msgstr "대상 ID"
+
+msgid "Tell Us About Your Facility"
+msgstr "시설에 대해 알려주세요"
+
+msgid "Terms of Use"
+msgstr "이용 약관"
+
+msgid "The AI advisor will begin learning about this facility. The more feedback you provide on its suggestions, the more accurate and customized the advice becomes."
+msgstr "AI 어드바이저가 이 시설에 대해 학습을 시작합니다. 제안에 대한 피드백을 많이 제공할수록 더 정확하고 맞춤화된 조언을 드릴 수 있습니다."
+
+msgid "The executable command to start the MCP server process."
+msgstr "MCP 서버 프로세스를 시작하는 실행 명령어."
+
+msgid "The more you interact, the more precise it becomes"
+msgstr "상호작용이 많을수록 더 정밀해집니다"
+
+msgid "Thermal curtain"
+msgstr "보온 커튼"
+
+msgid "This AI advisor learns from your facility over time. During the initial learning period, advice is based on general agricultural knowledge and may not be specific to your conditions. Your feedback — confirming, adjusting, or rejecting suggestions — is what calibrates the system to your facility. The system will tell you when it is uncertain and what confirmation would help. You remain in control: no automated actions will be taken without your approval."
+msgstr "AI 어드바이저는 시간이 지남에 따라 시설에 대해 학습합니다. 초기 학습 기간에는 일반 농업 지식 기반으로 조언을 제공하며 귀하의 조건에 특화되지 않을 수 있습니다. 귀하의 피드백(확인, 조정, 거절)이 시스템을 시설에 맞게 조정합니다. 확실하지 않은 경우 시스템이 알려드립니다. 귀하의 승인 없이 자동 조치는 취해지지 않습니다."
+
+msgid "This AI system requires a learning period to provide advice customized to your facility."
+msgstr "AI 시스템이 시설 맞춤 조언을 제공하기 위해 학습 기간이 필요합니다."
+msgid "Toggle failed"
+msgstr "토글 실패"
+
+msgid "Toggle which devices are included in AI judgment. Changes are saved immediately."
+msgstr "AI 판단에 포함될 장치를 토글하세요. 변경 사항은 즉시 저장됩니다."
+
+msgid "Tool Misuse"
+msgstr "도구 오용"
+
+msgid "Total Pending"
+msgstr "총 대기 수"
+
+msgid "Total:"
+msgstr "합계:"
+
+msgid "Transportation"
+msgstr "운송"
+
+msgid "Update AI Setup"
+msgstr "AI 설정 업데이트"
+msgid "User Correction"
+msgstr "사용자 수정"
+
+msgid "Value (0–359)"
+msgstr "값 (0–359)"
+
+msgid "Vent open"
+msgstr "환기구 열림"
+
+msgid "Vertical Farm"
+msgstr "수직 농장"
+
+msgid "View Device AI Context"
+msgstr "장치 AI 컨텍스트 보기"
+
+msgid "What best describes your facility?"
+msgstr "귀하의 시설을 가장 잘 설명하는 것은?"
+
+msgid "Worker"
+msgstr "워커"
+
+msgid "You control what AI focuses on"
+msgstr "귀하가 AI가 집중할 내용을 제어합니다"
+
+msgid "You will now see: AI Status, your key keywords, and how the AI is learning about your facility."
+msgstr "이제 AI 상태, 핵심 키워드, AI가 시설에 대해 학습하는 방법을 확인할 수 있습니다."
+
+msgid "Your AI Instructions"
+msgstr "귀하의 AI 지침"
+
+msgid "Your Instructions"
+msgstr "귀하의 지침"
+
+msgid "Your feedback is the key to calibration"
+msgstr "귀하의 피드백이 보정의 핵심입니다"
+
+msgid "e.g. Energy Analytics, GIS Data"
+msgstr "예: 에너지 분석, GIS 데이터"
+
+msgid "e.g. I manage a greenhouse and need help with pest management and temperature control"
+msgstr "예: 온실을 관리하며 병해충 관리와 온도 제어에 도움이 필요합니다"
+
+msgid "loading..."
+msgstr "로딩 중..."
+
+msgid "running"
+msgstr "실행 중"
+
+msgid "select all that apply"
+msgstr "해당하는 것 모두 선택"
+
+msgid "unknown"
+msgstr "알 수 없음"
+
+msgid "AI Assistant"
+msgstr "AI 어시스턴트"
+
+msgid "Ask AI anything..."
+msgstr "AI에게 무엇이든 물어보세요..."
+
+msgid "Browser Default"
+msgstr "브라우저 기본값"
+
+msgid "Manager"
+msgstr "매니저"
+
+msgid "Portal"
+msgstr "포털"
+
+msgid "Restart System"
+msgstr "시스템 재시작"
+
+msgid "Schedule"
+msgstr "스케줄"
+
+msgid "Wind Speed"
+msgstr "풍속"
+
+msgid "Clouds"
+msgstr "구름"
+
+msgid "Precipitation"
+msgstr "강수량"
+
+msgid "Rain/Snow Intensity"
+msgstr "비/눈 강도"
+
+msgid "Snow"
+msgstr "눈"
+
+msgid "Rain"
+msgstr "비"
+
+msgid "Storm"
+msgstr "폭풍"
+
+msgid "Soil Moisture (Root Zone)"
+msgstr "토양 수분 (근권)"
+
+msgid "Dry"
+msgstr "건조"
+
+msgid "Wet"
+msgstr "습윤"
+
+msgid "NDVI"
+msgstr "NDVI"
+
+msgid "Soil pH (0-5cm)"
+msgstr "토양 pH (0-5cm)"
+
+msgid "Clay Content (%)"
+msgstr "점토 함량 (%)"
+
+msgid "Sand Content (%)"
+msgstr "모래 함량 (%)"
+
+msgid "Silt Content (%)"
+msgstr "실트 함량 (%)"
+
+msgid "Organic Carbon (dg/kg)"
+msgstr "유기 탄소 (dg/kg)"
+
+msgid "Bulk Density (cg/cm³)"
+msgstr "용적 밀도 (cg/cm³)"
+
+msgid "Error: API returned"
+msgstr "오류: API 응답"
+
+msgid "Legend Error"
+msgstr "범례 오류"
+
+msgid "Graphs"
+msgstr "그래프"
+
+msgid "Graphs are useful for visualizing datasets over weeks, months, or years. Displaying such data on synchronous graphs can cause high data processing and computation load."
+msgstr "그래프는 몇 주, 몇 달 또는 몇 년에 걸친 데이터셋을 시각화하는 데 유용합니다. 동기식 그래프에서 이러한 데이터를 표시하면 데이터 처리 및 계산 부하가 높아질 수 있습니다."
+
+msgid "All Data"
+msgstr "전체 데이터"
+
+msgid "Past Period"
+msgstr "이전 기간"
+
+msgid "1 Year"
+msgstr "1년"
+
+msgid "Hold <kbd>Ctrl</kbd> or <kbd>&#8984;</kbd> to select multiple items."
+msgstr "<kbd>Ctrl</kbd> 또는 <kbd>&#8984;</kbd>를 누른 채로 여러 항목을 선택하세요."
+
+msgid "1h"
+msgstr "1시"
+
+msgid "1d"
+msgstr "1일"
+
+msgid "1w"
+msgstr "1주"
+
+msgid "1m"
+msgstr "1달"
+
+msgid "1y"
+msgstr "1년"

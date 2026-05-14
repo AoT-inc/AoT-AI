@@ -27,7 +27,7 @@ fi
 
 # Fix for below issue(s)
 # https://github.com/pypa/setuptools/issues/3278
-# https://github.com/aot-inc/AoT/issues/1149
+# https://github.com/AoT-inc/AoT-AI/issues/1149
 export SETUPTOOLS_USE_DISTUTILS=stdlib
 
 
@@ -195,7 +195,7 @@ AoT가 정상적으로 설치되지 않았을 수 있습니다!
 %s/install/setup.log
 
 설치 중 문제가 발생했다면, 아래의 링크로 버그 리포트를 제출해 주세요:
-https://github.com/AoT-inc/AoT/issues
+https://github.com/AoT-inc/AoT-AI/issues
 
 버그 리포트에는 아래 경로의 setup 로그에서 관련된 부분을 첨부해 주세요:
 %s/install/setup.log

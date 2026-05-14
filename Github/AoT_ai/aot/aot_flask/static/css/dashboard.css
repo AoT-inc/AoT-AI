@@ -111,19 +111,26 @@ body.aot-nav-hidden .widget-add-bar {
   z-index: 1042;
   position: absolute;
 }
-/* Hide default triangular resize art but keep hit-area */
-.grid-stack-item .ui-resizable-se {
-  width: 18px;
-  height: 18px;
-  right: 4px;
-  bottom: 4px;
-  background: transparent !important;
-  border: none !important;
-  opacity: 0.7;
-  touch-action: none;
-}
-.grid-stack-item .ui-resizable-handle::after {
+/* Visible resize corner grip when dashboard is unlocked */
+.dashboard-unlocked .grid-stack-item .ui-resizable-se::after {
   content: '';
+  display: block;
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 12px;
+  height: 12px;
+  border-right: 2px solid rgba(90, 90, 90, 0.35);
+  border-bottom: 2px solid rgba(90, 90, 90, 0.35);
+  border-radius: 0 0 3px 0;
+  transition: border-color 0.15s ease;
+  pointer-events: none;
+}
+.dashboard-unlocked .grid-stack-item:hover .ui-resizable-se::after {
+  border-color: rgba(60, 60, 60, 0.7);
+}
+.dashboard-unlocked .grid-stack-item .ui-resizable-se:active::after {
+  border-color: rgba(30, 30, 30, 0.9);
 }
 
 /* Dash Table Sidebar */

@@ -18,7 +18,7 @@ from aot.config import (ALEMBIC_VERSION, INSTALL_DIRECTORY, LANGUAGES,
                            AOT_VERSION, THEMES, THEMES_DARK)
 from aot.config import PATH_STATIC
 from aot.config_translations import TRANSLATIONS
-from aot.databases.models import Dashboard, Misc, GeoSetting
+from aot.databases.models import Dashboard, Misc
 from aot.aot_client import DaemonControl
 from aot.aot_flask.forms import forms_dashboard
 from aot.aot_flask.routes_authentication import admin_exists
@@ -33,7 +33,86 @@ blueprint = Blueprint('routes_static',
 logger = logging.getLogger(__name__)
 
 _daemon_status_cache = {'value': '0', 'ts': 0.0}
-_DAEMON_STATUS_TTL = 5.0
+_DAEMON_STATUS_TTL = 30.0
+
+_INJECT_CACHE_TTL = 10.0
+_misc_cache = {'obj': None, 'ts': 0.0}
+_dashboards_cache = {'objs': None, 'ts': 0.0}
+_api_keys_cache = {'objs': None, 'ts': 0.0}
+_ai_settings_cache = {'obj': None, 'ts': 0.0}
+
+
+def _cached_misc():
+    now = time.time()
+    if now - _misc_cache['ts'] < _INJECT_CACHE_TTL and _misc_cache['obj'] is not None:
+        return _misc_cache['obj']
+    obj = Misc.query.first()
+    try:
+        db.session.expunge(obj)
+    except Exception:
+        pass
+    _misc_cache['obj'] = obj
+    _misc_cache['ts'] = now
+    return obj
+
+
+def _cached_dashboards():
+    now = time.time()
+    if now - _dashboards_cache['ts'] < _INJECT_CACHE_TTL and _dashboards_cache['objs'] is not None:
+        return _dashboards_cache['objs']
+    try:
+        rows = db.session.execute(db.text(
+            "SELECT unique_id FROM dashboard ORDER BY COALESCE(sort_order, 999999), id"
+        ))
+        ordered_uids = [r[0] for r in rows]
+        if ordered_uids:
+            dash_map = {d.unique_id: d for d in Dashboard.query.filter(Dashboard.unique_id.in_(ordered_uids)).all()}
+            objs = [dash_map[uid] for uid in ordered_uids if uid in dash_map]
+        else:
+            objs = Dashboard.query.order_by(Dashboard.id.asc()).all()
+    except Exception:
+        objs = Dashboard.query.order_by(Dashboard.id.asc()).all()
+    for o in objs:
+        try:
+            db.session.expunge(o)
+        except Exception:
+            pass
+    _dashboards_cache['objs'] = objs
+    _dashboards_cache['ts'] = now
+    return objs
+
+
+def _cached_api_keys():
+    from aot.databases.models import APIKey
+    now = time.time()
+    if now - _api_keys_cache['ts'] < _INJECT_CACHE_TTL and _api_keys_cache['objs'] is not None:
+        return _api_keys_cache['objs']
+    objs = APIKey.query.all()
+    for o in objs:
+        try:
+            db.session.expunge(o)
+        except Exception:
+            pass
+    _api_keys_cache['objs'] = objs
+    _api_keys_cache['ts'] = now
+    return objs
+
+
+def _cached_ai_settings():
+    from aot.databases.models import AIGlobalSettings
+    now = time.time()
+    if now - _ai_settings_cache['ts'] < _INJECT_CACHE_TTL and _ai_settings_cache['obj'] is not None:
+        return _ai_settings_cache['obj']
+    obj = AIGlobalSettings.query.first()
+    if obj is not None:
+        try:
+            db.session.expunge(obj)
+        except Exception:
+            pass
+    _ai_settings_cache['obj'] = obj
+    _ai_settings_cache['ts'] = now
+    return obj
+
 
 
 def before_request_admin_exist():
@@ -55,28 +134,9 @@ def template_exists(path):
 @blueprint.app_context_processor
 def inject_variables():
     """Variables to send with every page request."""
-    try:
-        db.session.expire_all()
-    except Exception:
-        pass
-    
-    form_dashboard = forms_dashboard.DashboardConfig()  # Dashboard configuration in layout
-
-    # Order dashboards via raw SQL to avoid any ORM caching/NULLS LAST portability issues
-    try:
-        rows = db.session.execute(db.text(
-            "SELECT unique_id FROM dashboard ORDER BY COALESCE(sort_order, 999999), id"
-        ))
-        ordered_uids = [r[0] for r in rows]
-        if ordered_uids:
-            dash_map = {d.unique_id: d for d in Dashboard.query.filter(Dashboard.unique_id.in_(ordered_uids)).all()}
-            dashboards = [dash_map[uid] for uid in ordered_uids if uid in dash_map]
-        else:
-            dashboards = Dashboard.query.order_by(Dashboard.id.asc()).all()
-    except Exception:
-        # Fallback: at least return something if the table/column isn't ready yet
-        dashboards = Dashboard.query.order_by(Dashboard.id.asc()).all()
-    misc = Misc.query.first()
+    form_dashboard = forms_dashboard.DashboardConfig()
+    dashboards = _cached_dashboards()
+    misc = _cached_misc()
 
     try:
         if not current_app.config['TESTING']:
@@ -95,35 +155,19 @@ def inject_variables():
 
     languages_sorted = sorted(LANGUAGES.items(), key=operator.itemgetter(1))
 
-# Map Global Settings
-    map_global_providers = {}
-    map_global_keys = {}
-    try:
-        mgs = GeoSetting.query.first()
-        if mgs:
-            state = mgs.state_dict()
-            map_global_providers = state.get('providers', {})
-            map_global_keys = state.get('keys', {})
-    except Exception:
-        pass
-
     import json
     try:
         custom_theme = json.loads(misc.custom_theme_json or '{}')
     except Exception:
         custom_theme = {}
 
-    # Global Geo Config
     from aot.aot_flask.utils.utils_geo import get_geo_config
     geo_config = get_geo_config()
+    map_global_providers = geo_config.get('providers', {}) if geo_config else {}
+    map_global_keys = geo_config.get('keys', {}) if geo_config else {}
 
-    # API Keys
-    from aot.databases.models import APIKey
-    api_keys = APIKey.query.all()
-    
-    # AI Global Settings
-    from aot.databases.models import AIGlobalSettings
-    ai_settings = AIGlobalSettings.query.first()
+    api_keys = _cached_api_keys()
+    ai_settings = _cached_ai_settings()
 
     return dict(current_user=flask_login.current_user,
                 geo_config=geo_config,

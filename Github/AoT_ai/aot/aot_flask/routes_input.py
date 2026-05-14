@@ -193,13 +193,17 @@ def save_input_layout():
     if not utils_general.user_has_permission('edit_controllers'):
         return redirect(url_for('routes_general.home'))
     data = request.get_json()
-    keys = ('id', 'y')
-    for each_input in data:
-        if all(k in each_input for k in keys):
-            input_mod = Input.query.filter(
-                Input.unique_id == each_input['id']).first()
-            if input_mod:
-                input_mod.position_y = each_input['y']
+    # Sort by reported y, then re-rank to sequential ints to eliminate ties.
+    # Without this, multiple cards can share the same position_y (especially
+    # newly-created ones), making ORDER BY position_y nondeterministic and
+    # the rendered card order unstable across reloads.
+    items = [d for d in data if 'id' in d and 'y' in d]
+    items.sort(key=lambda d: (d['y'], d['id']))
+    for rank, each_input in enumerate(items):
+        input_mod = Input.query.filter(
+            Input.unique_id == each_input['id']).first()
+        if input_mod:
+            input_mod.position_y = rank
     db.session.commit()
     return "success"
 
@@ -226,7 +230,7 @@ def page_input():
     if not current_tab:
         # Fallback: Tab 테이블이 비어있는 경우
         logger.warning("No default tab found for input page")
-        input_dev = Input.query.order_by(Input.position_y).all()
+        input_dev = Input.query.order_by(Input.position_y, Input.id).all()
     else:
         # ===== FILTER BY TAB (Including Legacy NULL) =====
         input_dev = Input.query.filter(
@@ -234,7 +238,7 @@ def page_input():
                 Input.tab_id == current_tab.unique_id,
                 Input.tab_id.is_(None)
             )
-        ).order_by(Input.position_y).all()
+        ).order_by(Input.position_y, Input.id).all()
     # ==================================
 
     each_input = None

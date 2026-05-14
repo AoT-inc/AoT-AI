@@ -113,6 +113,8 @@ def settings_general():
         for each_success in messages["success"]:
             flash(each_success, "success")
 
+        return redirect(url_for('routes_settings.settings_general'))
+
     return render_template('settings/general.html',
                            form_settings_general=form_settings_general,
                            report_path=os.path.normpath(USAGE_REPORTS_PATH))

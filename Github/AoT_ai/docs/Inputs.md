@@ -6,17 +6,17 @@
 
 ### 사용자 정의 입력
 
-[사용자 정의 입력 모듈 빌드](https://github.com/aot-inc/AoT/wiki/Building-a-Custom-Input-Module) Wiki 페이지를 참조하세요.
+[사용자 정의 입력 모듈 빌드](https://github.com/AoT-inc/AoT-AI/wiki/Building-a-Custom-Input-Module) Wiki 페이지를 참조하세요.
 
 AoT에는 사용자 정의 입력을 생성하여 AoT 시스템에서 사용할 수 있도록 하는 사용자 정의 입력 가져오기 시스템이 있습니다. 사용자 정의 입력은 `[기어 아이콘] -> 구성 -> 사용자 정의 입력` 페이지에서 업로드 및 가져오기할 수 있습니다. 가져온 후에는 `설정 -> 입력` 페이지에서 사용할 수 있습니다.
 
-작동하는 입력 모듈을 개발한 경우, [새 GitHub 이슈 생성](https://github.com/aot-inc/AoT/issues/new?assignees=&labels=&template=feature-request.md&title=New%20Module) 또는 풀 리퀘스트를 고려해 주세요. 해당 모듈이 기본 제공 세트에 포함될 수 있습니다.
+작동하는 입력 모듈을 개발한 경우, [새 GitHub 이슈 생성](https://github.com/AoT-inc/AoT-AI/issues/new?assignees=&labels=&template=feature-request.md&title=New%20Module) 또는 풀 리퀘스트를 고려해 주세요. 해당 모듈이 기본 제공 세트에 포함될 수 있습니다.
 
-적절한 형식의 예를 보려면 디렉토리 [AoT/aot/inputs](https://github.com/aot-inc/AoT/tree/master/aot/inputs/)에 있는 기본 제공 모듈을 열어보세요.
+적절한 형식의 예를 보려면 디렉토리 [AoT/aot/inputs](https://github.com/AoT-inc/AoT-AI/tree/master/aot/inputs/)에 있는 기본 제공 모듈을 열어보세요.
 
-또한, 디렉토리 [AoT/aot/inputs/examples](https://github.com/aot-inc/AoT/tree/master/aot/inputs/examples)에는 사용자 정의 입력 예제가 있습니다.
+또한, 디렉토리 [AoT/aot/inputs/examples](https://github.com/AoT-inc/AoT-AI/tree/master/aot/inputs/examples)에는 사용자 정의 입력 예제가 있습니다.
 
-기본 제공 세트에 포함되지 않은 사용자 정의 모듈에 전념하는 또 다른 GitHub 저장소는 [aot-inc/AoT-custom](https://github.com/aot-inc/AoT-custom)에서 확인할 수 있습니다.
+기본 제공 세트에 포함되지 않은 사용자 정의 모듈에 전념하는 또 다른 GitHub 저장소는 [aot-inc/AoT-custom](https://github.com/AoT-inc/AoT-AI-custom)에서 확인할 수 있습니다.
 
 ### 입력 명령
 

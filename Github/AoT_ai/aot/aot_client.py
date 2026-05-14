@@ -201,8 +201,21 @@ class DaemonControl:
     #
 
     def output_off(self, output_id, output_channel=None, trigger_conditionals=True):
-        return self.proxy().output_off(
-            output_id, output_channel=output_channel, trigger_conditionals=trigger_conditionals)
+        try:
+            return self.proxy().output_off(
+                output_id, output_channel=output_channel, trigger_conditionals=trigger_conditionals)
+        except Pyro5.errors.TimeoutError as err:
+            msg = f"Output OFF timed out: {err}"
+            logger.error(msg)
+            return 1, msg
+        except Pyro5.errors.CommunicationError as err:
+            msg = f"Output OFF communication error: {err}"
+            logger.error(msg)
+            return 1, msg
+        except Exception as err:
+            msg = f"Output OFF error: {err}"
+            logger.error(msg)
+            return 1, msg
 
     def output_on(self,
                   output_id,
@@ -211,9 +224,22 @@ class DaemonControl:
                   min_off=0.0,
                   output_channel=None,
                   trigger_conditionals=True):
-        return self.proxy().output_on(
-            output_id, output_type=output_type, amount=amount, min_off=min_off,
-            output_channel=output_channel, trigger_conditionals=trigger_conditionals)
+        try:
+            return self.proxy().output_on(
+                output_id, output_type=output_type, amount=amount, min_off=min_off,
+                output_channel=output_channel, trigger_conditionals=trigger_conditionals)
+        except Pyro5.errors.TimeoutError as err:
+            msg = f"Output ON timed out: {err}"
+            logger.error(msg)
+            return 1, msg
+        except Pyro5.errors.CommunicationError as err:
+            msg = f"Output ON communication error: {err}"
+            logger.error(msg)
+            return 1, msg
+        except Exception as err:
+            msg = f"Output ON error: {err}"
+            logger.error(msg)
+            return 1, msg
 
     def output_on_off(self, output_id, state, output_type=None, amount=0.0, output_channel=None):
         """Turn an output on or off."""
@@ -233,10 +259,33 @@ class DaemonControl:
         return self.proxy().output_setup(action, output_id)
 
     def output_state(self, output_id, output_channel):
-        return self.proxy().output_state(output_id, output_channel)
+        try:
+            return self.proxy().output_state(output_id, output_channel)
+        except Pyro5.errors.TimeoutError as err:
+            msg = f"Output state timed out: {err}"
+            logger.error(msg)
+            return None
+        except Pyro5.errors.CommunicationError as err:
+            msg = f"Output state communication error: {err}"
+            logger.error(msg)
+            return None
+        except Exception as err:
+            msg = f"Output state error: {err}"
+            logger.error(msg)
+            return None
 
     def output_states_all(self):
-        return self.proxy().output_states_all()
+        try:
+            return self.proxy().output_states_all()
+        except Pyro5.errors.TimeoutError as err:
+            logger.error(f"output_states_all timed out: {err}")
+            return {}
+        except Pyro5.errors.CommunicationError as err:
+            logger.error(f"output_states_all communication error: {err}")
+            return {}
+        except Exception as err:
+            logger.error(f"output_states_all error: {err}")
+            return {}
 
     #
     # PID Controller

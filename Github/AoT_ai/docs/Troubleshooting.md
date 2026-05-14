@@ -32,8 +32,8 @@ sudo service aotflask restart
 
 ## Restoring a Backup Without the UI
 
-If the web UI is inaccessible, because of an error, for example, you can restore a backup from the command line. See [Backup and Restore](https://github.com/aot-inc/AoT/wiki/Backup-and-Restore) for more information.
+If the web UI is inaccessible, because of an error, for example, you can restore a backup from the command line. See [Backup and Restore](https://github.com/AoT-inc/AoT-AI/wiki/Backup-and-Restore) for more information.
 
 ## More on Diagnosing issues
 
-Check out the [Diagnosing Issues](https://github.com/aot-inc/AoT/wiki/Diagnosing-Issues) for more information about diagnosing issues.
+Check out the [Diagnosing Issues](https://github.com/AoT-inc/AoT-AI/wiki/Diagnosing-Issues) for more information about diagnosing issues.

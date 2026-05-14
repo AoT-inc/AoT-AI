@@ -59,8 +59,8 @@ runDownloadAoT() {
 
     UPDATE_VERSION="master"
     printf "\n\nUpgrade script executed with the 'force-upgrade-master' argument. Upgrading from github repo master.\n"
-    UPDATE_URL="https://github.com/aot-inc/AoT/archive/master.tar.gz"
-    TARBALL_FILE="AoT-master"
+    UPDATE_URL="https://github.com/AoT-inc/AoT-AI/archive/master.tar.gz"
+    TARBALL_FILE="AoT-AI-master"
 
   fi
 

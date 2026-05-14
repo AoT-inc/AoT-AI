@@ -37,7 +37,7 @@
         <div class="row small-gutters" style="padding: 0.3em">
           <div class="col-12 col-sm-6 col-md-4 col-lg-3" style="font-family: 'Courier New', monospace;">
             {% set split_version = each_backup[0].split('-') %}
-            {{each_backup[0][14:33]}}<br><a href="https://github.com/aot-inc/AoT/releases/tag/v{{each_backup[0][34:]}}" target="_blank">v{{each_backup[0][34:]}}</a>, {{"%.1f MB"|format(each_backup[1])}}
+            {{each_backup[0][14:33]}}<br><a href="https://github.com/AoT-inc/AoT-AI/releases/tag/v{{each_backup[0][34:]}}" target="_blank">v{{each_backup[0][34:]}}</a>, {{"%.1f MB"|format(each_backup[1])}}
           </div>
           <div class="col-6 col-sm-3 small-gutters">
             {{form_backup.download(class_='btn btn-primary btn-block', value=_('Download Backup'))}}
