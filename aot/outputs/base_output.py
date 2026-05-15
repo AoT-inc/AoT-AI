@@ -505,15 +505,29 @@ class AbstractOutput(AbstractBaseController):
 
                     self.output_time_turned_on[output_channel] = None
 
-                # determine which measurement of the output_channel is a duration
-                measurement_channel = None
-                if ('channels_dict' in self.OUTPUT_INFORMATION and
-                        'measurements_dict' in self.OUTPUT_INFORMATION):
-                    measurement_channels = self.OUTPUT_INFORMATION['channels_dict'][output_channel]['measurements']
-                    for each_measure_channel in measurement_channels:
-                        if self.OUTPUT_INFORMATION['measurements_dict'][each_measure_channel]['unit'] == 's':
-                            measurement_channel = each_measure_channel
-                            break
+                # determine which measurement of the output_channel is a duration.
+                # Multi-channel outputs (e.g. FarmOn MQTT) declare channels_dict[0]
+                # as a template and register runtime channels 1..N dynamically — a
+                # bare channels_dict[output_channel] lookup raises KeyError for any
+                # ch>=1 and silently kills the DB-write path. Mirror the ON-side
+                # fallback (line 179): default to output_channel so each runtime
+                # channel writes a distinct series tag; only override when
+                # channels_dict has an explicit per-channel definition.
+                measurement_channel = output_channel
+                try:
+                    if ('channels_dict' in self.OUTPUT_INFORMATION and
+                            'measurements_dict' in self.OUTPUT_INFORMATION):
+                        ch_def = self.OUTPUT_INFORMATION['channels_dict'].get(output_channel)
+                        if ch_def:
+                            for each_measure_channel in ch_def.get('measurements', []):
+                                if self.OUTPUT_INFORMATION['measurements_dict'][each_measure_channel]['unit'] == 's':
+                                    measurement_channel = each_measure_channel
+                                    break
+                        # else: template-only channels_dict → keep output_channel
+                        # so per-channel series stays separate.
+                except Exception as e:
+                    self.logger.warning(
+                        f"measurement_channel resolve failed for ch={output_channel}: {e}")
 
                 write_db = threading.Thread(
                     target=write_influxdb_value,

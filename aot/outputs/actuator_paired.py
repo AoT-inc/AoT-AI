@@ -224,8 +224,28 @@ class OutputModule(AbstractOutput):
 
         moved = self._drive(target)
         if not moved:
-            # Already at target — nothing to do, but still publish state.
-            self.output_states[output_channel] = target if target > 0 else False
+            # _drive returned False because |target - current position| < 0.5.
+            # Two sub-cases share this branch and must be handled differently:
+            #   (a) motor was idle, already at target → nothing to do.
+            #   (b) motor was running and the new target ≈ current live
+            #       position → user pressed "stop here". The old code ignored
+            #       this and let the motor run on to its ORIGINAL target.
+            # Detect (b) via _motion_dir and treat it as a Stop-in-place:
+            # cancel watchdog and OFF only the running relay (safe direction).
+            if self._motion_dir != 'idle':
+                self.logger.info(
+                    "Stop-in-place: target %.1f%% ≈ current %.1f%%",
+                    target, self._position_pct)
+                self._cancel_watchdog()
+                running = self._running_relay_id()
+                if running:
+                    self._relay_off(running)
+                self._motion_dir = 'idle'
+                self._last_direction = 'idle'
+                self._last_direction_change_ts = time.time()
+                self._save_position(self._position_pct)
+            self.output_states[output_channel] = (
+                self._position_pct if self._position_pct > 0 else False)
             measure = copy.deepcopy(measurements_dict)
             measure[0]['value'] = self._position_pct
             add_measurements_influxdb(self.unique_id, measure)
@@ -253,10 +273,34 @@ class OutputModule(AbstractOutput):
     def is_setup(self):
         return self.output_setup
 
+    def _running_relay_id(self):
+        """Return the relay reference for the direction currently driving, or None.
+
+        FarmOn-style toggle protocols flip a relay's state on every command, so a
+        redundant OFF sent to an already-off relay activates it. Stop must only
+        target the relay we know is running — never blast both directions.
+        """
+        if self._motion_dir == 'open':
+            return self._opt('output_open_id')
+        if self._motion_dir == 'close':
+            return self._opt('output_close_id')
+        # Fall back to _last_direction when motion has just finished but we
+        # still need to ensure the relay we last activated is off.
+        if self._last_direction == 'open':
+            return self._opt('output_open_id')
+        if self._last_direction == 'close':
+            return self._opt('output_close_id')
+        return None
+
     def stop_output(self):
         self._cancel_watchdog()
-        self._relay_off(self._opt('output_open_id'))
-        self._relay_off(self._opt('output_close_id'))
+        # Only OFF the running direction. The opposite direction must NEVER be
+        # touched on stop — under FarmOn toggle protocol a redundant OFF on an
+        # already-off relay activates it, energizing both directions of an
+        # H-bridge motor driver simultaneously (motor damage / short circuit).
+        running = self._running_relay_id()
+        if running:
+            self._relay_off(running)
         self.running = False
 
     # ── drive ────────────────────────────────────────────────────────────────
@@ -279,10 +323,19 @@ class OutputModule(AbstractOutput):
         # a redundant OFF on an already-off relay can flip it ON.
         if self._last_direction not in ('idle', new_dir):
             self._relay_off(opposite_id)
-            waited = time.time() - self._last_direction_change_ts
-            pause = max(rev_pause - waited, 0.0)
-            if pause > 0:
-                time.sleep(pause)
+            # rev_pause is the dwell BETWEEN turning off the running motor and
+            # energizing the opposite direction — protects the H-bridge and
+            # lets the motor coast to a stop. The previous "waited = since
+            # direction change" subtraction is wrong: _last_direction_change_ts
+            # is set when the previous motor STARTED, so for a long-running
+            # close→open reverse the subtraction made pause = 0 (no dwell at
+            # all). Use the full configured pause every time we actually
+            # reverse direction.
+            if rev_pause > 0:
+                self.logger.info(
+                    "Reverse pause %.2fs (%s → %s)",
+                    rev_pause, self._last_direction, new_dir)
+                time.sleep(rev_pause)
 
         run_sec = (abs(delta) / 100.0) * travel
         start_pos = self._position_pct
@@ -336,8 +389,12 @@ class OutputModule(AbstractOutput):
     def _watchdog_fire(self):
         """Travel timer expired — motion is finished. Force relays off, finalize state."""
         self.logger.info("Travel time elapsed — motion complete, forcing Stop")
-        self._relay_off(self._opt('output_open_id'))
-        self._relay_off(self._opt('output_close_id'))
+        # Same safety rule as stop_output: only OFF the relay that is running.
+        # Touching the opposite (idle) relay can phantom-activate it under
+        # toggle protocols (FarmOn) and energize both motor directions.
+        running = self._running_relay_id()
+        if running:
+            self._relay_off(running)
         # Snap to target since motion ran the full expected time.
         target = self._motion_target
         self._position_pct = target
@@ -452,8 +509,15 @@ class OutputModule(AbstractOutput):
         return "Running. Click '■ Stop & Save' when fully {}.".format(direction)
 
     def calib_stop(self, args_dict=None):
-        self._relay_off(self._opt('output_open_id'))
-        self._relay_off(self._opt('output_close_id'))
+        # Calibration only drives one direction (calib_direction). Only OFF
+        # that one — opposite was never turned on, so touching it would risk
+        # phantom-activating it under toggle protocols.
+        direction = self._opt('calib_direction') or 'open'
+        calib_id = (self._opt('output_open_id')
+                    if direction == 'open'
+                    else self._opt('output_close_id'))
+        if calib_id:
+            self._relay_off(calib_id)
         elapsed = round(time.time() - self._calib_start_ts, 1)
         try:
             self.set_custom_channel_option(0, 'travel_time_sec', elapsed)

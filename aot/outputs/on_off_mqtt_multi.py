@@ -8,7 +8,7 @@ import threading
 
 from flask_babel import lazy_gettext
 
-from aot.databases.models import OutputChannel
+from aot.databases.models import DeviceMeasurements, OutputChannel
 from aot.outputs.base_output import AbstractOutput
 from aot.utils.constraints_pass import constraints_pass_positive_or_zero_value
 from aot.utils.database import db_retrieve_table_daemon
@@ -273,8 +273,20 @@ def execute_at_modification(
     ).order_by(OutputChannel.channel).all()
     current_count = len(current_channels)
 
+    # measurements_dict is template-only ({0: duration_time/s}). Without this
+    # sync, runtime channels 1..N have no DeviceMeasurements row and the UI
+    # cannot display per-channel duration_time even though InfluxDB writes
+    # succeed. Mirror OutputChannel changes with DeviceMeasurements changes.
+    measure_template = measurements_dict.get(0, {})
+
     if num_channels < current_count:
         for ch in current_channels[num_channels:]:
+            dm = DeviceMeasurements.query.filter(
+                DeviceMeasurements.device_id == mod_output.unique_id,
+                DeviceMeasurements.channel == ch.channel
+            ).first()
+            if dm and ch.channel != 0:
+                db.session.delete(dm)
             db.session.delete(ch)
 
     elif num_channels > current_count:
@@ -295,6 +307,20 @@ def execute_at_modification(
                 'amps': 0.0
             })
             db.session.add(new_ch)
+
+            if i != 0:
+                existing_dm = DeviceMeasurements.query.filter(
+                    DeviceMeasurements.device_id == mod_output.unique_id,
+                    DeviceMeasurements.channel == i
+                ).first()
+                if not existing_dm:
+                    new_dm = DeviceMeasurements()
+                    new_dm.device_id = mod_output.unique_id
+                    new_dm.measurement = measure_template.get('measurement', 'duration_time')
+                    new_dm.unit = measure_template.get('unit', 's')
+                    new_dm.channel = i
+                    new_dm.is_enabled = True
+                    db.session.add(new_dm)
 
     mod_output.size_y = num_channels + 1
 

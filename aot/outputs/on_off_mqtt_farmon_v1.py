@@ -30,7 +30,7 @@ import threading
 
 from flask_babel import lazy_gettext
 
-from aot.databases.models import OutputChannel
+from aot.databases.models import DeviceMeasurements, OutputChannel
 from aot.outputs.base_output import AbstractOutput
 from aot.utils.constraints_pass import constraints_pass_positive_or_zero_value
 from aot.utils.database import db_retrieve_table_daemon
@@ -280,8 +280,23 @@ def execute_at_modification(
     ).order_by(OutputChannel.channel).all()
     current_count = len(current_channels)
 
+    # The framework only creates one DeviceMeasurements row per entry in
+    # measurements_dict (utils_output.py:270-281). measurements_dict here is
+    # template-only ({0: duration_time/s}), so without this sync, runtime
+    # channels 1..N have no measurement row → InfluxDB writes succeed with
+    # channel=N tag but the UI (which queries by DeviceMeasurements row) shows
+    # nothing past channel 0. Mirror OutputChannel add/delete with a matching
+    # DeviceMeasurements add/delete so each runtime channel has a row.
+    measure_template = measurements_dict.get(0, {})
+
     if num_channels < current_count:
         for ch in current_channels[num_channels:]:
+            dm = DeviceMeasurements.query.filter(
+                DeviceMeasurements.device_id == mod_output.unique_id,
+                DeviceMeasurements.channel == ch.channel
+            ).first()
+            if dm and ch.channel != 0:
+                db.session.delete(dm)
             db.session.delete(ch)
 
     elif num_channels > current_count:
@@ -297,6 +312,20 @@ def execute_at_modification(
                 'amps': 0.0
             })
             db.session.add(new_ch)
+
+            if i != 0:
+                existing_dm = DeviceMeasurements.query.filter(
+                    DeviceMeasurements.device_id == mod_output.unique_id,
+                    DeviceMeasurements.channel == i
+                ).first()
+                if not existing_dm:
+                    new_dm = DeviceMeasurements()
+                    new_dm.device_id = mod_output.unique_id
+                    new_dm.measurement = measure_template.get('measurement', 'duration_time')
+                    new_dm.unit = measure_template.get('unit', 's')
+                    new_dm.channel = i
+                    new_dm.is_enabled = True
+                    db.session.add(new_dm)
 
     mod_output.size_y = num_channels + 1
 
@@ -399,6 +428,24 @@ class OutputModule(AbstractOutput):
 
     def _start_status_subscriber(self):
         """Connect a paho-mqtt Client and subscribe to the FarmOn mcuTopic."""
+        # Tear down any prior client first. Without this, a re-entry into
+        # initialize() leaks the previous paho client: its loop thread keeps
+        # running, its on_message keeps mutating self.output_states, and its
+        # on_disconnect fires through the same self.logger — producing the
+        # doubled "unexpectedly disconnected" warnings observed in logs and
+        # racing state writes that break output_switch idempotency (=
+        # repeated toggles on the board).
+        if self.status_client is not None:
+            try:
+                self.status_client.loop_stop()
+            except Exception:
+                pass
+            try:
+                self.status_client.disconnect()
+            except Exception:
+                pass
+            self.status_client = None
+
         try:
             import paho.mqtt.client as mqtt_client
 
@@ -435,11 +482,25 @@ class OutputModule(AbstractOutput):
             self.logger.error("Status subscriber connect failed (rc={})".format(rc))
 
     def _on_status_disconnect(self, client, userdata, rc):
+        # Defense in depth: if this callback fires from an orphaned client
+        # (e.g. a leak that pre-dates the cleanup in _start_status_subscriber),
+        # stop its loop and stay silent instead of writing through self.logger.
+        if client is not self.status_client:
+            try:
+                client.loop_stop()
+            except Exception:
+                pass
+            return
         if rc != 0:
             self.logger.warning("Status subscriber unexpectedly disconnected (rc={})".format(rc))
 
     def _on_status_message(self, client, userdata, msg):
         """Parse FarmOn 'd:<HEX20>:...' frame and refresh each channel's state."""
+        # Drop frames from orphaned clients. Same self.output_states race as
+        # the doubled disconnect warning — a stale client mutating state can
+        # flip current!=target and trigger a redundant toggle publish.
+        if client is not self.status_client:
+            return
         # Reject frames not from this instance's configured status topic.
         # Without this guard, a wildcard subscription or a co-located FarmOn
         # board sharing the broker can leak its HEX20 state into this Output's
@@ -507,6 +568,19 @@ class OutputModule(AbstractOutput):
                 self.logger.debug(
                     "FarmOn ch {} already {} — skip toggle".format(
                         output_channel, 'ON' if target else 'OFF'))
+                return
+
+            # SAFETY: refuse to send OFF when board state is unknown. Toggle
+            # protocol has no absolute "off" command — a toggle from unknown
+            # state can ACTIVATE an already-off relay (phantom activation).
+            # Only allow ON from unknown state, since worst case there is
+            # "send the command twice" (next mcuTopic will reconcile), whereas
+            # a wrong OFF energizes a motor's opposite direction.
+            if current is None and target is False:
+                self.logger.warning(
+                    "FarmOn ch {} OFF refused: cached state unknown "
+                    "(mcuTopic not yet received). Skipping toggle to avoid "
+                    "phantom activation.".format(output_channel))
                 return
 
             transport = 'websockets' if self.mqtt_use_websockets else 'tcp'
