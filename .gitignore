@@ -26,8 +26,15 @@ flask_session_*/
 # --- 로그 ---
 logs/
 
-# --- 데이터베이스 ---
-aot.db
+# --- 데이터베이스 (런타임 자동 생성, 커밋 불필요) ---
+aot/databases/*.db
+aot/databases/*.db-shm
+aot/databases/*.db-wal
+aot/databases/*.db-*
+aot/databases/*.bak
+aot/databases/*.bak.*
+aot/databases/.fuse_hidden*
+aot/databases/.smb*
 influxdb_data/
 
 # --- T2 Executor / Agent 파일 ---
