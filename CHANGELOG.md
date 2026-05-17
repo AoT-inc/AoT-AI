@@ -18,11 +18,11 @@
 ## 설정 (Config)
 
 - `ALEMBIC_VERSION`: `d0e1f2a3b4c5` → `p5_6_geo_facility_fittings` 동기화
-- `AOT_VERSION`: `26.0.7`
+- `AOT_VERSION`: `26.05.0`
 
 ---
 
-# v26.0.1 (2026-02-14)
+# v26.02.1 (2026-02-14)
 
 ## 기능 (Features)
 
@@ -55,7 +55,7 @@
 
 ---
 
-# v26.0.1 (2026-02-14) - English
+# v26.02.1 (2026-02-14) - English
 
 ## Features
 
