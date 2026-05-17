@@ -18,7 +18,7 @@ from config_translations import TRANSLATIONS as T
 
 MYCODO_VERSION = '8.16.0'
 ALEMBIC_VERSION = 'p5_6_geo_facility_fittings'
-AOT_VERSION = '26.0.7'
+AOT_VERSION = '26.5.0'
 
 # FORCE UPGRADE MASTER
 # Set True to enable upgrading to the master branch of the AoT repository.
