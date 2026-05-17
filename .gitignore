@@ -102,3 +102,4 @@ docker/.env
 aot/databases/flask_secret_key
 docs/dev/
 docs/architecture/
+docs/upgrade/
