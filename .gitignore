@@ -100,3 +100,4 @@ ssl_certs/
 **/ssl_certs/
 docker/.env
 aot/databases/flask_secret_key
+docs/dev/
