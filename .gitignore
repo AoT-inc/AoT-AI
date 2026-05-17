@@ -27,6 +27,7 @@ flask_session_*/
 logs/
 
 # --- 데이터베이스 (런타임 자동 생성, 커밋 불필요) ---
+aot/databases/migrations/
 aot/databases/*.db
 aot/databases/*.db-shm
 aot/databases/*.db-wal
