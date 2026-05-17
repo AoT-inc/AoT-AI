@@ -59,8 +59,11 @@ class FacilityManager:
           geo_id (required)        — GeoMap.unique_id
           name, preset, structure, bay_count
           outer_geometry           — GeoJSON geometry of the outer polygon
-          geometry_3d, envelope, actuators, computed, notes
+          geometry_3d, envelope, actuators, fittings, computed, notes
           bays                     — list of {id, geometry, crop, sensor_zone, name}
+
+        Fittings (G1 policy): list of placed 3D elements; authoritative for
+        vent area and airflow when present.
         """
         facility_uuid = data.get('facility_uuid')
         geo_id = data.get('geo_id')
@@ -154,6 +157,9 @@ class FacilityManager:
             facility.geometry_3d = data.get('geometry_3d')
             facility.envelope = data.get('envelope')
             facility.actuators = data.get('actuators')
+            # Fittings: list of placed elements from the 3D editor (FittingsUI).
+            # Authoritative source for vent area & airflow simulation (G1 policy).
+            facility.fittings = data.get('fittings') or []
             facility.computed = data.get('computed')
             facility.notes = data.get('notes', '')
             facility.updated_at = datetime.utcnow()
@@ -271,6 +277,7 @@ class FacilityManager:
             'geometry_3d': f.geometry_3d,
             'envelope': f.envelope,
             'actuators': f.actuators,
+            'fittings': f.fittings or [],
             'bays': f.bays,
             'computed': f.computed,
             'notes': f.notes,

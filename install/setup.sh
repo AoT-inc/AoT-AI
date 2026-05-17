@@ -8,10 +8,12 @@
 INSTALL_DIRECTORY=$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd -P )
 INSTALL_CMD="/bin/bash ${INSTALL_DIRECTORY}/aot/scripts/upgrade_commands.sh"
 LOG_LOCATION=${INSTALL_DIRECTORY}/install/setup.log
-UNAME_TYPE=$(uname -m)
-MACHINE_TYPE=$(dpkg --print-architecture)
 INFLUX_A='NONE'
 INFLUX_B='NONE'
+
+# 플랫폼 자동 감지 (INSTALL_TARGET, INSTALL_ARCH, MACHINE_TYPE, UNAME_TYPE 설정)
+# shellcheck source=install/detect_platform.sh
+source "${INSTALL_DIRECTORY}/install/detect_platform.sh"
 
 if [[ "$INSTALL_DIRECTORY" == "/opt/AoT" ]]; then
   printf "## 현재 /opt/AoT/install/setup.sh에서 설치를 진행 중입니다.\n"
@@ -36,14 +38,22 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+# Docker 환경에서는 대화형 설치 불가 → docker-compose 사용 안내
+if [[ "${INSTALL_TARGET}" == "docker" ]]; then
+    printf "\n오류: Docker 환경이 감지되었습니다.\n"
+    printf "Docker 배포는 docker-compose를 사용하세요:\n"
+    printf "  cd %s/docker && docker compose up -d\n\n" "${INSTALL_DIRECTORY}"
+    exit 1
+fi
+
 # Ensure upgrade_commands.sh receives consistent service user
 export AOT_USER="${AOT_USER:-aot}"
 export AOT_GROUP="${AOT_GROUP:-$AOT_USER}"
 
 printf "Python 버전 확인 중...\n"
 if hash python3 2>/dev/null; then
-  if ! python3 "${INSTALL_DIRECTORY}"/aot/scripts/upgrade_check.py --min_python_version "3.6"; then
-    printf "\n오류: 올바르지 않은 Python 버전이 감지되었습니다. AoT 설치를 위해서는 Python >= 3.6이 필요합니다.\n"
+  if ! python3 "${INSTALL_DIRECTORY}"/aot/scripts/upgrade_check.py --min_python_version "3.8"; then
+    printf "\n오류: 올바르지 않은 Python 버전이 감지되었습니다. AoT 설치를 위해서는 Python >= 3.8이 필요합니다.\n"
     exit 1
   else
     printf "Python >= 3.6 found.\n"
@@ -111,7 +121,7 @@ if [ $exitstatus != 0 ]; then
 fi
 
 clear
-if [[ ${MACHINE_TYPE} == 'armhf' ]]; then
+if [[ ${INSTALL_ARCH} == 'armhf' ]]; then
     INFLUX_A=$(dialog --title "AoT Installer: Measurement Database" \
                         --backtitle "AoT" \
                         --menu "InfluxDB를 설치하시겠습니까?\n\n지금 InfluxDB를 설치하지 않으면, AoT 설치 후 설정 메뉴에서 InfluxDB 서버 정보와 인증 정보를 수동으로 입력하셔야 합니다." 20 68 4 \
@@ -123,7 +133,7 @@ if [[ ${MACHINE_TYPE} == 'armhf' ]]; then
         printf "사용자에 의해 AoT 설치가 취소되었습니다\n" 2>&1 | tee -a "${LOG_LOCATION}"
         exit 1
     fi
-elif [[ ${MACHINE_TYPE} == 'arm64' || ${UNAME_TYPE} == 'x86_64' ]]; then
+elif [[ ${INSTALL_ARCH} == 'arm64' || ${INSTALL_ARCH} == 'amd64' ]]; then
     # Check if InfluxDB is already installed
     INFLUX_INSTALLED=false
     CURRENT_INFLUX_MSG=""

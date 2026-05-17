@@ -241,3 +241,27 @@ class Actions(CRUDMixin, db.Model):
 
     def __repr__(self):
         return "<{cls}(id={s.id})>".format(s=self, cls=self.__class__.__name__)
+
+
+class FunctionRuntimeState(CRUDMixin, db.Model):
+    """
+    PI 상태(적분·이전 명령·히스테리시스)를 데몬 재시작 간에 보존한다.
+
+    각 env_coordinator Function 인스턴스마다 row 하나.
+    사이클 종료 시 업데이트, 초기화 시 로드한다.
+
+    @phase active
+    """
+    __tablename__ = 'function_runtime_state'
+    __table_args__ = {'extend_existing': True}
+
+    id               = db.Column(db.Integer, primary_key=True)
+    function_id      = db.Column(db.String(36), nullable=False, unique=True, index=True)
+    integral_json    = db.Column(db.Text, default='{}')
+    prev_cmds_json   = db.Column(db.Text, default='{}')
+    active_vars_json = db.Column(db.Text, default='{}')
+    last_cycle_ts    = db.Column(db.Float, default=0.0)
+    updated_at       = db.Column(db.Float, default=0.0)
+
+    def __repr__(self):
+        return f'<FunctionRuntimeState function_id={self.function_id}>'

@@ -44,6 +44,8 @@ from .log_channels import (
     REASON_UNAVAILABLE,
     REASON_SAFETY_POST_GATE,
     REASON_MANUAL_OVERRIDE,
+    CH_DISPATCH_FAIL,
+    CH_RUNTIME_STATE_FAIL,
 )
 
 from .safety_gates import (
@@ -66,6 +68,7 @@ __all__ = [
     'REASON_WRONG_DIRECTION', 'REASON_SIDE_EFFECT',
     'REASON_SAFETY_PRE_GATE', 'REASON_UNAVAILABLE',
     'REASON_SAFETY_POST_GATE', 'REASON_MANUAL_OVERRIDE',
+    'CH_DISPATCH_FAIL', 'CH_RUNTIME_STATE_FAIL',
     # safety_gates
     'GateResult', 'PreGateConfig', 'SafetyPreGate', 'SafetyPostGate',
 ]

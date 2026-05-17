@@ -1370,8 +1370,21 @@ def form_output_channel_measurement_choices(
         prefetched_measurements=None, prefetched_conversions=None):
     for each_channel in output_channels:
         ch_dict = dict_outputs[each_output.output_type]['channels_dict']
-        ch_info = ch_dict.get(each_channel.channel, ch_dict.get(0, {}))
-        measurement_channels = ch_info.get('measurements', [])
+        explicit_ch = ch_dict.get(each_channel.channel)
+        # Keep ch_info populated (template fallback) for downstream use such
+        # as the 'types' lookup later in this function — don't leave it None.
+        ch_info = explicit_ch if explicit_ch is not None else ch_dict.get(0, {})
+        if explicit_ch:
+            measurement_channels = explicit_ch.get('measurements', [])
+        else:
+            # Template-only multi-channel outputs (FarmOn, mqtt_multi) declare
+            # channels_dict[0] only; runtime channels 1..N reuse the template
+            # but each has its OWN DeviceMeasurements row at channel==N. The
+            # previous fallback used ch_dict.get(0)['measurements'] (=[0]) and
+            # only ever matched DeviceMeasurement channel=0, hiding channels
+            # 1..N from the dropdowns. Map each runtime channel to its own
+            # measurement row instead.
+            measurement_channels = [each_channel.channel]
         for measurement_channel in measurement_channels:
             device_measurement = None
             if prefetched_measurements is not None:

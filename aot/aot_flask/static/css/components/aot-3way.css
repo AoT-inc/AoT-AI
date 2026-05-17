@@ -40,7 +40,9 @@
 }
 
 .aot-3way-buttons > .aot-paired-btn {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto !important;
   text-align: center !important;
   text-align-last: center !important;
   line-height: 1 !important;

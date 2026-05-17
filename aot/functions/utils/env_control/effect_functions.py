@@ -225,18 +225,99 @@ LIGHTING_EFFECT_MODEL = {
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# P3-1: fan 계열 효과 함수
+# ─────────────────────────────────────────────────────────────────────────────
+# 순환팬: 균질화 효과 (T/RH 구배 해소). 에너지 투입은 없음 — 효과 크기는 작음.
+K_CIRC_FAN_T   = 0.3   # °C/cycle at 100% (T 불균일 완화)
+K_CIRC_FAN_RH  = 0.5   # %/cycle at 100%
+
+# 배기팬: ACH 기반. capacity_meta['rated_m3h'] (m³/h) + volume_m3 필요.
+K_EXHAUST_FAN_FACTOR = 1.0   # 경험적 보정 계수 (추후 캘리브레이션)
+
+
+def circulation_fan_temp_effect(env: EnvContext, cmd_pct: float, profile=None) -> EffectResult:
+    """순환팬 → 내부 T 구배 완화 (미미한 효과)."""
+    return EffectResult('~', K_CIRC_FAN_T * (cmd_pct / 100.0))
+
+
+def circulation_fan_humid_effect(env: EnvContext, cmd_pct: float, profile=None) -> EffectResult:
+    return EffectResult('~', K_CIRC_FAN_RH * (cmd_pct / 100.0))
+
+
+CIRCULATION_FAN_EFFECT_MODEL = {
+    'temperature': circulation_fan_temp_effect,
+    'humidity':    circulation_fan_humid_effect,
+}
+
+
+def _exhaust_ach(cmd_pct: float, profile) -> float:
+    """ACH (Air Changes per Hour) = rated_m3h × cmd/100 / volume_m3."""
+    meta = getattr(profile, 'capacity_meta', {}) or {}
+    rated = float(meta.get('rated_m3h', 0.0) or 0.0)
+    volume = float(meta.get('volume_m3', 0.0) or 0.0)
+    if rated <= 0 or volume <= 0:
+        return 0.0
+    return rated * (cmd_pct / 100.0) / volume
+
+
+def exhaust_fan_temp_effect(env: EnvContext, cmd_pct: float, profile=None) -> EffectResult:
+    """배기팬 → 외내부 온도차 × ACH 기반 T 변화."""
+    ach = _exhaust_ach(cmd_pct, profile)
+    if ach <= 0:
+        # rated_m3h 없으면 근사값 사용
+        return EffectResult('↓' if env.get('T_ext', 20) < env.get('T_int', 25) else '↑',
+                            K_CIRC_FAN_T * 2 * (cmd_pct / 100.0))
+    delta_T = env.get('T_ext', 20.0) - env.get('T_int', 25.0)
+    mag = abs(delta_T) * ach * (1 / 60.0) * K_EXHAUST_FAN_FACTOR
+    return EffectResult('↑' if delta_T > 0 else '↓', mag)
+
+
+def exhaust_fan_humid_effect(env: EnvContext, cmd_pct: float, profile=None) -> EffectResult:
+    """배기팬 → 외내부 RH 차 × ACH 기반 RH 변화."""
+    ach = _exhaust_ach(cmd_pct, profile)
+    if ach <= 0:
+        return EffectResult('~', 0.0)
+    delta_rh = env.get('RH_ext', 60.0) - env.get('RH_int', 70.0)
+    mag = abs(delta_rh) * ach * (1 / 60.0) * K_EXHAUST_FAN_FACTOR
+    return EffectResult('↑' if delta_rh > 0 else '↓', mag)
+
+
+def exhaust_fan_co2_effect(env: EnvContext, cmd_pct: float, profile=None) -> EffectResult:
+    """배기팬 → CO₂ 희석 (실내 CO₂ > 외부 가정)."""
+    ach = _exhaust_ach(cmd_pct, profile)
+    if ach <= 0:
+        return EffectResult('~', 0.0)
+    excess = max(0, env.get('CO2_int', 400) - env.get('CO2_ext', 400))
+    mag = excess * ach * (1 / 60.0) * K_EXHAUST_FAN_FACTOR
+    return EffectResult('↓', mag)
+
+
+EXHAUST_FAN_EFFECT_MODEL = {
+    'temperature': exhaust_fan_temp_effect,
+    'humidity':    exhaust_fan_humid_effect,
+    'co2':         exhaust_fan_co2_effect,
+}
+
+# 흡기팬: 배기팬과 동일 물리 모델 (보완 관계) — 별도 조율은 coordinator 에서 처리
+INTAKE_FAN_EFFECT_MODEL = dict(EXHAUST_FAN_EFFECT_MODEL)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # kind → 기본 effect_model 조회
 # ─────────────────────────────────────────────────────────────────────────────
 
 DEFAULT_EFFECT_MODELS = {
-    'opening':      OPENING_EFFECT_MODEL,
-    'cooler':       COOLER_EFFECT_MODEL,
-    'heater':       HEATER_EFFECT_MODEL,
-    'fogger':       FOGGER_EFFECT_MODEL,
-    'co2_injector': CO2_INJECTOR_EFFECT_MODEL,
-    'shade':        SHADE_EFFECT_MODEL,
-    'curtain':      CURTAIN_EFFECT_MODEL,
-    'lighting':     LIGHTING_EFFECT_MODEL,
+    'opening':          OPENING_EFFECT_MODEL,
+    'cooler':           COOLER_EFFECT_MODEL,
+    'heater':           HEATER_EFFECT_MODEL,
+    'fogger':           FOGGER_EFFECT_MODEL,
+    'co2_injector':     CO2_INJECTOR_EFFECT_MODEL,
+    'shade':            SHADE_EFFECT_MODEL,
+    'curtain':          CURTAIN_EFFECT_MODEL,
+    'lighting':         LIGHTING_EFFECT_MODEL,
+    'circulation_fan':  CIRCULATION_FAN_EFFECT_MODEL,
+    'exhaust_fan':      EXHAUST_FAN_EFFECT_MODEL,
+    'intake_fan':       INTAKE_FAN_EFFECT_MODEL,
 }
 
 
@@ -333,5 +414,8 @@ def build_effect_model(kind: str, k: dict) -> dict:
         return {
             'light': lambda env, pct, profile=None, _k=k_ppfd: EffectResult('↑', _k * (pct / 100)),
         }
+    elif kind in ('circulation_fan', 'exhaust_fan', 'intake_fan'):
+        # fan 계열은 k_override 없으면 DEFAULT_EFFECT_MODELS 그대로 사용
+        return dict(DEFAULT_EFFECT_MODELS.get(kind, {}))
     else:
         return {}

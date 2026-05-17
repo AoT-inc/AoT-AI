@@ -44,6 +44,8 @@ from .function import Actions
 from .function import Conditional
 from .function import ConditionalConditions
 from .function import Function
+from .function import FunctionRuntimeState
+from .function_cumulative import FunctionCumulativeState
 from .function import Trigger
 from .input import Input
 from .input import InputChannel
@@ -111,6 +113,7 @@ from .tier_adaptive_storage import TierThreshold           # Adaptive Document S
 from .tier_adaptive_storage import TierDecision
 from .tier_adaptive_storage import DocumentAccessLog
 from .tier_adaptive_storage import AdaptiveStorageSettings
+from .mcp_audit import MCPAuditLog, MCPConfirmation
 
 
 

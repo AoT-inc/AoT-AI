@@ -1,3 +1,27 @@
+# v26.0.7 (2026-05-15)
+
+## 버그 수정 (Bug Fixes)
+
+### 출력 제어 (Output Control)
+- **actuator_paired**: `stop_output` / `_watchdog_fire` / `calib_stop` 3개 지점에서 진행 방향만 OFF 처리, `_running_relay_id` 헬퍼 추가, `reverse_pause` 수학 수정, stop-in-place 처리 개선
+- **base_output**: OFF write 시 `measurement_channel` lookup fallback 추가 (template-only 안전 처리)
+- **on_off_mqtt_farmon_v1**: `status_client` 누수 정리, orphan client 콜백 차단, `cache=None` 일 때 OFF publish 차단, `execute_at_modification` → `device_measurements` 동기화
+- **on_off_mqtt_multi**: `execute_at_modification` → `device_measurements` 동기화
+
+## DB 마이그레이션 (Database Migrations)
+
+- `p5_1`: Geo Facility timezone 필드 추가
+- `p5_5`: Function cumulative state 추가
+- `p5_3`: Function crop preset 추가
+- `p5_6`: Geo Facility fittings 추가 ← **현재 HEAD**
+
+## 설정 (Config)
+
+- `ALEMBIC_VERSION`: `d0e1f2a3b4c5` → `p5_6_geo_facility_fittings` 동기화
+- `AOT_VERSION`: `26.0.7`
+
+---
+
 # v26.0.1 (2026-02-14)
 
 ## 기능 (Features)

@@ -1,0 +1,339 @@
+{# DailyMultiPoint 편집 UI — v2 다중 주차 열 + 다중 시리즈 차트 #}
+
+{% set _md = method_data[0] if method_data else None %}
+{% set _raw = _md.points_json if _md and _md.points_json else '{"version":2,"weeks":[0],"points":[{"point_id":0,"t_sec":0,"values":[0.8],"smooth":false,"is_endpoint":true},{"point_id":1,"t_sec":86400,"values":[0.8],"smooth":false,"is_endpoint":true}]}' %}
+
+<div style="margin-bottom:0.8em;">
+  <p class="text-muted" style="font-size:0.9em; margin:0;">
+    {{_('Each column = one week number. Values interpolate linearly between week columns over time.')}}
+    {{_('Corner = linear segment, Smooth = monotonic cubic Hermite.')}}
+  </p>
+</div>
+
+{# ── 저장용 hidden field (외부 form 재사용) ── #}
+<input type="hidden" name="points_json" id="mp-points-json-field">
+
+{# ── 주차 열 컨트롤 ── #}
+<div style="margin-bottom:0.7em; display:flex; gap:0.5em; flex-wrap:wrap; align-items:center;">
+  <button type="button" class="btn btn-sm aot-pill-btn" onclick="mpAddWeekCol()">
+    + {{_('Add Week Column')}}
+  </button>
+  <button type="button" class="btn btn-sm btn-outline-secondary" onclick="mpRemoveWeekCol()">
+    − {{_('Remove Last Column')}}
+  </button>
+  <span class="text-muted" style="font-size:0.85em;" id="mp-week-label"></span>
+</div>
+
+{# ── 제어점 테이블 (JS 렌더링) ── #}
+<div class="table-responsive" style="margin-bottom:0.8em;">
+  <table class="table table-sm table-bordered" id="mp-point-table">
+    <thead class="thead-light" id="mp-thead"></thead>
+    <tbody id="mp-tbody"></tbody>
+  </table>
+</div>
+
+{# ── 포인트 추가 / 저장 ── #}
+<div style="margin-bottom:1em; display:flex; gap:0.5em; flex-wrap:wrap; align-items:center;">
+  <button type="button" class="btn btn-sm aot-pill-btn" onclick="mpAddPoint()">
+    + {{_('Add Point')}}
+  </button>
+  <span class="text-muted" style="font-size:0.85em;" id="mp-count-label"></span>
+  <button type="button" class="btn aot-pill-btn aot-pill-btn-primary" onclick="mpSave()" style="margin-left:auto;">
+    {{_('Save')}}
+  </button>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const MAX_POINTS = 12;
+  const MAX_WEEKS  = 10;
+
+  // 시리즈 색상 팔레트
+  const COLORS = [
+    '#2196F3', '#4CAF50', '#FF9800', '#E91E63',
+    '#9C27B0', '#00BCD4', '#FF5722', '#795548',
+    '#607D8B', '#F44336'
+  ];
+
+  // ── 초기 데이터 로드 (v1 → v2 JS 마이그레이션 포함) ────────────────
+  let raw = {{ _raw | safe }};
+  if (!raw.version || raw.version < 2) {
+    raw = migrateV1(raw);
+  }
+  let weeks  = raw.weeks  || [0];
+  let points = raw.points || [];
+
+  function migrateV1(d) {
+    const pts = (d.points || []).map(function(p, i) {
+      return {
+        point_id: i, t_sec: p.t_sec || 0,
+        values: [parseFloat(p.value || 0)],
+        smooth: !!p.smooth, is_endpoint: !!p.is_endpoint
+      };
+    });
+    return { version: 2, weeks: [0], points: pts };
+  }
+
+  // ── 시간 변환 헬퍼 ──────────────────────────────────────────────────
+  function secToHHMM(s) {
+    return String(Math.floor(s / 3600)).padStart(2,'0') + ':' +
+           String(Math.floor((s % 3600) / 60)).padStart(2,'0');
+  }
+  function hhmmToSec(t) {
+    const p = t.split(':');
+    return (parseInt(p[0])||0)*3600 + (parseInt(p[1])||0)*60;
+  }
+
+  // ── 테이블 렌더링 ───────────────────────────────────────────────────
+  function render() {
+    renderHead();
+    renderBody();
+    document.getElementById('mp-week-label').textContent =
+      weeks.length + ' / ' + MAX_WEEKS + ' 주차 열';
+    document.getElementById('mp-count-label').textContent =
+      points.length + ' / ' + MAX_POINTS + ' 포인트';
+    updateChart();
+  }
+
+  function renderHead() {
+    const thead = document.getElementById('mp-thead');
+    let html = '<tr>' +
+      '<th style="width:2.5em;">#</th>' +
+      '<th style="width:8em;">{{_("Time (HH:MM)")}}</th>';
+    weeks.forEach(function(w, wi) {
+      html += '<th style="min-width:7em;">' +
+        '<div style="display:flex;align-items:center;gap:4px;">' +
+        '<span style="color:' + COLORS[wi % COLORS.length] + ';font-weight:700;">●</span>' +
+        'Week <input type="number" min="0" max="999" value="' + w + '" ' +
+        'class="form-control form-control-sm" style="width:4.5em;display:inline-block;" ' +
+        'onchange="mpUpdateWeek(this,' + wi + ')">' +
+        '</div></th>';
+    });
+    html += '<th style="width:6em;">{{_("Smooth")}}</th><th style="width:3em;"></th></tr>';
+    thead.innerHTML = html;
+  }
+
+  function renderBody() {
+    const tbody = document.getElementById('mp-tbody');
+    tbody.innerHTML = '';
+    points.forEach(function(pt, idx) {
+      const ep = !!pt.is_endpoint;
+      const tr = document.createElement('tr');
+      let html = '<td style="text-align:center;vertical-align:middle;">' + (idx+1) + '</td>';
+      // Time
+      html += '<td><input type="text" class="form-control form-control-sm" value="' +
+        secToHHMM(pt.t_sec) + '" ' +
+        (ep ? 'readonly style="background:#f5f5f5;cursor:not-allowed;"' : '') +
+        ' data-idx="' + idx + '" onchange="mpUpdateTime(this)"></td>';
+      // Value columns
+      weeks.forEach(function(_, wi) {
+        const v = (pt.values && pt.values[wi] !== undefined) ? pt.values[wi] : 0;
+        html += '<td><input type="number" class="form-control form-control-sm" ' +
+          'value="' + parseFloat(v).toFixed(3) + '" step="0.01" ' +
+          'data-idx="' + idx + '" data-wi="' + wi + '" onchange="mpUpdateVal(this)"></td>';
+      });
+      // Smooth
+      html += '<td style="text-align:center;vertical-align:middle;">' +
+        '<input type="checkbox" ' + (pt.smooth ? 'checked' : '') +
+        ' data-idx="' + idx + '" onchange="mpUpdateSmooth(this)"></td>';
+      // Delete
+      html += '<td style="text-align:center;vertical-align:middle;">' +
+        (ep ? '' : '<button type="button" class="btn btn-sm btn-outline-danger" ' +
+          'onclick="mpDeletePoint(' + idx + ')">✕</button>') + '</td>';
+      tr.innerHTML = html;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ── 주차 열 조작 ────────────────────────────────────────────────────
+  window.mpUpdateWeek = function(el, wi) {
+    weeks[wi] = parseInt(el.value) || 0;
+    weeks = weeks.slice().sort(function(a,b){ return a-b; });
+    // values 도 weeks 순서에 맞게 재정렬 (단순: 입력값 그대로 유지)
+    render();
+  };
+
+  window.mpAddWeekCol = function() {
+    if (weeks.length >= MAX_WEEKS) { alert('최대 ' + MAX_WEEKS + '개 열까지 가능합니다.'); return; }
+    const lastW = weeks[weeks.length - 1];
+    weeks.push(lastW + 2);
+    points.forEach(function(p) {
+      if (!p.values) p.values = [];
+      const last = p.values.length > 0 ? p.values[p.values.length - 1] : 0;
+      p.values.push(last);
+    });
+    render();
+  };
+
+  window.mpRemoveWeekCol = function() {
+    if (weeks.length <= 1) { alert('최소 1개 열이 필요합니다.'); return; }
+    weeks.pop();
+    points.forEach(function(p) { if (p.values) p.values.pop(); });
+    render();
+  };
+
+  // ── 포인트 값 조작 ──────────────────────────────────────────────────
+  window.mpUpdateTime = function(el) {
+    const idx = parseInt(el.dataset.idx);
+    points[idx].t_sec = hhmmToSec(el.value);
+    const interior = points.filter(function(p){ return !p.is_endpoint; });
+    interior.sort(function(a,b){ return a.t_sec - b.t_sec; });
+    points = [points[0]].concat(interior).concat([points[points.length-1]]);
+    render();
+  };
+
+  window.mpUpdateVal = function(el) {
+    const idx = parseInt(el.dataset.idx);
+    const wi  = parseInt(el.dataset.wi);
+    const v   = parseFloat(el.value);
+    if (!isNaN(v)) points[idx].values[wi] = v;
+    updateChart();
+  };
+
+  window.mpUpdateSmooth = function(el) {
+    const idx = parseInt(el.dataset.idx);
+    points[idx].smooth = el.checked;
+    updateChart();
+  };
+
+  window.mpDeletePoint = function(idx) {
+    if (points.length <= 2) { alert('최소 2개 포인트가 필요합니다.'); return; }
+    points.splice(idx, 1);
+    points.forEach(function(p, i){ p.point_id = i; });
+    render();
+  };
+
+  window.mpAddPoint = function() {
+    if (points.length >= MAX_POINTS) { alert('최대 ' + MAX_POINTS + '개까지 추가 가능합니다.'); return; }
+    const last = points[points.length - 1];
+    const prev = points[points.length - 2];
+    const midSec = Math.floor((prev.t_sec + last.t_sec) / 2);
+    const midVals = weeks.map(function(_, wi) {
+      const a = prev.values[wi] !== undefined ? prev.values[wi] : 0;
+      const b = last.values[wi] !== undefined ? last.values[wi] : 0;
+      return parseFloat(((a + b) / 2).toFixed(3));
+    });
+    points.splice(points.length - 1, 0, {
+      point_id: points.length - 1,
+      t_sec: midSec, values: midVals,
+      smooth: false, is_endpoint: false
+    });
+    points.forEach(function(p, i){ p.point_id = i; });
+    render();
+  };
+
+  // ── 저장 ────────────────────────────────────────────────────────────
+  window.mpSave = function() {
+    const payload = { version: 2, weeks: weeks, points: points };
+    const field = document.getElementById('mp-points-json-field');
+    field.value = JSON.stringify(payload);
+    const outerForm = field.closest('form');
+    outerForm.querySelector('input[name="form-name"]').value = 'saveDailyMultiPoint';
+    outerForm.submit();
+  };
+
+  // ── 차트 — 다중 시리즈 ──────────────────────────────────────────────
+  function updateChart() {
+    const chart = window.aotMethodChart;
+    if (!chart) return;
+    while (chart.series.length > 0) chart.series[0].remove(false);
+
+    const step = 300;
+    weeks.forEach(function(w, wi) {
+      const color = COLORS[wi % COLORS.length];
+      const resolved = resolveV2At(w);
+      const data = [];
+      for (let t = 0; t <= 86400; t += step) {
+        data.push([t * 1000, parseFloat(evalCurve(resolved, t).toFixed(4))]);
+      }
+      const isLast = (wi === weeks.length - 1);
+      chart.addSeries({
+        name: 'Week ' + w,
+        data: data,
+        color: color,
+        lineWidth: 2,
+        marker: { enabled: false }
+      }, isLast);
+    });
+
+    // 첫 번째 주차 제어점 산점도
+    const ctrlData = points.map(function(p) {
+      return { x: p.t_sec * 1000, y: p.values[0] !== undefined ? p.values[0] : 0 };
+    });
+    chart.addSeries({
+      type: 'scatter',
+      name: 'Points (Week ' + (weeks[0] || 0) + ')',
+      data: ctrlData,
+      color: COLORS[0],
+      marker: { symbol: 'circle', radius: 5 },
+      tooltip: { pointFormat: '{point.x:%H:%M}: <b>{point.y:.3f}</b>' },
+      showInLegend: false
+    }, true);
+  }
+
+  window.mpOnChartReady = function() { updateChart(); };
+
+  // ── v2 주차 보간 (JS) ────────────────────────────────────────────────
+  function resolveV2At(weekNum) {
+    return points.map(function(p) {
+      const vals = p.values || [0];
+      let value = vals[0];
+      for (let i = 0; i < weeks.length - 1; i++) {
+        if (weeks[i] <= weekNum && weekNum <= weeks[i+1]) {
+          const span = weeks[i+1] - weeks[i];
+          const frac = span > 0 ? (weekNum - weeks[i]) / span : 0;
+          const a = vals[i]   !== undefined ? vals[i]   : 0;
+          const b = vals[i+1] !== undefined ? vals[i+1] : 0;
+          value = a + frac * (b - a);
+          break;
+        }
+      }
+      if (weekNum >= weeks[weeks.length-1]) value = vals[vals.length-1] || 0;
+      return { t_sec: p.t_sec, value: value, smooth: !!p.smooth, is_endpoint: !!p.is_endpoint };
+    }).sort(function(a,b){ return a.t_sec - b.t_sec; });
+  }
+
+  // ── Fritsch-Carlson (JS) ─────────────────────────────────────────────
+  function evalCurve(pts, t) {
+    if (!pts.length) return 0;
+    if (t <= pts[0].t_sec) return pts[0].value;
+    if (t >= pts[pts.length-1].t_sec) return pts[pts.length-1].value;
+    for (let i = 0; i < pts.length-1; i++) {
+      if (t >= pts[i].t_sec && t < pts[i+1].t_sec) {
+        if (!pts[i].smooth && !pts[i+1].smooth) {
+          const h = pts[i+1].t_sec - pts[i].t_sec;
+          return h ? pts[i].value + (t - pts[i].t_sec)/h*(pts[i+1].value-pts[i].value) : pts[i].value;
+        }
+        return hermite(pts, i, (t - pts[i].t_sec) / (pts[i+1].t_sec - pts[i].t_sec || 1));
+      }
+    }
+    return pts[pts.length-1].value;
+  }
+
+  function hermite(pts, seg, frac) {
+    const n = pts.length;
+    const delta = pts.slice(0,-1).map(function(_,i) {
+      const h = pts[i+1].t_sec - pts[i].t_sec;
+      return h ? (pts[i+1].value - pts[i].value) / h : 0;
+    });
+    const m = new Array(n).fill(0);
+    m[0] = delta[0]; m[n-1] = delta[n-2];
+    for (let i = 1; i < n-1; i++) m[i] = (delta[i-1]+delta[i])/2;
+    for (let i = 0; i < n-1; i++) {
+      if (Math.abs(delta[i]) < 1e-12) { m[i] = m[i+1] = 0; continue; }
+      const a = m[i]/delta[i], b = m[i+1]/delta[i], tau = a*a+b*b;
+      if (tau > 9) { const s = 3/Math.sqrt(tau); m[i]=s*a*Math.abs(delta[i]); m[i+1]=s*b*Math.abs(delta[i]); }
+    }
+    const p0 = pts[seg], p1 = pts[seg+1];
+    const h = p1.t_sec - p0.t_sec || 1;
+    const t = frac;
+    return p0.value*(2*t*t*t-3*t*t+1) + m[seg]*h*(t*t*t-2*t*t+t) +
+           p1.value*(-2*t*t*t+3*t*t)  + m[seg+1]*h*(t*t*t-t*t);
+  }
+
+  // ── 초기화 ──────────────────────────────────────────────────────────
+  render();
+})();
+</script>

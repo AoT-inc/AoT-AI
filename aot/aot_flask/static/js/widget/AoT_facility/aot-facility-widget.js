@@ -177,11 +177,26 @@
     const facility = STATE[widgetId].vars.facility;
     if (!facility) return;
 
-    // Mock — real impl: GET /api/aot/facility/<uuid>/advice
+    // Mock — real impl: GET /api/geo/facility/<uuid>/advice (AI 엔진 연동 시 교체)
     const cards = [
-      { cls: 'now', title: '🔴 즉시 조치', actions: '측창 모터 닫기 권장', reason: '외기 강하 + 풍속 증가', effect: '열 손실 절감 예상', confidence: 0.84, horizon: 'now' },
-      { cls: 'h1',  title: '🟡 1시간 내',  actions: '보온 커튼 전개 준비', reason: '일몰 후 외기 하강 예보', effect: '난방 부하 -25%',    confidence: 0.72, horizon: '1h' },
-      { cls: 'h6',  title: '🟢 6시간 내',  actions: '새벽 단시간 환기 권장', reason: '이슬점 상승 예측',   effect: '결로 위험 억제',    confidence: 0.65, horizon: '6h' },
+      {
+        cls: 'now', horizon: 'now', confidence: 0.84,
+        title: '🔴 즉시 조치', actions: '측창 모터 닫기 권장',
+        reason: '외기 강하 + 풍속 증가', effect: '열 손실 절감 예상',
+        commands: [{ kind: 'side_window_motor', action: 'off' }],
+      },
+      {
+        cls: 'h1', horizon: '1h', confidence: 0.72,
+        title: '🟡 1시간 내', actions: '보온 커튼 전개 준비',
+        reason: '일몰 후 외기 하강 예보', effect: '난방 부하 -25%',
+        commands: [{ kind: 'thermal_curtain_motor', action: 'on' }],
+      },
+      {
+        cls: 'h6', horizon: '6h', confidence: 0.65,
+        title: '🟢 6시간 내', actions: '새벽 단시간 환기 30% 개방',
+        reason: '이슬점 상승 예측', effect: '결로 위험 억제',
+        commands: [{ kind: 'side_window_motor', action: 'set', pct: 30 }],
+      },
     ];
 
     adviceEl.innerHTML = cards.map(function (a) {
@@ -193,8 +208,12 @@
         '<div class="advice-reason">' + _esc(a.reason) + '</div>' +
         '<div class="advice-effect">' + _esc(a.effect) + '</div>' +
         '<div class="advice-buttons">' +
-          '<button class="approve" onclick="window.aotFacilityApprove(\'' + widgetId + '\',\'' +
-            facility.unique_id + '\',\'' + a.horizon + '\')">승인하고 적용</button>' +
+          '<button class="approve aot-fac-approve"' +
+            ' data-widget="' + _esc(widgetId) + '"' +
+            ' data-facility="' + _esc(facility.unique_id) + '"' +
+            ' data-horizon="' + _esc(a.horizon) + '"' +
+            ' data-commands="' + _esc(JSON.stringify(a.commands || [])) + '"' +
+            '>승인하고 적용</button>' +
           '<button onclick="window.aotFacilityModify(\'' + a.horizon + '\')">수정</button>' +
           '<button onclick="window.aotFacilityIgnore(\'' + a.horizon + '\')">무시</button>' +
         '</div>' +
@@ -207,11 +226,50 @@
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
-  // ── Approval handlers (PoC) ───────────────────────────────────────────────────
-  window.aotFacilityApprove = function (widgetId, facilityUuid, horizon) {
-    if (!confirm('AI 권고를 적용하시겠습니까? (' + horizon + ')')) return;
-    alert('권고 적용 기록 (mock). 실제 output 명령 발행은 차기 단계.');
-  };
+  // ── Approval handler (event delegation — data 속성으로 안전하게 전달) ──────────
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.aot-fac-approve');
+    if (!btn) return;
+
+    var facilityUuid = btn.dataset.facility;
+    var horizon      = btn.dataset.horizon;
+    var commands     = [];
+    try { commands = JSON.parse(btn.dataset.commands || '[]'); } catch (_) {}
+
+    var label = horizon === 'now' ? '즉시 조치' : horizon === '1h' ? '1시간 내' : '6시간 내';
+    var summary = commands.map(function (c) {
+      return c.kind + ' → ' + c.action + (c.pct != null ? ' ' + c.pct + '%' : '');
+    }).join(', ');
+
+    if (!confirm('AI 권고를 적용하시겠습니까?\n[' + label + '] ' + summary)) return;
+
+    btn.disabled = true;
+    fetch('/api/geo/facility/' + facilityUuid + '/apply', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ horizon: horizon, commands: commands }),
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (data.ok) {
+        alert('✅ 적용 완료: ' + data.applied + '개 output 명령 전달');
+        btn.textContent = '✅ 적용됨';
+      } else {
+        var msg = '⚠️ 일부 실패 (' + data.applied + '개 성공)';
+        if (data.failed && data.failed.length) {
+          msg += '\n' + data.failed.map(function (f) {
+            return '· ' + f.kind + ': ' + f.reason;
+          }).join('\n');
+        }
+        alert(msg);
+        btn.disabled = false;
+      }
+    })
+    .catch(function (err) {
+      alert('❌ 오류: ' + err);
+      btn.disabled = false;
+    });
+  });
   window.aotFacilityModify = function (horizon) { alert('수정 기능 — 차기 단계 (' + horizon + ')'); };
   window.aotFacilityIgnore = function (horizon) { alert('무시 기록 (mock, ' + horizon + ')'); };
 

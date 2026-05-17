@@ -261,8 +261,29 @@ def evaluate(self, env, profiles, last_uid):
 | G3 | ✅ 완료 | EffectFn 시그니처 `(env, pct, profile=None)`. opening/shade에 면적 가중. 개구부 u_eff 우회 (물리적). 9개 단위 테스트 PASS |
 | G4 | ✅ 완료 | `windward_arc_deg=60°` config + `GateResult.partial`. 강풍 단독 + per-opening 정보 시 windward만 폐쇄. 8개 단위 테스트 PASS |
 | G5 | ✅ 완료 | `lighting`을 `ACTUATOR_KINDS` 정식 등록. `build_env_target`에 `Light_target` 인자 (R2 — 보광 등록 시만 활성). 5개 단위 테스트 PASS |
+| B2-fix | ✅ 완료 (2026-05-18) | `get_facility_integration` 페이로드 일관성 강화 — fitting-only 등록 누락 해소, vent 이중 회계 차단, GeoShape bulk fetch, groups 재조회 제거 |
 
 **전체**: 41/41 단위 테스트 PASS. `test_facility_calc.py` 회귀 없음. 서버 재시작 정상.
+
+### B2-fix — Integration 페이로드 사용 패치 (2026-05-18)
+
+B2 통합(`get_facility_integration` 공유 헬퍼) 도입 후 발견된 4개 데이터 정합/성능 이슈를 일괄 처리.
+
+| 이슈 | 위치 | 수정 |
+|---|---|---|
+| A. fitting-only Output 등록 누락 | `_profile_loader_mixin.py` `if not kind: continue` | `facility_integration.py` 에 `_FITTING_KIND_TO_ACTUATOR_KIND` 매핑 추가 — `window/side_window/door → opening`, `curtain → curtain` 자동 추론. fan 계열은 모호하여 None 유지 (slot 또는 명시 `actuator_kind` 필요) |
+| B. vent 면적 이중 회계 | 동 파일, vent fallback 분기 | `vent_open_source == 'fittings'` 모드에서는 균등 분할 fallback 비활성화. envelope-only 모드에서만 `vent_open_m2 / len(vent_slots)` 적용 |
+| C. GeoShape N+1 쿼리 | actuator 루프 내 `GeoShape.query.filter_by(device_id=...).first()` | 루프 진입 전 `output_uuids_all` 로 한 번에 `in_(...)` bulk fetch → `shape_lookup` dict |
+| D. GeoFacility 재조회 (그룹 파싱) | 섹션 4 `session_scope + GeoFacility.query` | `facility_integration` 반환 dict 에 `actuators_slot_map`, `groups` 포함 → 섹션 4 는 `integ` 만 참조. 사용되지 않게 된 `GeoFacility`, `session_scope`, `AOT_DB_PATH` import 제거 |
+
+**파일**:
+- `aot/aot_flask/geo/facility_integration.py` — `_FITTING_KIND_TO_ACTUATOR_KIND` 추가, fitting kind 추론 2-pass, `actuators_slot_map`/`groups` 페이로드 포함
+- `aot/functions/custom_functions/env_coordinator_impl/_profile_loader_mixin.py` — vent fallback 정책 분기, GeoShape bulk fetch, 그룹 파싱을 integ 페이로드로 전환, 미사용 import 정리
+
+**호환성**:
+- B1 HTTP 엔드포인트(`/api/geo/facility/<uuid>/integration`) 의 응답에 두 키(`actuators_slot_map`, `groups`)가 추가됨. 기존 필드는 그대로 — 프런트엔드 호환.
+- 페이로드 `actuators_resolved` 항목의 `kind` 가 fitting-only 케이스에서 None → 추론된 값으로 채워질 수 있음. 기존 소비자가 `kind` 의 None 을 의미 있게 다루지 않았다면 무영향.
+- GeoFacility 모델에 `groups` 컬럼이 아직 없으므로 `groups` 는 현재 빈 dict. 컬럼 추가 시 그대로 활용.
 
 ---
 

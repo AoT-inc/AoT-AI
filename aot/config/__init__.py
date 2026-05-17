@@ -17,7 +17,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config_translations import TRANSLATIONS as T
 
 MYCODO_VERSION = '8.16.0'
-ALEMBIC_VERSION = 'd0e1f2a3b4c5'
+ALEMBIC_VERSION = 'p5_6_geo_facility_fittings'
 AOT_VERSION = '26.0.7'
 
 # FORCE UPGRADE MASTER
@@ -338,6 +338,10 @@ METHOD_INFO = {
     'Cascade': {
         'name': lg('Method Cascade'),
         'dependencies_module': METHOD_DEP_BASE
+    },
+    'DailyMultiPoint': {
+        'name': f"{lg('Daily')} ({lg('Multi-Point')})",
+        'dependencies_module': METHOD_DEP_BASE
     }
 }
 
@@ -348,7 +352,8 @@ METHODS = [
     ('Daily', METHOD_INFO['Daily']['name']),
     ('DailySine', METHOD_INFO['DailySine']['name']),
     ('DailyBezier', METHOD_INFO['DailyBezier']['name']),
-    ('Cascade', METHOD_INFO['Cascade']['name'])
+    ('Cascade', METHOD_INFO['Cascade']['name']),
+    ('DailyMultiPoint', METHOD_INFO['DailyMultiPoint']['name'])
 ]
 
 PID_INFO = {

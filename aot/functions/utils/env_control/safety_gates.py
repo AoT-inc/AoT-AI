@@ -134,6 +134,10 @@ class SafetyPreGate:
             mask |= GATE_BIT_COLD
             reasons.append('cold_emergency')
 
+        # ── EXT_EXP 단독 발동 → partial gate (개구부만 강제 폐쇄, 내부 제어 지속) ──
+        # 다른 게이트(강우·강풍·폭염·한파·내부 만료)가 함께 발동된 경우는 일반 경로.
+        ext_exp_only = (mask == GATE_BIT_EXT_EXP)
+
         triggered = bool(mask) or (now < self._triggered_until)
         if triggered and mask:
             self._triggered_until = now + cfg.gate_ttl
@@ -158,17 +162,20 @@ class SafetyPreGate:
                             all(p.azimuth_deg is not None for p in opening_profiles))
         per_opening_mode = (wind_only and wind_dir is not None and all_have_azimuth)
 
+        # EXT_EXP 단독: partial=True, triggered=False → L1-L3 계속, 개구부만 강제 폐쇄
+        is_partial = per_opening_mode or ext_exp_only
+
         forced = self._build_forced_commands(mask, profiles, ext, per_opening_mode)
 
         if unique_id:
             write_decision_log(unique_id, 'safety_gate_active', CH_SAFETY_GATE, float(mask))
 
         return GateResult(
-            triggered=(not per_opening_mode),   # 풍향 차등 모드는 partial=True/triggered=False
+            triggered=(not is_partial),   # partial 모드는 triggered=False
             gate_mask=mask,
             forced_commands=forced,
             description=', '.join(reasons),
-            partial=per_opening_mode,
+            partial=is_partial,
         )
 
     def reset_after_release(self):
@@ -232,9 +239,16 @@ class SafetyPreGate:
                 elif p.kind == 'heater':
                     value = 100.0
 
-            if mask & (GATE_BIT_EXT_EXP | GATE_BIT_INT_EXP):
-                # 센서 만료: 모두 안전 기본값
+            if mask & GATE_BIT_INT_EXP:
+                # 내부 센서 만료: 모두 안전 기본값 (제어 불가)
                 value = p.safe_default
+
+            if (mask & GATE_BIT_EXT_EXP) and not (mask & GATE_BIT_INT_EXP):
+                # 외부 센서 단독 만료: 개구부·차광막만 보수적 폐쇄.
+                # 내부 전용 액추에이터(heater/cooler/fogger/co2_injector/curtain)는
+                # L1-L3 제어 지속 → forced 명령 생성 안 함.
+                if p.kind in ('opening', 'shade'):
+                    value = 0.0
 
             if value is not None:
                 cmds[p.actuator_id] = {

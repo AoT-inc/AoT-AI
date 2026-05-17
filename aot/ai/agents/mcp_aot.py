@@ -167,6 +167,24 @@ VIRTUAL_TOOLS = [
                 }
             }
         }
+    },
+    {
+        "tool_name": "get_cumulative_status",
+        "description": "EnvCoordinator 함수의 DLI(일적산광량)·GDD(누적온도) 일별 누적 상태와 부채 현황을 조회합니다. 광량·온도 목표 달성 여부와 보상 제안을 확인할 때 사용하세요.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "function_id": {
+                    "type": "string",
+                    "description": "EnvCoordinator 함수의 unique_id"
+                },
+                "days": {
+                    "type": "integer",
+                    "description": "조회할 최근 일수 (기본값: 7)"
+                }
+            },
+            "required": ["function_id"]
+        }
     }
 ]
 

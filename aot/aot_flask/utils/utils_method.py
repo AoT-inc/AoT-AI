@@ -424,6 +424,46 @@ def method_mod(form_mod_method):
     flash_success_errors(error, action, url_for('routes_method.method_list'))
 
 
+def method_multipoint_save(method):
+    """DailyMultiPoint 제어점 JSON 을 MethodData 에 저장한다."""
+    import json
+    from flask import request as _req
+    error = []
+    action = 'Save DailyMultiPoint'
+
+    try:
+        points_json_str = _req.form.get('points_json', '{}')
+        data = json.loads(points_json_str)
+
+        pts = data.get('points', [])
+        if not isinstance(pts, list) or len(pts) < 2:
+            error.append('최소 2개 이상의 제어점이 필요합니다.')
+        weeks = data.get('weeks', [0])
+        if not isinstance(weeks, list) or len(weeks) < 1:
+            error.append('weeks 열이 최소 1개 이상 필요합니다.')
+        for p in pts:
+            vals = p.get('values', [])
+            if len(vals) != len(weeks):
+                error.append(f'포인트 {p.get("point_id")}의 values 개수가 weeks 와 다릅니다.')
+
+        if not error:
+            md_row = MethodData.query.filter(
+                MethodData.method_id == method.unique_id).first()
+            if md_row is None:
+                import uuid as _uuid
+                md_row = MethodData()
+                md_row.unique_id = str(_uuid.uuid4())
+                md_row.method_id = method.unique_id
+                db.session.add(md_row)
+            md_row.points_json = json.dumps(data, ensure_ascii=False)
+            db.session.commit()
+
+    except Exception as exc_msg:
+        error.append(str(exc_msg))
+
+    flash_success_errors(error, action, url_for('routes_method.method_list'))
+
+
 def method_del(method_id):
     action = '{action} {controller}'.format(
         action=TRANSLATIONS['delete']['title'],

@@ -359,8 +359,17 @@ def return_output_usage(
         output_channels = table_output_channels.query.filter(table_output_channels.output_id == each_output.unique_id).all()
         for each_channel in output_channels:
             channel_options = custom_options_values_output_channels[each_output.unique_id][each_channel.channel]
-            if ('types' in dict_outputs[each_output.output_type]['channels_dict'][each_channel.channel] and
-                    'on_off' in dict_outputs[each_output.output_type]['channels_dict'][each_channel.channel]['types'] and
+            # Dynamic multi-channel outputs (FarmOn, mqtt_multi) declare
+            # channels_dict[0] as a template and register runtime channels
+            # 1..N dynamically; channels_dict[N] raises KeyError for N>=1
+            # which causes this aggregator to skip those channels entirely,
+            # so the Energy Usage / runtime page only ever shows channel 0.
+            # Fall back to the template at [0] for those outputs.
+            ch_def = (dict_outputs[each_output.output_type]['channels_dict'].get(each_channel.channel)
+                      or dict_outputs[each_output.output_type]['channels_dict'].get(0)
+                      or {})
+            if ('types' in ch_def and
+                    'on_off' in ch_def['types'] and
                     'amps' in channel_options):
                 past_1d_hours = output_sec_on(
                     each_output.unique_id, 86400, output_channel=each_channel.channel) / 3600

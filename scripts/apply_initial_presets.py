@@ -31,5 +31,6 @@ if __name__ == "__main__":
     run("create_admin_user.py")
     run("seed_agent_mcp_access.py")
     run("sync_agent_prompts.py")
+    run("seed_crop_presets.py")
     
     print("\n✅ System Presets Applied Successfully.")

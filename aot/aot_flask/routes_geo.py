@@ -1059,6 +1059,128 @@ def api_facility_list():
     return jsonify({'ok': True, 'facilities': result})
 
 
+@blueprint.route('/api/geo/inputs', methods=['GET'])
+@login_required
+def api_geo_inputs():
+    """List active Input devices for binding to sensor fittings.
+
+    Sensors in facility designs need to reference a physical input source
+    (DHT22, DS18B20, ADC channels, etc.) — not an actuator. This endpoint
+    returns a flat lightweight list used by the fitting inspector dropdown.
+    """
+    from aot.databases.models import Input
+    rows = Input.query.filter(Input.is_activated).order_by(Input.name.asc()).all()
+    items = [{
+        'unique_id': r.unique_id,
+        'name': r.name or 'Input',
+        'device': r.device or '',
+    } for r in rows]
+    return jsonify({'ok': True, 'inputs': items})
+
+
+@blueprint.route('/api/geo/outputs', methods=['GET'])
+@login_required
+def api_geo_outputs():
+    """List Output devices for binding to actuating fittings (windows, fans, heaters, fixtures).
+
+    Non-sensor fittings drive a physical output (relay, motor, valve, PWM).
+    This returns a flat lightweight list for the fitting inspector dropdown.
+    """
+    from aot.databases.models import Output
+    rows = Output.query.order_by(Output.name.asc()).all()
+    items = [{
+        'unique_id': r.unique_id,
+        'name': r.name or 'Output',
+        'output_type': r.output_type or '',
+        'interface': r.interface or '',
+    } for r in rows]
+    return jsonify({'ok': True, 'outputs': items})
+
+
+@blueprint.route('/api/geo/facility/<facility_uuid>/integration', methods=['GET'])
+@login_required
+def api_facility_integration(facility_uuid):
+    """Unified Facility view for IEC consumers (Integrated Environment Control).
+
+    Delegates to get_facility_integration() (facility_integration.py) so that
+    the same logic is reusable by the env_coordinator profile loader (B2) without
+    going through HTTP.
+    """
+    from aot.aot_flask.geo.facility_integration import get_facility_integration
+
+    try:
+        result, error = get_facility_integration(facility_uuid)
+    except Exception as exc:
+        current_app.logger.exception('api_facility_integration: unhandled error')
+        return jsonify({'ok': False, 'message': str(exc)}), 500
+
+    if error:
+        status = 404 if 'not found' in error.lower() else 500
+        return jsonify({'ok': False, 'message': error}), status
+
+    return jsonify({'ok': True, **result})
+
+
+@blueprint.route('/api/geo/facility/<facility_uuid>/wind', methods=['GET'])
+@login_required
+def api_facility_wind(facility_uuid):
+    """자연환기 풍압 시뮬레이션 (D1).
+
+    Query params
+    ------------
+    speed  : 풍속 m/s  (default 3.0)
+    dir    : 기상 풍향 0-359° (0=북풍, 90=동풍)  (default 0)
+    pct    : 개구부 개방률 0-100%  (default 100)
+
+    Response
+    --------
+    { ok, effective_ach, inflow_m3h, outflow_m3h,
+      openings[{id, face, world_face, area_m2, cp, flow_m3h, direction, actuator_id}],
+      wind_bias{actuator_id: weight},
+      method, inputs }
+    """
+    from aot.aot_flask.geo.facility_integration import get_facility_integration
+    from aot.aot_flask.geo.facility_wind import compute_natural_ventilation, wind_biased_opening
+
+    try:
+        wind_speed  = float(request.args.get('speed', 3.0))
+        wind_dir    = float(request.args.get('dir',   0.0))
+        opening_pct = float(request.args.get('pct',   100.0))
+    except (TypeError, ValueError) as e:
+        return jsonify({'ok': False, 'message': f'Invalid param: {e}'}), 400
+
+    integ, error = get_facility_integration(facility_uuid)
+    if error:
+        status = 404 if 'not found' in error.lower() else 500
+        return jsonify({'ok': False, 'message': error}), status
+
+    vent_openings   = integ.get('vent_openings') or []
+    capacity_meta   = integ.get('capacity_meta') or {}
+    volume_m3       = float(capacity_meta.get('volume_m3') or 1.0)
+    orientation_deg = float(
+        ((integ.get('geometry_3d') or {}).get('orientation_deg'))
+        or 0.0
+    )
+
+    result = compute_natural_ventilation(
+        vent_openings   = vent_openings,
+        wind_speed_ms   = wind_speed,
+        wind_dir_deg    = wind_dir,
+        orientation_deg = orientation_deg,
+        volume_m3       = volume_m3,
+        opening_pct     = opening_pct,
+    )
+
+    bias = wind_biased_opening(vent_openings, wind_dir, orientation_deg)
+
+    return jsonify({
+        'ok':            True,
+        'facility_uuid': facility_uuid,
+        'wind_bias':     bias,
+        **result,
+    })
+
+
 @blueprint.route('/api/geo/facility/compute', methods=['POST'])
 @login_required
 def api_facility_compute():
@@ -1137,52 +1259,280 @@ def api_facility_delete(facility_uuid):
 def api_facility_runtime(facility_uuid):
     """Real-time runtime snapshot for the 3D facility widget.
 
-    Returns actuator states (mapped outputs) + indoor/outdoor environment.
-    MVP: actuator state resolves against Output table; environment is mock
-    until sensor zone wiring is implemented (Phase 2).
+    Returns:
+        actuator_states : live on/off+percent via DaemonControl.output_states_all()
+        indoor          : weighted average from facility.sensors (role=indoor_*)
+        outdoor         : facility.sensors (role=outdoor_*) → fallback to
+                          ext_context_collector shared context
+        sensors         : per-sensor detail list (valid/stale/degraded_reason)
+        degraded        : True if any registered sensor is unavailable
     """
+    import time as _time
     from aot.databases.models import GeoFacility, Output
+    from aot.aot_client import DaemonControl
+    from aot.aot_flask.geo.facility_sensors import read_facility_sensors
+
     facility = GeoFacility.query.filter_by(unique_id=facility_uuid).first()
     if not facility:
         return jsonify({'ok': False, 'message': 'Facility not found'}), 404
 
-    actuator_states = {}
-    actuators = facility.actuators or {}
-    for slot_key, output_uuid in actuators.items():
-        if not output_uuid:
-            continue
+    # ── Live output states via daemon ─────────────────────────────────────────
+    try:
+        all_states = DaemonControl().output_states_all() or {}
+    except Exception:
+        all_states = {}
+
+    # ── Actuator name batch lookup ────────────────────────────────────────────
+    actuators_raw = facility.actuators or {}
+
+    def _resolve_pairs(raw):
+        """Yield (slot_key, output_uuid, kind) for both list and dict formats."""
+        if isinstance(raw, list):
+            for i, act in enumerate(raw):
+                uuid = act.get('device_uuid') or ''
+                kind = act.get('kind') or ''
+                if uuid:
+                    yield f'{kind}_{i}' if kind else f'actuator_{i}', uuid, kind
+        else:
+            for slot_key, uuid in raw.items():
+                if uuid:
+                    yield slot_key, uuid, ''
+
+    pairs = list(_resolve_pairs(actuators_raw))
+    uuids = [u for _, u, _ in pairs]
+    output_map = {}
+    if uuids:
         try:
-            output = Output.query.filter_by(unique_id=output_uuid).first()
-            if output:
-                actuator_states[slot_key] = {
-                    'output_uuid': output_uuid,
-                    'name': output.name,
-                    'on': bool(getattr(output, 'is_on', False)),
-                    'percent': None,
-                }
+            rows = Output.query.filter(Output.unique_id.in_(uuids)).all()
+            output_map = {o.unique_id: o.name for o in rows}
         except Exception:
             pass
 
-    # Environment: mock until sensor-zone wiring (Phase 2)
+    actuator_states = {}
+    for slot_key, uuid, kind in pairs:
+        ch_states = all_states.get(uuid, {})
+        raw_state = ch_states.get(0) if isinstance(ch_states, dict) else None
+        on_val = raw_state not in (None, 'off', False, 0)
+        pct = float(raw_state) if isinstance(raw_state, (int, float)) and raw_state not in (0, False) else None
+        entry = {
+            'output_uuid': uuid,
+            'name': output_map.get(uuid, slot_key),
+            'on': on_val,
+            'percent': pct,
+        }
+        if kind:
+            entry['kind'] = kind
+        actuator_states[slot_key] = entry
+
+    # ── Sensor data: facility.sensors 바인딩 ─────────────────────────────────
+    sensor_bindings = facility.sensors or []
+    sensor_result = read_facility_sensors(sensor_bindings)
+
+    indoor  = sensor_result['indoor']
+    outdoor = sensor_result['outdoor']   # 시설 센서에서 읽은 outdoor 값
+
+    # ── Outdoor fallback: ext_context_collector (시설 센서가 없는 항목만 보완) ──
+    # 시설에 outdoor_* 센서가 하나도 없을 때만 전체 교체.
+    # 일부만 없는 경우(예: solar 없음)는 항목별로 None을 유지하고
+    # 외부 컨텍스트로 보완한다.
+    try:
+        from aot.functions.ext_context_collector import (
+            get_shared_context, get_shared_context_ts)
+        ext = get_shared_context() or {}
+        ext_age = _time.time() - get_shared_context_ts()
+        if ext and ext_age < 600:
+            ext_outdoor = {
+                'temp_c':       ext.get('T_ext'),
+                'humidity_pct': ext.get('RH_ext'),
+                'wind_ms':      ext.get('wind'),
+                'wind_deg':     ext.get('wind_dir'),
+                'solar_wm2':    ext.get('solar'),
+            }
+            # 시설 센서에서 읽지 못한 항목(None)만 ext_context 값으로 채운다
+            for key, ext_val in ext_outdoor.items():
+                if outdoor.get(key) is None and ext_val is not None:
+                    outdoor[key] = ext_val
+    except Exception:
+        pass
+
     runtime = {
         'ok': True,
-        'facility_uuid': facility_uuid,
+        'facility_uuid':  facility_uuid,
         'actuator_states': actuator_states,
-        'outdoor': {
-            'temp_c': None,
-            'humidity_pct': None,
-            'wind_ms': None,
-            'wind_deg': None,
-            'solar_wm2': None,
+        'indoor':  indoor,
+        'outdoor': outdoor,
+        'sensors': {
+            'detail':      sensor_result['sensors'],
+            'valid_count': sensor_result['valid_count'],
+            'total_count': sensor_result['total_count'],
+            'degraded':    sensor_result['degraded'],
         },
-        'indoor': {
-            'temp_c': None,
-            'humidity_pct': None,
-            'co2_ppm': None,
-        },
-        '_mock': True,
     }
     return jsonify(runtime)
+
+
+@blueprint.route('/api/geo/facility/<facility_uuid>/apply', methods=['POST'])
+@login_required
+def api_facility_apply(facility_uuid):
+    """AI 권고 승인 — 구조화된 commands를 매핑된 output에 즉시 전달.
+
+    Request body:
+        {
+            "horizon": "now" | "1h" | "6h",
+            "commands": [
+                {"kind": "side_window_motor", "action": "off"},
+                {"kind": "thermal_curtain_motor", "action": "on"},
+                {"kind": "side_window_motor", "action": "set", "pct": 30}
+            ]
+        }
+
+    command.action:
+        "off"  → output_off (채널 0)
+        "on"   → output_on (duration=0, 계속 켬)
+        "set"  → output_on(output_type='value', amount=pct)
+
+    kind 매핑: facility.actuators 배열에서 kind 일치하는 항목의 device_uuid를 수집.
+    구버전(dict) actuators도 key-prefix 매칭으로 처리한다.
+
+    VEE(VirtualExecutionEngine): MEDIUM/HIGH 하드웨어 프로파일에서 사전 충돌 점검.
+    VEE는 advisory-only — 충돌 감지 시에도 실행을 진행하며 결과를 응답에 포함한다.
+
+    Returns:
+        {"ok": True, "applied": N, "failed": [...], "horizon": "...",
+         "simulation": {"conflict_flags": [...], "confidence_score": 0.8, "advisory_only": True}}
+    """
+    if not utils_general.user_has_permission('edit_settings'):
+        return jsonify({'ok': False, 'message': 'Permission denied'}), 403
+
+    from aot.databases.models import GeoFacility
+    from aot.aot_client import DaemonControl
+
+    facility = GeoFacility.query.filter_by(unique_id=facility_uuid).first()
+    if not facility:
+        return jsonify({'ok': False, 'message': 'Facility not found'}), 404
+
+    body = request.get_json(silent=True) or {}
+    horizon  = body.get('horizon', 'now')
+    commands = body.get('commands') or []
+
+    if not commands:
+        return jsonify({'ok': False, 'message': 'commands 없음'}), 400
+
+    # ── VEE 사전 충돌 점검 (advisory-only, MEDIUM/HIGH 프로파일) ─────────────
+    simulation_result = None
+    try:
+        from aot.config.feature_flags import capability_manager
+        if capability_manager.is_enabled('VEE'):
+            from aot.ai.services.virtual_execution_engine import (
+                VirtualExecutionEngine, SimulationRequest, URGENCY_NORMAL, URGENCY_CRITICAL)
+            from aot.functions.ext_context_collector import (
+                get_shared_context, get_shared_context_ts)
+            import time as _time
+
+            ext = get_shared_context() or {}
+            ext_age = _time.time() - get_shared_context_ts()
+            weather = {}
+            if ext and ext_age < 600:
+                weather = {
+                    'temperature_c':  ext.get('T_ext'),
+                    'wind_speed_ms':  ext.get('wind'),
+                }
+
+            urgency = URGENCY_CRITICAL if horizon == 'now' else URGENCY_NORMAL
+            kinds = [c.get('kind', '') for c in commands]
+            sim_req = SimulationRequest(
+                action_payload={
+                    'action_type':  'facility_apply',
+                    'tool_name':    'facility_apply',
+                    'target_id':    facility_uuid,
+                    'kinds':        kinds,
+                    'horizon':      horizon,
+                },
+                spatial_snapshot={},
+                weather_forecast=weather,
+                simulation_horizon_minutes=60 if horizon == '1h' else (360 if horizon == '6h' else 5),
+                urgency_level=urgency,
+            )
+            vee_result = VirtualExecutionEngine().simulate(sim_req)
+            simulation_result = {
+                'conflict_flags':   vee_result.conflict_flags,
+                'confidence_score': vee_result.confidence_score,
+                'proceed_recommended': vee_result.proceed_recommended,
+                'advisory_only':    True,
+            }
+    except Exception:
+        pass  # VEE failure never blocks execution
+
+    # ── actuators → kind 별 device_uuid 인덱스 ──────────────────────────────
+    actuators_raw = facility.actuators or {}
+    kind_to_uuids: dict = {}
+
+    if isinstance(actuators_raw, list):
+        # 신형 배열 포맷: [{kind, device_uuid, ...}]
+        for act in actuators_raw:
+            k = act.get('kind') or ''
+            u = act.get('device_uuid') or ''
+            if k and u:
+                kind_to_uuids.setdefault(k, []).append(u)
+    else:
+        # 구형 딕셔너리 포맷: {slot_key: device_uuid}
+        _KIND_ALIAS = {
+            'side_window_motor':     ['outer_side_vent_motor', 'inner_side_vent_motor', 'side_vent_motor'],
+            'roof_vent_motor':       ['outer_roof_vent_motor', 'inner_roof_vent_motor', 'roof_vent_motor'],
+            'thermal_curtain_motor': ['thermal_curtain', 'thermal_curtain_motor'],
+            'shade_curtain_motor':   ['shade_curtain', 'shade_curtain_motor'],
+            'exhaust_fan':           ['exhaust_fan'],
+            'circulation_fan':       ['circulation_fan'],
+            'heater':                ['heater'],
+            'cooler':                ['cooler'],
+        }
+        for slot_key, uuid in actuators_raw.items():
+            if not uuid:
+                continue
+            for kind, aliases in _KIND_ALIAS.items():
+                if any(slot_key == alias or slot_key.startswith(alias) for alias in aliases):
+                    kind_to_uuids.setdefault(kind, []).append(uuid)
+
+    # ── commands 실행 ────────────────────────────────────────────────────────
+    control = DaemonControl()
+    applied = 0
+    failed  = []
+
+    for cmd in commands:
+        kind   = cmd.get('kind', '')
+        action = cmd.get('action', 'off')
+        pct    = float(cmd.get('pct', 0) or 0)
+        uuids  = kind_to_uuids.get(kind, [])
+
+        if not uuids:
+            failed.append({'kind': kind, 'reason': '매핑된 output 없음'})
+            continue
+
+        for uuid in uuids:
+            try:
+                if action == 'off':
+                    control.output_off(uuid)
+                elif action == 'on':
+                    control.output_on(uuid, output_type='sec', amount=0)
+                elif action == 'set':
+                    control.output_on(uuid, output_type='value', amount=pct)
+                else:
+                    failed.append({'kind': kind, 'uuid': uuid, 'reason': f'알 수 없는 action: {action}'})
+                    continue
+                applied += 1
+            except Exception as exc:
+                failed.append({'kind': kind, 'uuid': uuid, 'reason': str(exc)})
+
+    resp = {
+        'ok':      len(failed) == 0,
+        'applied': applied,
+        'failed':  failed,
+        'horizon': horizon,
+        'facility_uuid': facility_uuid,
+    }
+    if simulation_result is not None:
+        resp['simulation'] = simulation_result
+    return jsonify(resp)
 
 
 @blueprint.route('/geo/layer') # Renamed from /geo/input

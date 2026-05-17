@@ -39,13 +39,13 @@ def method_data(method_id):
     Returns options for a particular method
     This includes sets of (time, setpoint) data.
     """
-    # First method column with general information about method
     method = Method.query.filter(Method.unique_id == method_id).first()
-
-    # User-edited lines of each method
     method_data = MethodData.query.filter(MethodData.method_id == method.unique_id)
+    plot = create_method_handler(method, method_data).get_plot(700)
 
-    return jsonify(create_method_handler(method, method_data).get_plot(700))
+    # DailyMultiPoint: [{"week": N, "data": [...]}] — multi-series JSON
+    # Other types:     [[t, v], ...]                 — single-series JSON
+    return jsonify(plot)
 
 
 @blueprint.route('/method', methods=('GET', 'POST'))
@@ -130,6 +130,29 @@ def method_builder(method_id):
                                method_id=method_id,
                                output_types=output_types(),
                                cascade_method=cascade_method,
+                               form_create_method=form_create_method,
+                               form_add_method=form_add_method,
+                               form_mod_method=form_mod_method)
+
+    if method.method_type == 'DailyMultiPoint':
+        if request.method == 'POST':
+            form_name = request.form.get('form-name')
+            if form_name == 'saveDailyMultiPoint':
+                utils_method.method_multipoint_save(method)
+            elif form_name == 'renameMethod':
+                utils_method.method_mod(form_mod_method)
+            return redirect('/method-build/{method_id}'.format(
+                method_id=method.unique_id))
+
+        # Load existing points_json from the single MethodData row
+        md_row = MethodData.query.filter(
+            MethodData.method_id == method.unique_id).first()
+
+        return render_template('pages/method-build.html',
+                               method=method,
+                               method_data=[md_row] if md_row else [],
+                               method_id=method_id,
+                               output_types=output_types(),
                                form_create_method=form_create_method,
                                form_add_method=form_add_method,
                                form_mod_method=form_mod_method)

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, List, Optional
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 단위 규약 R1 (§3.2)
@@ -130,6 +130,48 @@ class ActuatorProfile:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 복합 액추에이터 그룹 (P2-4)
+# ─────────────────────────────────────────────────────────────────────────────
+
+GROUP_MODES = frozenset({'symmetric', 'windward_diff', 'stacked', 'multi_stage'})
+"""
+그룹 모드 의미:
+
+  symmetric      — 모든 멤버가 리더 명령과 동일한 값 수신.
+                   예) 좌/우 측창이 항상 같이 움직임.
+
+  windward_diff  — 기본은 symmetric 이나 안전 게이트(G4)가 풍상측 멤버를
+                   선택적으로 폐쇄한다. 리더 명령은 풍하측에만 적용.
+
+  stacked        — 단계적 개방. 리더가 threshold_pct(%) 초과 시 팔로워 개방 시작.
+                   예) 하단 측창(리더) → 상단 측창(팔로워).
+
+  multi_stage    — 이중 커튼 등 순서 있는 개폐.
+                   개방: 내부(리더) 먼저 100%, 이후 외부(팔로워) 시작.
+                   폐쇄: 외부(팔로워) 먼저 0%, 이후 내부(리더) 폐쇄.
+"""
+
+
+@dataclass
+class ActuatorGroup:
+    """
+    복합 액추에이터 그룹 정의.
+
+    GeoFacility.groups JSON 에 기술되며 _reload_profiles() 에서 파싱된다.
+    Coordinator 는 leader 에만 명령을 내리고, expand_group_commands() 가
+    팔로워들에게 모드별 규칙으로 명령을 확장한다.
+    """
+    group_id: str
+    mode: str                             # GROUP_MODES 중 하나
+    leader_id: str                        # 조율 대상 actuator_id
+    member_ids: List[str] = field(default_factory=list)   # leader 포함 전체
+    threshold_pct: float = 50.0           # stacked 모드: 팔로워 개방 시작 임계값
+
+    def follower_ids(self) -> List[str]:
+        return [m for m in self.member_ids if m != self.leader_id]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 캘리브레이션 머지 규칙 R2 (§3.5)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -161,6 +203,7 @@ class TargetVar:
     tolerance: float
     priority: float = 1.0
     unit: str = ''
+    degraded: bool = False   # P5-3: NATURAL 권한으로 완화된 목표
 
 
 EnvTarget = Dict[str, TargetVar]
@@ -179,6 +222,10 @@ MODE_DEHUMIDIFY   = 'dehumidify'
 MODE_CO2_ENRICH   = 'co2_enrich'
 MODE_CONSERVATION = 'conservation'
 MODE_EMERGENCY    = 'emergency'
+# P5-2: Control Authority 모드 확장
+MODE_DEGRADED     = 'degraded'    # 일부 변수 NATURAL — best-effort
+MODE_NATURAL      = 'natural'     # 모든 능동 변수 NATURAL — 외기 추적만
+MODE_UNATTAINABLE = 'unattainable'  # 목표 도달 불가 (외기 한계)
 
 
 @dataclass
@@ -188,3 +235,4 @@ class SituationReport:
     deviation_native: Dict[str, float]       # 변수별 편차 (native 단위, R1)
     limiting_factor: Optional[str] = None   # 'light'|'co2'|'temperature'|'water'
     modes: list = field(default_factory=list)  # 복합 모드 리스트
+    authority: Dict[str, str] = field(default_factory=dict)  # P5-2: 변수별 제어 권한

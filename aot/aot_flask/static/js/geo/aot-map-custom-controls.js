@@ -786,7 +786,35 @@
                 const itemElements = [];
 
                 if (options.measurements) {
-                    options.measurements.forEach(function(m) {
+                    // [Sorting] VPD 측정값을 맨 왼쪽으로 우선 배치
+                    const vpdSortPatterns = [
+                        'vapor_pressure_deficit',
+                        'vaper_pressure_decifit',
+                        'vapor_pressure_deficite',
+                        'vapor pressure deficit',
+                        'vaper pressure deficit',
+                        'vpd'
+                    ];
+                    const sortedMeasurements = [...options.measurements].sort(function(a, b) {
+                        const aName = (a.name || '').toLowerCase().trim();
+                        const bName = (b.name || '').toLowerCase().trim();
+                        const aIsVPD = vpdSortPatterns.some(function(p) { return aName.includes(p); });
+                        const bIsVPD = vpdSortPatterns.some(function(p) { return bName.includes(p); });
+                        if (aIsVPD && !bIsVPD) return -1;
+                        if (!aIsVPD && bIsVPD) return 1;
+                        return 0;
+                    });
+
+                    // [Formatting] VPD 이름 정규화 패턴 (유사 이름 포함)
+                    const vpdDisplayPatterns = [
+                        'vapor_pressure_deficit',
+                        'vaper_pressure_decifit',
+                        'vapor_pressure_deficite',
+                        'vapor pressure deficit',
+                        'vaper pressure deficit'
+                    ];
+
+                    sortedMeasurements.forEach(function(m) {
                         // Resolve display unit: aotMapUnits has proper symbols (m/s, °C, etc.)
                         const resolvedUnit = (window.aotMapUnits && window.aotMapUnits[m.id]) || m.unit || '';
                         const isBearing = (resolvedUnit === 'bearing' || m.unit === 'bearing');
@@ -830,7 +858,11 @@
 
                         const nameSpan = document.createElement('span');
                         nameSpan.className = 'aot-meas-name';
-                        nameSpan.innerText = m.name || '';
+                        let displayName = m.name || '';
+                        if (vpdDisplayPatterns.some(function(p) { return displayName.toLowerCase().includes(p); })) {
+                            displayName = 'VPD';
+                        }
+                        nameSpan.innerText = displayName;
                         nameRow.appendChild(nameSpan);
 
                         item.appendChild(valueDiv);

@@ -124,53 +124,22 @@
 
 <script type="text/javascript">
   function initGrid() {
-    let targetColumn = (window.innerWidth <= 768) ? 1 : 24;
-    
-    // Recalculate cellHeight from DOM if possible
-    let targetHeight = 52; // Phase 9-1: Fixed cellHeight 52px (48px content + 4px gap)
+    if (window.grid) return; // Already initialized; CSS handles mobile layout.
 
-    if (window.grid) {
-      window.grid.batchUpdate(true);
-      
-      // Update column count if changed
-      if (window.grid.getColumn() !== targetColumn) {
-        window.grid.column(targetColumn, 'moveScale');
-      }
-      
-      // Always sync height and force 100% width on mobile
-      window.grid.cellHeight(targetHeight);
-      
-      if (targetColumn === 1) {
-        window.grid.engine.nodes.forEach(node => {
-          window.grid.update(node.el, { w: 1, x: 0 });
-        });
-      } else if (targetColumn === 24) {
-        window.grid.engine.nodes.forEach(node => {
-          window.grid.update(node.el, { w: 24, x: 0 });
-        });
-      }
-      
-      window.grid.batchUpdate(false);
-    } else {
-      window.grid = GridStack.init({
-        animate: true,
-        cellHeight: 52,
-        column: targetColumn,
-        margin: 2,
-        handle: '.aot-entry-drag-handle',
-        float: false,
-        disableOneColumnMode: true,
-        alwaysShowResizeHandle: false,
-        resizable: false
-      }, '.aot-entry-container');
-    }
+    window.grid = GridStack.init({
+      animate: true,
+      cellHeight: 52,
+      column: 24,
+      margin: 2,
+      handle: '.aot-entry-drag-handle',
+      float: false,
+      disableOneColumnMode: true,
+      alwaysShowResizeHandle: false,
+      resizable: false
+    }, '.aot-entry-container');
 
-    // Save only on user-initiated drag completion. 'change' fires during
-    // column transitions / programmatic updates (e.g. window resize) and
-    // would otherwise overwrite the saved order with transient layouts.
-    window.grid.off('dragstop');
     window.grid.on('dragstop', function (event, el) {
-      if (window.grid.getColumn() === 1) return;
+      if (window.innerWidth <= 768) return; // No save on mobile viewport.
 
       let serializedFull = window.grid.save(false);
       $.ajax({
@@ -190,8 +159,7 @@
   $(window).on('resize', function() {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(function() {
-      initGrid();
-      if (window.grid && typeof window.grid.onParentResize === 'function') window.grid.onParentResize(); // Force immediate calculation
+      if (window.grid && typeof window.grid.onParentResize === 'function') window.grid.onParentResize();
     }, 50);
   });
 
@@ -572,94 +540,33 @@
                 type: "GET",
                 url: '/function?function_type=actions&function_id=' + data.data.function_id + '&action_id=' + data.data.action_id,
                 success: function (new_options) {
+                  // Append the new card HTML into the grid container. The grid's
+                  // MutationObserver (installed by init_gridstack_actions) detects
+                  // the new .grid-stack-item, calls grid.makeWidget on it,
+                  // initializes selectpicker/clockpicker, attaches ResizeObserver,
+                  // and triggers _adjustHeights — no per-call init logic needed.
                   var gridId = 'mod_function_actions_' + data.data.function_id;
                   var gridEl = document.getElementById(gridId);
-                  var grid = gridEl ? gridEl.gridstack : null;
 
-                  // [Fix] Force initialization if missing (e.g. new empty sequence)
-                  if (!grid && gridEl && gridEl.classList.contains('grid-stack')) {
-                    try {
-                      console.log('GridStack not initialized. Forcing init for ' + gridId);
-                      grid = GridStack.init({
-                        column: 12,
-                        cellHeight: 42,
-                        animate: true,
-                        float: false,
-                        disableResize: true,
-                        removable: false,
-                        margin: 2
-                      }, gridEl);
-                      window[gridId] = grid;
-                    } catch (e) {
-                      console.warn('GridStack auto-init failed:', e);
-                    }
-                  }
-
-                  if (grid && grid.makeWidget) {
-                    // Parse HTML to DOM so gs-h/gs-w/gs-y attributes are honored.
-                    // addWidget(htmlString) drops these attributes in GridStack v6+,
-                    // collapsing multi-row actions (sequence gs_h=3, custom gs_h=4) to h=1.
+                  if (gridEl) {
                     var tmpWrap = document.createElement('div');
                     tmpWrap.innerHTML = (new_options || '').trim();
                     var newItem = tmpWrap.firstElementChild;
-                    if (newItem) {
-                      gridEl.appendChild(newItem);
-                      if (!newItem.gridstackNode) {
-                        grid.makeWidget(newItem);
-                      }
-                      grid.compact();
-
-                      try {
-                        if (typeof grid._updateStyles === 'function') {
-                          grid._updateStyles(grid.getRow() + 1);
-                        }
-                      } catch (e) {
-                        console.warn('GridStack _updateStyles failed:', e);
-                      }
-
-                      try {
-                        $(newItem).find('.selectpicker').selectpicker();
-                        $(newItem).find('.clockpicker').clockpicker();
-                      } catch (e) {
-                        console.warn('Plugin initialization failed for new widget:', e);
-                      }
-                    }
-
+                    if (newItem) gridEl.appendChild(newItem);
                     popup_response(data);
                   } else {
-                    var actionContainer = document.getElementById(gridId);
-                    if (actionContainer) {
-                      actionContainer.insertAdjacentHTML('beforeend', (new_options));
-
-                      // [Fix] Explicitly initialize new widget
-                      var gridEl2 = document.getElementById(gridId);
-                      if (gridEl2 && gridEl2.gridstack) {
-                        var addedNode = actionContainer.lastElementChild;
-                        if (addedNode && !addedNode.gridstackNode) {
-                          gridEl2.gridstack.makeWidget(addedNode);
-                        }
-                      } else if (window[gridId] && window[gridId].makeWidget) {
-                        var addedNode = actionContainer.lastElementChild;
-                        if (addedNode && !addedNode.gridstackNode) {
-                          window[gridId].makeWidget(addedNode);
-                        }
+                    // Container missing — full refresh of the function options.
+                    $.ajax({
+                      type: 'GET',
+                      url: '/function?function_type=options&function_id=' + data.data.function_id,
+                      success: function (new_options_full) {
+                        $('#mod_function_' + data.data.function_id).html(new_options_full);
+                        popup_response(data);
+                      },
+                      error: function () {
+                        window.showToast('{{ _("Error: Could not get new Function options.") }}', 'error');
                       }
-                      popup_response(data);
-                    } else {
-                      console.warn('Action container not found: mod_function_actions_' + data.data.function_id);
-                      // Fallback to full refresh
-                      $.ajax({
-                        type: "GET",
-                        url: '/function?function_type=options&function_id=' + data.data.function_id,
-                        success: function (new_options_full) {
-                          $('#mod_function_' + data.data.function_id).html(new_options_full);
-                          popup_response(data);
-                        },
-                        error: function () {
-                          window.showToast('{{ _("Error: Could not get new Function options.") }}', 'error');
-                        }
                       });
-                    }
                   }
                 },
                 error: function () {

@@ -20,7 +20,7 @@ from typing import Dict, List, Optional, Tuple
 from .types import (
     EnvContext, EnvTarget, SituationReport, TargetVar,
     MODE_COOLING, MODE_HEATING, MODE_HUMIDIFY, MODE_DEHUMIDIFY,
-    MODE_CO2_ENRICH, MODE_CONSERVATION,
+    MODE_CO2_ENRICH, MODE_CONSERVATION, MODE_DEGRADED, MODE_NATURAL,
 )
 
 
@@ -77,6 +77,7 @@ def assess(
     last_ext_ts: Optional[float] = None,
     last_int_ts: Optional[float] = None,
     trend_state: Optional[TrendState] = None,
+    authority: Optional[Dict] = None,
 ) -> Tuple[SituationReport, TrendState]:
     """
     L2 상황 평가: 편차 계산 + VPD 분해 + 추세 + 제한 인자 + 운전 모드.
@@ -149,12 +150,30 @@ def assess(
     # ── D3: 운전 모드 결정 ────────────────────────────────────────────────────
     modes = _decide_modes(working_target, ctx, limiting)
 
+    # ── P5-2/P5-3: Authority 기반 모드 보강 + 목표 완화 ─────────────────────
+    auth = authority or {}
+    if auth:
+        from .authority import degrade_target, is_all_natural, LEVEL_NATURAL
+        if is_all_natural(auth):
+            if MODE_NATURAL not in modes:
+                modes = [MODE_NATURAL] + [m for m in modes if m != MODE_CONSERVATION]
+            # 모든 NATURAL → 목표를 외기에 맞게 완화
+            degrade_target(working_target, auth, external)
+        else:
+            has_natural = any(v == LEVEL_NATURAL for v in auth.values())
+            if has_natural:
+                if MODE_DEGRADED not in modes:
+                    modes = modes + [MODE_DEGRADED]
+                # 일부 NATURAL 변수만 완화
+                degrade_target(working_target, auth, external)
+
     report = SituationReport(
         context=ctx,
         target=working_target,
         deviation_native=deviation,
         limiting_factor=limiting,
         modes=modes,
+        authority=auth,
     )
     return report, ts
 
@@ -385,7 +404,72 @@ def _decompose_vpd(target: EnvTarget, ctx: EnvContext) -> EnvTarget:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 유틸리티
+# 공개 유틸리티 (테스트·외부 사용 가능)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def svp(T: float) -> float:
+    """포화 수증기압 [kPa], Magnus 공식. T: °C."""
+    return 0.6108 * math.exp(17.27 * T / (T + 237.3))
+
+
+def compute_vpd(T: float, RH: float) -> float:
+    """실제 VPD [kPa] = SVP(T) × (1 - RH/100)."""
+    return max(0.0, (1 - RH / 100.0) * svp(T))
+
+
+def decompose_vpd_to_T_RH(
+    vpd_target: float,
+    T_int: float,
+    RH_int: float,
+    w_T: float = 0.6,
+) -> Tuple[float, float]:
+    """
+    VPD 목표값을 (T_aux, RH_aux) 보조목표로 분해한다. (P1-1, 설계 §3.1)
+
+    알고리즘:
+      1. 현재 RH 유지 시 VPD 목표를 달성하는 T_needed 를 뉴턴법으로 산출
+      2. T_aux = lerp(T_int, T_needed, w_T)  (w_T 비중만큼 T 이동)
+      3. T_aux 에서 VPD 제약을 정확히 만족하는 RH_aux 를 역산
+      4. RH_aux 를 [0, 100] 으로 클램프
+
+    Args:
+        vpd_target: 목표 VPD [kPa]
+        T_int:      현재 실내 온도 [°C]
+        RH_int:     현재 실내 습도 [%]
+        w_T:        온도 변경 비중 (0=RH만, 1=T만, 기본 0.6)
+
+    Returns:
+        (T_aux, RH_aux) — 보조 목표 (T °C, RH %)
+    """
+    vpd_target = max(0.0, vpd_target)  # 물리적 하한
+
+    # 이미 목표 충족 시 현재값 반환
+    vpd_now = compute_vpd(T_int, RH_int)
+    if abs(vpd_now - vpd_target) < 1e-4:
+        return T_int, RH_int
+
+    # 1. 현재 RH 유지 시 필요한 T_needed
+    T_needed = _invert_svp_for_T(vpd_target, RH_int, T_guess=T_int)
+
+    # 2. w_T 비중만큼 T 이동
+    T_aux = T_int + w_T * (T_needed - T_int)
+    T_aux = max(-10.0, min(50.0, T_aux))
+
+    # 3. T_aux 에서 VPD 제약 정확히 만족하는 RH_aux
+    svp_aux = svp(T_aux)
+    if svp_aux < 1e-9:
+        RH_aux = RH_int
+    else:
+        RH_aux = (1.0 - vpd_target / svp_aux) * 100.0
+
+    # 4. 물리 범위 클램프
+    RH_aux = max(0.0, min(100.0, RH_aux))
+
+    return T_aux, RH_aux
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 내부 유틸리티 (하위 호환 aliases)
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _get_measured(var: str, ctx: EnvContext) -> Optional[float]:
@@ -397,22 +481,22 @@ def _get_measured(var: str, ctx: EnvContext) -> Optional[float]:
     return mapping.get(var)
 
 
+# 기존 코드 호환용 내부 별칭
 def _svp(T: float) -> float:
-    """포화 수증기압 (kPa), Magnus 공식."""
-    return 0.6108 * math.exp(17.27 * T / (T + 237.3))
+    return svp(T)
 
 
 def _compute_vpd(T: float, RH: float) -> float:
-    return (1 - RH / 100.0) * _svp(T)
+    return compute_vpd(T, RH)
 
 
 def _invert_svp_for_T(vpd_target: float, RH: float, T_guess: float = 20.0) -> float:
     """뉴턴법으로 VPD 목표를 만족하는 T 계산 (최대 10회)."""
     T = T_guess
     for _ in range(10):
-        svp = _svp(T)
-        f   = (1 - RH / 100) * svp - vpd_target
-        df  = (1 - RH / 100) * svp * 17.27 * 237.3 / (T + 237.3) ** 2
+        s   = svp(T)
+        f   = (1 - RH / 100) * s - vpd_target
+        df  = (1 - RH / 100) * s * 17.27 * 237.3 / (T + 237.3) ** 2
         if abs(df) < 1e-9:
             break
         T -= f / df

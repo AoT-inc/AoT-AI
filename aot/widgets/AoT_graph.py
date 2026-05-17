@@ -625,19 +625,25 @@ WIDGET_INFORMATION = {
 """,
 
     'widget_dashboard_js': """
-  Highcharts.setOptions({
-    global: {
-      useUTC: false
-    }
-  });
+  if (typeof window._aot_graph_initialized === 'undefined') {
+    window._aot_graph_initialized = true;
 
-  // Change opacity of all chart colors
-  Highcharts.getOptions().colors = Highcharts.map(Highcharts.getOptions().colors, function (color) {
-    return Highcharts.Color(color).setOpacity(0.6).get('rgba');
-  });
+    Highcharts.setOptions({
+      global: {
+        useUTC: false
+      }
+    });
 
-  let note_timestamps = {};
-  let last_output_time_mil = {};  // Store the time (epoch) of the last data point received
+    // Change opacity of all chart colors
+    Highcharts.getOptions().colors = Highcharts.map(Highcharts.getOptions().colors, function (color) {
+      return Highcharts.Color(color).setOpacity(0.6).get('rgba');
+    });
+  }
+
+  if (typeof window.note_timestamps === 'undefined') window.note_timestamps = {};
+  if (typeof window.last_output_time_mil === 'undefined') window.last_output_time_mil = {};
+  var note_timestamps = window.note_timestamps;
+  var last_output_time_mil = window.last_output_time_mil;
 
   function graphMenuFunction(widget_id) {
     var x = document.getElementById("widget-graph-responsive-controls-" + widget_id);
@@ -1149,7 +1155,7 @@ WIDGET_INFORMATION = {
 
       {%- if measurement_id in device_measurements_dict -%}
       {
-        name: "{{this_output.name}}{% if device_measurements_dict[measurement_id].name %} {{device_measurements_dict[measurement_id].name}}{% endif %}",
+        name: "{{this_output.name}}{% if device_measurements_dict[measurement_id].channel is not none %} CH{{device_measurements_dict[measurement_id].channel}}{% endif %}{% if device_measurements_dict[measurement_id].name %} {{device_measurements_dict[measurement_id].name}}{% endif %}",
         
         
         {% if ns.series_type in ['line', 'column'] -%}
@@ -1209,7 +1215,7 @@ WIDGET_INFORMATION = {
       {%- if measurement_id in device_measurements_dict -%}
       {
 
-        name: "{{this_input.name}}{% if device_measurements_dict[measurement_id].name %} {{device_measurements_dict[measurement_id].name}}{% endif %}",
+        name: "{{this_input.name}}{% if device_measurements_dict[measurement_id].channel is not none %} CH{{device_measurements_dict[measurement_id].channel}}{% endif %}{% if device_measurements_dict[measurement_id].name %} {{device_measurements_dict[measurement_id].name}}{% endif %}",
 
         {% if ns.series_type in ['line', 'column'] -%}
         type: '{{ns.series_type}}',
@@ -1265,7 +1271,7 @@ WIDGET_INFORMATION = {
 
       {%- if measurement_id in device_measurements_dict -%}
       {
-      name: "{{each_function.name}}{% if device_measurements_dict[measurement_id].name %} {{device_measurements_dict[measurement_id].name}}{% endif %}",
+      name: "{{each_function.name}}{% if device_measurements_dict[measurement_id].channel is not none %} CH{{device_measurements_dict[measurement_id].channel}}{% endif %}{% if device_measurements_dict[measurement_id].name %} {{device_measurements_dict[measurement_id].name}}{% endif %}",
 
       {% if ns.series_type in ['line', 'column'] -%}
       type: '{{ns.series_type}}',
@@ -1321,7 +1327,7 @@ WIDGET_INFORMATION = {
 
       {%- if measurement_id in device_measurements_dict -%}
     {
-      name: "{{each_pid.name}}{% if device_measurements_dict[measurement_id].name %} {{device_measurements_dict[measurement_id].name}}{% endif %}",
+      name: "{{each_pid.name}}{% if device_measurements_dict[measurement_id].channel is not none %} CH{{device_measurements_dict[measurement_id].channel}}{% endif %}{% if device_measurements_dict[measurement_id].name %} {{device_measurements_dict[measurement_id].name}}{% endif %}",
 
       {% if ns.series_type in ['line', 'column'] -%}
       type: '{{ns.series_type}}',
@@ -1377,7 +1383,7 @@ WIDGET_INFORMATION = {
     {% for each_output in output -%}
       {% for output_and_measurement_ids in graph_output_ids if each_output.unique_id == output_and_measurement_ids.split(',')[0] %}
         {%- set measurement_id = output_and_measurement_ids.split(',')[1] -%}
-    retrieveLiveDataSynchronousGraph('{{each_widget.unique_id}}', {{count_series|count}}, '{{each_output.unique_id}}', 'output', '{{measurement_id}}', {{widget_variables['x_axis_duration_min'] * 1440}}, {{widget_options['enable_xaxis_reset']|int}}, {{widget_options['refresh_seconds']}});
+    retrieveLiveDataSynchronousGraph('{{each_widget.unique_id}}', {{count_series|count}}, '{{each_output.unique_id}}', 'output', '{{measurement_id}}', {{widget_variables['x_axis_duration_min']}}, {{widget_options['enable_xaxis_reset']|int}}, {{widget_options['refresh_seconds']}});
         {%- do count_series.append(1) %}
       {% endfor %}
     {%- endfor -%}
@@ -1385,7 +1391,7 @@ WIDGET_INFORMATION = {
     {% for each_input in input -%}
       {% for input_and_measurement_ids in graph_input_ids if each_input.unique_id == input_and_measurement_ids.split(',')[0] %}
         {%- set measurement_id = input_and_measurement_ids.split(',')[1] -%}
-    retrieveLiveDataSynchronousGraph('{{each_widget.unique_id}}', {{count_series|count}}, '{{each_input.unique_id}}', 'input', '{{measurement_id}}', {{widget_variables['x_axis_duration_min'] * 1440}}, {{widget_options['enable_xaxis_reset']|int}}, {{widget_options['refresh_seconds']}});
+    retrieveLiveDataSynchronousGraph('{{each_widget.unique_id}}', {{count_series|count}}, '{{each_input.unique_id}}', 'input', '{{measurement_id}}', {{widget_variables['x_axis_duration_min']}}, {{widget_options['enable_xaxis_reset']|int}}, {{widget_options['refresh_seconds']}});
         {%- do count_series.append(1) %}
       {% endfor %}
     {%- endfor -%}
@@ -1393,7 +1399,7 @@ WIDGET_INFORMATION = {
     {% for each_function in function -%}
       {% for function_and_measurement_id in graph_function_ids if each_function.unique_id == function_and_measurement_id.split(',')[0] %}
         {%- set measurement_id = function_and_measurement_id.split(',')[1] -%}
-    retrieveLiveDataSynchronousGraph('{{each_widget.unique_id}}', {{count_series|count}}, '{{each_function.unique_id}}', 'function', '{{measurement_id}}', {{widget_variables['x_axis_duration_min'] * 1440}}, {{widget_options['enable_xaxis_reset']|int}}, {{widget_options['refresh_seconds']}});
+    retrieveLiveDataSynchronousGraph('{{each_widget.unique_id}}', {{count_series|count}}, '{{each_function.unique_id}}', 'function', '{{measurement_id}}', {{widget_variables['x_axis_duration_min']}}, {{widget_options['enable_xaxis_reset']|int}}, {{widget_options['refresh_seconds']}});
         {%- do count_series.append(1) %}
       {% endfor %}
     {%- endfor -%}
@@ -1401,14 +1407,14 @@ WIDGET_INFORMATION = {
     {% for each_pid in pid -%}
       {% for pid_and_measurement_id in graph_pid_ids if each_pid.unique_id == pid_and_measurement_id.split(',')[0] %}
         {%- set measurement_id = pid_and_measurement_id.split(',')[1] -%}
-    retrieveLiveDataSynchronousGraph('{{each_widget.unique_id}}', {{count_series|count}}, '{{each_pid.unique_id}}', 'pid', '{{measurement_id}}', {{widget_variables['x_axis_duration_min'] * 1440}}, {{widget_options['enable_xaxis_reset']|int}}, {{widget_options['refresh_seconds']}});
+    retrieveLiveDataSynchronousGraph('{{each_widget.unique_id}}', {{count_series|count}}, '{{each_pid.unique_id}}', 'pid', '{{measurement_id}}', {{widget_variables['x_axis_duration_min']}}, {{widget_options['enable_xaxis_reset']|int}}, {{widget_options['refresh_seconds']}});
         {%- do count_series.append(1) %}
       {% endfor %}
     {%- endfor -%}
 
     {%- for each_tag in tag -%}
       {% for each_id_and_measure in graph_note_tag_ids if each_pid.unique_id == each_id_and_measure.split(',')[0] %}
-    retrieveLiveDataSynchronousGraph('{{each_widget.unique_id}}', {{count_series|count}}, '{{each_id_and_measure.split(',')[1]}}', '{{each_id_and_measure.split(',')[0]}}', {{widget_variables['x_axis_duration_min'] * 1440}}, {{widget_options['enable_xaxis_reset']|int}}, {{widget_options['refresh_seconds']}});
+    retrieveLiveDataSynchronousGraph('{{each_widget.unique_id}}', {{count_series|count}}, '{{each_id_and_measure.split(',')[1]}}', '{{each_id_and_measure.split(',')[0]}}', {{widget_variables['x_axis_duration_min']}}, {{widget_options['enable_xaxis_reset']|int}}, {{widget_options['refresh_seconds']}});
         {%- do count_series.append(1) %}
       {% endfor %}
     {%- endfor -%}

@@ -1,4 +1,4 @@
-{% macro gridstack_action_item(each_action, each_function, is_sequence=False, gs_h=1, wrap_options=False, post_action="/function") %}
+{% macro gridstack_action_item(each_action, each_function, is_sequence=False, gs_h=25, wrap_options=False, post_action="/function") %}
 {% set dict_options = dict_actions.get(each_action.action_type, {}) %}
 {% set each_device = each_action %}
 {% set custom_options_values = custom_options_values_actions %}

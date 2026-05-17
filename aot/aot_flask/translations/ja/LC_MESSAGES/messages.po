@@ -13671,3 +13671,186 @@ msgstr "1月"
 
 msgid "1y"
 msgstr "1年"
+
+msgid "Actuator Kind"
+msgstr "アクチュエーター種類"
+
+msgid "Ball Valve"
+msgstr "ボールバルブ"
+
+msgid "Calibration Direction"
+msgstr "キャリブレーション方向"
+
+msgid "Drives the actuator in the selected direction. Click Stop when done."
+msgstr "選択した方向にアクチュエーターを動作させます。完了したら停止をクリックしてください。"
+
+msgid "Full Travel Time (s)"
+msgstr "全行程時間 (秒)"
+
+msgid "Last Position (%)"
+msgstr "最終位置 (%)"
+
+msgid "Min Command Interval (s)"
+msgstr "最小コマンド間隔 (秒)"
+
+msgid "Output: Close"
+msgstr "出力: 閉じる"
+
+msgid "Output: Open"
+msgstr "出力: 開く"
+
+msgid "Reverse Pause (s)"
+msgstr "逆方向一時停止 (秒)"
+
+msgid "Roof Vent"
+msgstr "屋根換気口"
+
+msgid "Shade Curtain"
+msgstr "遮光カーテン"
+
+msgid "Side Vent"
+msgstr "側面換気口"
+
+msgid "Stops the actuator and saves elapsed time as Full Travel Time."
+msgstr "アクチュエーターを停止し、経過時間を全行程時間として保存します。"
+
+msgid "Thermal Curtain"
+msgstr "保温カーテン"
+
+msgid "Type of actuator being controlled."
+msgstr "制御中のアクチュエーターの種類。"
+
+msgid "on/off Output channel connected to the CLOSE relay."
+msgstr "閉じるリレーに接続されたon/off出力チャンネル。"
+
+msgid "on/off Output channel connected to the OPEN relay."
+msgstr "開くリレーに接続されたon/off出力チャンネル。"
+
+msgid "■ Stop & Save"
+msgstr "■ 停止して保存"
+
+msgid "▶ Start Calibration"
+msgstr "▶ キャリブレーション開始"
+
+msgid "Channel Name"
+msgstr "チャンネル名"
+
+msgid "Control Topic"
+msgstr "制御トピック"
+
+msgid "Off Payload (Control)"
+msgstr "Offペイロード (制御)"
+
+msgid "Off Payload (Status)"
+msgstr "Offペイロード (状態)"
+
+msgid "On Payload (Control)"
+msgstr "Onペイロード (制御)"
+
+msgid "On Payload (Status)"
+msgstr "Onペイロード (状態)"
+
+msgid "Status Topic"
+msgstr "状態トピック"
+
+msgid "Toggle Payload"
+msgstr "トグルペイロード"
+
+msgid "Saved Facilities"
+msgstr "保存済み施設"
+
+msgid "Bays (N)"
+msgstr "ベイ数 (N)"
+
+msgid "Drag the slider or type a value (0–359°)"
+msgstr "スライダーをドラッグするか値を入力してください (0–359°)"
+
+msgid "Click \"Place on Map\" then click the facility center on the map. Form dimensions and rotation update the rectangle in real time."
+msgstr "「地図に配置」をクリックし、地図上で施設の中心をクリックしてください。フォームの寸法と回転がリアルタイムで矩形に反映されます。"
+
+msgid "Standard Arch"
+msgstr "標準アーチ型"
+
+msgid "Eave Height (m)"
+msgstr "軒高 (m)"
+
+msgid "Ridge Height (m)"
+msgstr "棟高 (m)"
+
+msgid "Roof Type"
+msgstr "屋根タイプ"
+
+msgid "Arch"
+msgstr "アーチ型"
+
+msgid "Flat"
+msgstr "平屋根"
+
+msgid "Actuators"
+msgstr "アクチュエーター"
+
+msgid "Heating"
+msgstr "暖房"
+
+msgid "Cooling"
+msgstr "冷房"
+
+msgid "Reference values for mechanical equipment sizing (±5–10%)"
+msgstr "機械設備サイジングの参考値 (±5–10%)"
+
+msgid "Facility 3D View"
+msgstr "施設3Dビュー"
+
+msgid "connected"
+msgstr "連棟"
+
+msgid "double layer"
+msgstr "二重被覆"
+
+msgid "Environment"
+msgstr "環境"
+
+msgid "Indoor temp"
+msgstr "室内温度"
+
+msgid "Indoor humidity"
+msgstr "室内湿度"
+
+msgid "CO₂"
+msgstr "CO₂"
+
+msgid "Outdoor temp"
+msgstr "屋外温度"
+
+msgid "AI Advice"
+msgstr "AIアドバイス"
+
+msgid "Loading…"
+msgstr "読み込み中…"
+
+msgid "No facility selected. Register one at"
+msgstr "施設が選択されていません。次の場所で登録してください:"
+
+msgid "No facilities — register one in /geo/facility"
+msgstr "施設未登録 — /geo/facility で登録してください"
+
+msgid "AoT Facility"
+msgstr "AoT 施設"
+
+msgid "Facility cross-section mimic, environment summary, and AI advice — supports single/connected and single/double envelope."
+msgstr "施設断面ミミック、環境サマリー、AIアドバイス — 単棟/連棟、単層/二重被覆に対応。"
+
+msgid "Refresh interval. 0 to disable."
+msgstr "更新間隔。0で無効化。"
+
+msgid "Facility UUID"
+msgstr "施設UUID"
+
+msgid "unique_id of the selected facility (set via dropdown)."
+msgstr "選択した施設の一意ID（ドロップダウンで設定）。"
+
+msgid "Show AI Advice"
+msgstr "AIアドバイスを表示"
+
+msgid "Display AI recommendation cards (now / 1h / 6h)."
+msgstr "AI推奨カードを表示（現在 / 1時間 / 6時間）。"

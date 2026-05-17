@@ -1628,4 +1628,45 @@ class AoTDataToolService:
         except Exception as e:
             logger.warning(f"[modify_function_options] daemon reload failed (non-fatal): {e}")
 
+    # ─────────────────────────────────────────────────────────────────────
+    # P5-5: Cumulative Goal Tracker query
+    # ─────────────────────────────────────────────────────────────────────
+    @staticmethod
+    def get_cumulative_status(function_id: str, days: int = 7, **kwargs):
+        """최근 N일 DLI·GDD 누적 상태와 부채 보상 제안을 반환한다."""
+        if not function_id:
+            return {"error": "function_id is required"}
+
+        from aot.functions.utils.env_control.cumulative_tracker import load_recent_state
+        rows = load_recent_state(function_id, days=days)
+
+        if not rows:
+            return {
+                "function_id": function_id,
+                "days_requested": days,
+                "records": [],
+                "summary": "누적 데이터 없음 — 함수가 아직 실행되지 않았거나 tracker가 비활성화되어 있습니다.",
+            }
+
+        # 요약: 최근 일의 부채 합산
+        total_debt_dli = sum(r.get('debt_dli') or 0.0 for r in rows)
+        total_debt_gdd = sum(r.get('debt_gdd') or 0.0 for r in rows)
+
+        summary_parts = []
+        if abs(total_debt_dli) > 0.01:
+            direction = "부족" if total_debt_dli > 0 else "과잉"
+            summary_parts.append(f"DLI {direction} {abs(total_debt_dli):.2f} mol/m² ({days}일 합산)")
+        if abs(total_debt_gdd) > 0.01:
+            direction = "부족" if total_debt_gdd > 0 else "과잉"
+            summary_parts.append(f"GDD {direction} {abs(total_debt_gdd):.2f}°C·day ({days}일 합산)")
+
+        return {
+            "function_id": function_id,
+            "days_requested": days,
+            "records": rows,
+            "total_debt_dli": total_debt_dli,
+            "total_debt_gdd": total_debt_gdd,
+            "summary": "、".join(summary_parts) if summary_parts else f"최근 {days}일 목표 달성 양호",
+        }
+
         return {"status": "updated", "function_id": function_id, "updated_keys": list(params.keys())}

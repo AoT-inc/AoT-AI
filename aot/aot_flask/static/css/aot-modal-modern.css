@@ -354,6 +354,7 @@
 .aot-pill-btn {
     border-radius: var(--aot-btn-pill-radius) !important;
     width: var(--aot-common-control-width); /* Fixed width restored */
+    min-width: 54px;
     height: 32px !important;
     font-weight: 600 !important;
     font-size: 0.8rem !important;
@@ -370,9 +371,29 @@
     z-index: 1; /* Below modals (1050) but above normal content */
 }
 
+/* 액션 카드 헤더 행의 삭제/저장 버튼: 고정폭 제거, 콘텐츠 기반 폭 */
+.grid-stack-item .aot-pill-btn {
+    width: auto !important;
+    min-width: 48px !important;
+    padding: 0 0.6rem !important;
+}
+@media (max-width: 575.98px) {
+    .grid-stack-item .aot-pill-btn {
+        min-width: 44px !important;
+        padding: 0 0.45rem !important;
+        font-size: 0.75rem !important;
+    }
+}
+
 /* Modal buttons should stay below modal backdrop */
 .modal .aot-pill-btn {
     z-index: auto; /* Inherit from modal context, stays below modal */
+}
+
+/* Tab Settings modal footer buttons: 120px (narrower than global 160px control width) */
+#tabSettingsModal .modal-footer .aot-pill-btn {
+    width: 120px !important;
+    min-width: 120px !important;
 }
 
 /* Default (non-primary) pill buttons get a visible neutral border */
@@ -779,6 +800,53 @@
     .aot-camera-preview-media {
         width: 100%;
         height: 180px;
+    }
+}
+
+/* SECTION 12: ADD ACTION ROW — RESPONSIVE */
+/* 모바일에서 액션 추가 행을 전체 너비로 확장하여 드롭다운 오버플로 방지 */
+@media (max-width: 575.98px) {
+    .aot-modal-option-row:has(.aot-action-group) {
+        flex-wrap: wrap !important;
+        align-items: flex-start;
+        gap: 6px;
+    }
+    .aot-modal-option-row:has(.aot-action-group) .aot-modal-option-label {
+        flex: 1 1 100% !important;
+        min-width: 100% !important;
+        margin-bottom: 0 !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+    }
+    .aot-modal-option-row:has(.aot-action-group) .aot-modal-option-control {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+    .aot-modal-option-row:has(.aot-action-group) .aot-action-group,
+    .aot-modal-option-row:has(.aot-action-group) .d-flex.aot-control-composite {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+    /* bootstrap-select 버튼이 컨테이너 전체를 채우도록 */
+    .aot-modal-option-row:has(.aot-action-group) .bootstrap-select {
+        width: 100% !important;
+        flex: 1 1 auto !important;
+    }
+}
+
+/* body-container 드롭다운의 모바일 뷰포트 오버플로 방지 */
+@media (max-width: 575.98px) {
+    .bootstrap-select.open > .dropdown-menu,
+    .bootstrap-select.show > .dropdown-menu {
+        max-width: min(320px, calc(100vw - 24px)) !important;
+        overflow-x: hidden !important;
+    }
+    .bootstrap-select .dropdown-menu li a span.text {
+        white-space: normal !important;
+        word-break: break-word;
     }
 }
 

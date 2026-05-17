@@ -1,0 +1,272 @@
+# coding=utf-8
+"""
+env_control/cumulative_tracker.py — DLI·GDD 일별 누적 추적 (P5-5).
+
+매 사이클마다 호출되어 DLI(일적산광량)·GDD(누적온도)를 적산하고,
+부채 발생 시 보상 제안을 생성한다.
+
+보상은 Phase 1: 제안만(suggest-only) — 실제 목표 조정은 _cycle_mixin이 적용 여부 결정.
+
+참조: docs/env_control_enhancement_design.md §3.20
+"""
+
+from __future__ import annotations
+
+import json
+import time
+from dataclasses import dataclass, field
+from datetime import date, datetime, timezone
+from typing import Dict, List, Optional
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 상수
+# ─────────────────────────────────────────────────────────────────────────────
+
+# µmol/m²/s × s → mol/m²  변환 계수 (1 µmol = 1e-6 mol)
+_PPFD_S_TO_MOL = 1.0 / 1_000_000.0
+
+# 보상 한계: 정상 목표의 ±15%
+_COMPENSATION_RATIO = 0.15
+
+# 보상 분산 기간 (day)
+_COMPENSATION_SPREAD_DAYS = 3
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 인-메모리 누적 상태 (사이클 간 보존, DB는 일 단위 마감 시 저장)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@dataclass
+class DailyAccumulator:
+    """하루치 누적 상태 (UTC 자정 기준 초기화)."""
+    date_utc:  date  = field(default_factory=lambda: datetime.now(timezone.utc).date())
+    dli:       float = 0.0    # mol/m²
+    gdd:       float = 0.0    # °C·day (사이클 단위 누적)
+    vpd_h:     float = 0.0    # kPa·h
+    co2_kh:    float = 0.0    # ppm·h / 1000
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 보상 제안
+# ─────────────────────────────────────────────────────────────────────────────
+
+@dataclass
+class CompensationSuggestion:
+    """보상 제안 (Phase 1: suggest-only)."""
+    metric:       str    # 'dli' | 'gdd'
+    direction:    str    # 'increase' | 'decrease'
+    debt:         float  # 부채량 (metric 단위)
+    daily_delta:  float  # 일당 보상량 (metric 단위, spread 적용)
+    authority:    str    # 'ACTIVE' | 'PASSIVE' | 'unattainable'
+    message:      str    # 사람이 읽는 메시지
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 누적 계산 헬퍼
+# ─────────────────────────────────────────────────────────────────────────────
+
+def accumulate_cycle(
+    acc: DailyAccumulator,
+    light_ppfd: Optional[float],
+    T_mean: float,
+    VPD: float,
+    CO2: float,
+    cycle_sec: float,
+    T_base: float = 10.0,
+) -> bool:
+    """한 사이클분 메트릭을 누적한다. 날짜가 바뀌면 True 반환(일 마감 신호)."""
+    now_date = datetime.now(timezone.utc).date()
+    rolled   = now_date != acc.date_utc
+
+    if rolled:
+        # 날짜 바뀜 — 현재 값은 호출자가 DB 저장 후 초기화
+        return True
+
+    h = cycle_sec / 3600.0
+
+    # DLI: PPFD(µmol/m²/s) × cycle_sec(s) × 1e-6 → mol/m²
+    if light_ppfd is not None and light_ppfd > 0:
+        acc.dli   += light_ppfd * _PPFD_S_TO_MOL * cycle_sec
+
+    # GDD: max(0, T_mean - T_base) × (cycle_sec / 86400)
+    acc.gdd   += max(0.0, T_mean - T_base) * (cycle_sec / 86400.0)
+
+    # VPD·h
+    acc.vpd_h += max(0.0, VPD) * h
+
+    # CO2·h / 1000
+    acc.co2_kh += max(0.0, CO2) / 1000.0 * h
+
+    return False
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 보상 제안 생성
+# ─────────────────────────────────────────────────────────────────────────────
+
+def generate_suggestions(
+    debt_dli: float,
+    debt_gdd: float,
+    authority: Dict[str, str],
+    dli_target: Optional[float] = None,
+    gdd_target: Optional[float] = None,
+) -> List[CompensationSuggestion]:
+    """부채 기반 보상 제안을 생성한다 (suggest-only).
+
+    보상량은 _COMPENSATION_SPREAD_DAYS 일에 걸쳐 분산.
+    NATURAL 권한 변수는 'unattainable' 권고.
+    """
+    from .authority import LEVEL_ACTIVE, LEVEL_PASSIVE, LEVEL_NATURAL
+
+    suggestions: List[CompensationSuggestion] = []
+
+    # DLI 부채
+    if dli_target and abs(debt_dli) > dli_target * 0.05:
+        direction = 'increase' if debt_dli > 0 else 'decrease'
+        daily_delta = abs(debt_dli) / _COMPENSATION_SPREAD_DAYS
+        cap = (dli_target * _COMPENSATION_RATIO) if dli_target else daily_delta
+
+        light_auth = authority.get('Light_up', LEVEL_NATURAL)
+        if light_auth == LEVEL_ACTIVE:
+            auth_label = LEVEL_ACTIVE
+            msg = (f'DLI 부채 {debt_dli:.2f} mol/m²: 보광등 강도/시간을 '
+                   f'{daily_delta:.2f} mol/m²/day씩 {_COMPENSATION_SPREAD_DAYS}일 보상 권장')
+        elif light_auth == LEVEL_PASSIVE:
+            auth_label = LEVEL_PASSIVE
+            daily_delta = min(daily_delta, cap)
+            msg = (f'DLI 부채 {debt_dli:.2f} mol/m²: 차광 축소 또는 환기 최소화로 '
+                   f'부분 보상 가능 (max {cap:.2f} mol/m²/day)')
+        else:
+            auth_label = 'unattainable'
+            msg = (f'DLI 부채 {debt_dli:.2f} mol/m²: 보광 액추에이터 미보유 — '
+                   f'목표 완화 또는 사이클 연장 권고')
+
+        suggestions.append(CompensationSuggestion(
+            metric='dli', direction=direction, debt=debt_dli,
+            daily_delta=daily_delta, authority=auth_label, message=msg,
+        ))
+
+    # GDD 부채
+    if gdd_target and abs(debt_gdd) > gdd_target * 0.02:
+        direction = 'increase' if debt_gdd > 0 else 'decrease'
+        daily_delta = abs(debt_gdd) / _COMPENSATION_SPREAD_DAYS
+
+        t_up_auth   = authority.get('T_up',   LEVEL_NATURAL)
+        t_down_auth = authority.get('T_down',  LEVEL_NATURAL)
+
+        if debt_gdd > 0:  # GDD 부족 → T 상향
+            if t_up_auth == LEVEL_ACTIVE:
+                auth_label = LEVEL_ACTIVE
+                msg = (f'GDD 부채 {debt_gdd:.2f}°C·day: 야간 T 목표를 '
+                       f'+{daily_delta:.2f}°C·day/일 씩 {_COMPENSATION_SPREAD_DAYS}일 보상')
+            elif t_up_auth == LEVEL_PASSIVE:
+                auth_label = LEVEL_PASSIVE
+                msg = (f'GDD 부채 {debt_gdd:.2f}°C·day: 보온커튼 사전 폐쇄로 부분 보상')
+            else:
+                auth_label = 'unattainable'
+                msg = f'GDD 부채 {debt_gdd:.2f}°C·day: 난방 미보유 — 사이클 연장 권고'
+        else:  # GDD 과잉 → T 하향
+            if t_down_auth in (LEVEL_ACTIVE, LEVEL_PASSIVE):
+                auth_label = t_down_auth
+                msg = (f'GDD 과잉 {-debt_gdd:.2f}°C·day: 냉방·환기 증가 또는 '
+                       f'차광 증대 권장')
+            else:
+                auth_label = 'unattainable'
+                msg = f'GDD 과잉 {-debt_gdd:.2f}°C·day: 냉방 미보유 — 야간 환기 강화'
+
+        suggestions.append(CompensationSuggestion(
+            metric='gdd', direction=direction, debt=debt_gdd,
+            daily_delta=daily_delta, authority=auth_label, message=msg,
+        ))
+
+    return suggestions
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DB 영속화 헬퍼
+# ─────────────────────────────────────────────────────────────────────────────
+
+def save_daily_state(
+    function_id: str,
+    acc: DailyAccumulator,
+    dli_target: Optional[float],
+    gdd_target: Optional[float],
+    suggestions: List[CompensationSuggestion],
+) -> None:
+    """누적 상태를 FunctionCumulativeState DB에 upsert한다."""
+    try:
+        from aot.config import AOT_DB_PATH
+        from aot.databases.utils import session_scope
+        from aot.databases.models.function_cumulative import FunctionCumulativeState
+
+        now_ts = time.time()
+        debt_dli = (dli_target - acc.dli) if dli_target is not None else 0.0
+        debt_gdd = (gdd_target - acc.gdd) if gdd_target is not None else 0.0
+
+        comp_entries = [
+            {'metric': s.metric, 'authority': s.authority, 'message': s.message,
+             'ts': now_ts}
+            for s in suggestions
+        ]
+
+        with session_scope(AOT_DB_PATH) as sess:
+            row = sess.query(FunctionCumulativeState).filter_by(
+                function_id=function_id, date=acc.date_utc).first()
+            if row is None:
+                row = FunctionCumulativeState(
+                    function_id=function_id, date=acc.date_utc)
+                sess.add(row)
+
+            row.dli_actual  = acc.dli
+            row.gdd_actual  = acc.gdd
+            row.vpd_hours   = acc.vpd_h
+            row.co2_hours   = acc.co2_kh
+            row.dli_target  = dli_target
+            row.gdd_target  = gdd_target
+            row.debt_dli    = debt_dli
+            row.debt_gdd    = debt_gdd
+            row.updated_at  = now_ts
+            if comp_entries:
+                row.append_compensation(comp_entries[0])
+            sess.commit()
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error(
+            'cumulative_tracker: DB 저장 실패 — %s', exc)
+
+
+def load_recent_state(
+    function_id: str,
+    days: int = 7,
+) -> List[dict]:
+    """최근 N일 누적 상태를 리스트로 반환한다 (MCP 도구 지원용)."""
+    try:
+        from aot.config import AOT_DB_PATH
+        from aot.databases.utils import session_scope
+        from aot.databases.models.function_cumulative import FunctionCumulativeState
+
+        with session_scope(AOT_DB_PATH) as sess:
+            rows = (sess.query(FunctionCumulativeState)
+                    .filter_by(function_id=function_id)
+                    .order_by(FunctionCumulativeState.date.desc())
+                    .limit(days)
+                    .all())
+            result = [
+                {
+                    'date':        str(r.date),
+                    'dli_actual':  r.dli_actual,
+                    'dli_target':  r.dli_target,
+                    'gdd_actual':  r.gdd_actual,
+                    'gdd_target':  r.gdd_target,
+                    'debt_dli':    r.debt_dli,
+                    'debt_gdd':    r.debt_gdd,
+                    'vpd_hours':   r.vpd_hours,
+                    'co2_hours':   r.co2_hours,
+                }
+                for r in rows
+            ]
+            sess.expunge_all()
+            return result
+    except Exception:
+        return []

@@ -428,6 +428,323 @@ class CascadeMethod(AbstractMethod):
         return setpoint, False
 
 
+class DailyMultiPointMethod(AbstractMethod):
+    """Daily method with up to 12 control points, monotonic cubic Hermite interpolation,
+    and multi-week (keyframe) evolution.
+
+    v2 points_json schema:
+    {
+      "version": 2,
+      "weeks": [0, 2, 6],          # week numbers, ascending
+      "points": [
+        {"point_id": 0, "t_sec": 0,     "values": [0.6, 0.7, 0.9],
+         "smooth": false, "is_endpoint": true},
+        {"point_id": 1, "t_sec": 43200, "values": [1.2, 1.3, 1.5],
+         "smooth": true,  "is_endpoint": false},
+        {"point_id": 2, "t_sec": 86400, "values": [0.6, 0.7, 0.9],
+         "smooth": false, "is_endpoint": true}
+      ]
+    }
+
+    24h repeating — calculate_setpoint() never returns ended=True.
+    """
+
+    MAX_POINTS = 12
+
+    def __init__(self, method, method_data, logger=None):
+        super().__init__(method, method_data, logger)
+        first = self.method_data_first
+        if first and getattr(first, 'points_json', None):
+            try:
+                import json as _json
+                raw = _json.loads(first.points_json)
+                self._data = _migrate_multipoint(raw)
+            except Exception:
+                self._data = self._default_data()
+        else:
+            self._data = self._default_data()
+
+        self._resolved_cache = None
+        self._resolved_week_floor = None
+
+    @staticmethod
+    def _default_data():
+        return {
+            'version': 2,
+            'weeks': [0],
+            'points': [
+                {'point_id': 0, 't_sec': 0,     'values': [0.8], 'smooth': False,
+                 'is_endpoint': True},
+                {'point_id': 1, 't_sec': 86400, 'values': [0.8], 'smooth': False,
+                 'is_endpoint': True},
+            ],
+        }
+
+    # ── public API ────────────────────────────────────────────────────────────
+
+    def calculate_setpoint(self, now, method_start_time=None,
+                           weeks_elapsed=None, facility_tz=None):
+        """Calculate setpoint for the given timestamp.
+
+        Args:
+            now:             Unix timestamp (float) or datetime.
+            method_start_time: start datetime for internal weeks_elapsed computation
+                               (ignored when weeks_elapsed is supplied explicitly).
+            weeks_elapsed:   Pre-computed fractional weeks (from Function/Growth Schedule).
+                             When supplied, method_start_time is ignored for week selection.
+            facility_tz:     pytz timezone object for the facility.
+                             When supplied, t_sec is derived from local facility time
+                             instead of UTC — fixes the 9-hour offset for e.g. Korea.
+        """
+        if isinstance(now, (int, float)):
+            now_ts = now
+            now_dt_utc = datetime.datetime.utcfromtimestamp(now)
+        elif hasattr(now, 'tzinfo') and now.tzinfo is not None:
+            now_ts = now.timestamp()
+            now_dt_utc = now.replace(tzinfo=None) - now.utcoffset()
+        else:
+            now_dt_utc = now
+            now_ts = None
+
+        # ── weeks_elapsed ────────────────────────────────────────────────────
+        if weeks_elapsed is None:
+            if method_start_time is None:
+                start_dt = datetime.datetime(1900, 1, 1)
+            elif hasattr(method_start_time, 'tzinfo') and method_start_time.tzinfo is not None:
+                start_dt = method_start_time.replace(tzinfo=None) - method_start_time.utcoffset()
+            else:
+                start_dt = method_start_time
+            weeks_elapsed = max(0.0, (now_dt_utc - start_dt).total_seconds() / (7 * 86400))
+
+        # ── t_sec: use facility local time when available ────────────────────
+        if facility_tz is not None and now_ts is not None:
+            try:
+                import pytz as _pytz
+                now_local = datetime.datetime.fromtimestamp(now_ts, tz=facility_tz)
+                t_sec = now_local.hour * 3600 + now_local.minute * 60 + now_local.second
+            except Exception:
+                t_sec = now_dt_utc.hour * 3600 + now_dt_utc.minute * 60 + now_dt_utc.second
+        else:
+            t_sec = now_dt_utc.hour * 3600 + now_dt_utc.minute * 60 + now_dt_utc.second
+
+        week_floor = int(weeks_elapsed)
+        if self._resolved_cache is None or self._resolved_week_floor != week_floor:
+            self._resolved_cache = _resolve_v2_at(self._data, weeks_elapsed)
+            self._resolved_week_floor = week_floor
+
+        return _eval_curve(self._resolved_cache, t_sec), False
+
+    def get_plot(self, max_points_x=700):
+        """Returns list of series dicts for DailyMultiPoint.
+
+        [{"week": 0, "data": [[t_ms, value], ...]},
+         {"week": 2, "data": [[t_ms, value], ...]}, ...]
+        """
+        weeks = self._data.get('weeks', [0])
+        step = max(1, 86400 // max_points_x)
+        series = []
+        for i, w in enumerate(weeks):
+            pts = _resolve_v2_at(self._data, float(w))
+            data = [[t * 1000, _eval_curve(pts, t)] for t in range(0, 86401, step)]
+            series.append({'week': w, 'week_index': i, 'data': data})
+        return series
+
+    def ignore_date(self):
+        return True
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DailyMultiPointMethod 내부 헬퍼
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _migrate_multipoint(data: dict) -> dict:
+    """v1 → v2 자동 변환. v2는 그대로 반환."""
+    if data.get('version', 1) >= 2:
+        return data
+
+    # v1: 각 point 에 'value' 단일 필드 + keyframes 선택
+    points_v1 = data.get('points', [])
+    # keyframes 에서 추가 week 컬럼 수집
+    all_weeks = {0}
+    for p in points_v1:
+        for kf in p.get('keyframes') or []:
+            all_weeks.add(int(kf['week']))
+    weeks = sorted(all_weeks)
+
+    points_v2 = []
+    for p in points_v1:
+        kfs = {int(kf['week']): kf['value'] for kf in (p.get('keyframes') or [])}
+        base = float(p.get('value', 0))
+        values = [float(kfs.get(w, base)) for w in weeks]
+        points_v2.append({
+            'point_id':   p.get('point_id', 0),
+            't_sec':      p.get('t_sec', 0),
+            'values':     values,
+            'smooth':     p.get('smooth', False),
+            'is_endpoint': p.get('is_endpoint', False),
+        })
+
+    return {'version': 2, 'weeks': weeks, 'points': points_v2}
+
+
+def _resolve_v2_at(data: dict, weeks_elapsed: float) -> list:
+    """weeks_elapsed 시점의 단일 곡선 포인트 목록 반환.
+
+    각 포인트의 values[] 를 weeks[] 기준으로 선형 보간하여 단일 value 생성.
+    반환: [{'t_sec': int, 'value': float, 'smooth': bool, 'is_endpoint': bool}, ...]
+    """
+    weeks = data.get('weeks', [0])
+    points = data.get('points', [])
+    resolved = []
+
+    for p in points:
+        vals = p.get('values', [p.get('value', 0)])
+        # weeks 범위 내 보간
+        value = _interp_weeks(weeks, vals, weeks_elapsed)
+        resolved.append({
+            't_sec':      int(p.get('t_sec', 0)),
+            'value':      value,
+            'smooth':     p.get('smooth', False),
+            'is_endpoint': p.get('is_endpoint', False),
+        })
+
+    return sorted(resolved, key=lambda x: x['t_sec'])
+
+
+def _interp_weeks(weeks: list, values: list, w: float) -> float:
+    """weeks/values 배열에서 w 주차 선형 보간."""
+    if not weeks or not values:
+        return 0.0
+    n = min(len(weeks), len(values))
+    if n == 1 or w <= weeks[0]:
+        return float(values[0])
+    if w >= weeks[n - 1]:
+        return float(values[n - 1])
+    for i in range(n - 1):
+        if weeks[i] <= w <= weeks[i + 1]:
+            span = weeks[i + 1] - weeks[i]
+            frac = (w - weeks[i]) / span if span else 0.0
+            return values[i] + frac * (values[i + 1] - values[i])
+    return float(values[-1])
+
+
+def _resolve_points_at(raw_points, weeks_elapsed):
+    """주차(weeks_elapsed)에 따라 각 포인트의 t_sec/value를 키프레임 선형 보간으로 결정."""
+    resolved = []
+    for p in raw_points:
+        kfs = p.get('keyframes') or []
+        if not kfs:
+            resolved.append(dict(p))
+            continue
+
+        kfs_sorted = sorted(kfs, key=lambda k: k['week'])
+        # week=0 기준점이 없으면 포인트 자체 값으로 삽입
+        if not kfs_sorted or kfs_sorted[0]['week'] != 0:
+            kfs_sorted = [{'week': 0, 't_sec': p['t_sec'], 'value': p['value']}] + kfs_sorted
+
+        t_val = float(p['t_sec'])
+        v_val = float(p['value'])
+
+        for i in range(len(kfs_sorted) - 1):
+            k0, k1 = kfs_sorted[i], kfs_sorted[i + 1]
+            if k0['week'] <= weeks_elapsed <= k1['week']:
+                w_span = k1['week'] - k0['week']
+                frac = (weeks_elapsed - k0['week']) / w_span if w_span else 0.0
+                if not p.get('is_endpoint'):
+                    t_val = k0['t_sec'] + frac * (k1['t_sec'] - k0['t_sec'])
+                v_val = k0['value'] + frac * (k1['value'] - k0['value'])
+                break
+        else:
+            # 마지막 키프레임 이후 — 최종값 유지
+            last = kfs_sorted[-1]
+            if not p.get('is_endpoint'):
+                t_val = float(last['t_sec'])
+            v_val = float(last['value'])
+
+        resolved.append({**p, 't_sec': int(round(t_val)), 'value': v_val})
+
+    return sorted(resolved, key=lambda pp: pp['t_sec'])
+
+
+def _eval_curve(points, t_sec):
+    """t_sec(0~86400)에서 곡선 값 반환. smooth 플래그에 따라 선형 또는 Hermite 보간."""
+    if not points:
+        return 0.0
+    pts = sorted(points, key=lambda p: p['t_sec'])
+    t_sec = max(0, min(86400, t_sec))
+
+    if t_sec <= pts[0]['t_sec']:
+        return float(pts[0]['value'])
+    if t_sec >= pts[-1]['t_sec']:
+        return float(pts[-1]['value'])
+
+    for i in range(len(pts) - 1):
+        p0, p1 = pts[i], pts[i + 1]
+        if p0['t_sec'] <= t_sec <= p1['t_sec']:
+            dt = p1['t_sec'] - p0['t_sec']
+            if dt == 0:
+                return float(p0['value'])
+            frac = (t_sec - p0['t_sec']) / dt
+            if not p0.get('smooth') and not p1.get('smooth'):
+                # 선형 보간
+                return p0['value'] + frac * (p1['value'] - p0['value'])
+            else:
+                # Monotonic Cubic Hermite (Fritsch-Carlson)
+                return _hermite_interp(pts, i, frac)
+    return float(pts[-1]['value'])
+
+
+def _hermite_interp(pts, seg_idx, frac):
+    """Fritsch-Carlson monotonic cubic Hermite interpolation for segment seg_idx."""
+    n = len(pts)
+
+    # 1. 인접 기울기 δ
+    deltas = []
+    for i in range(n - 1):
+        dt = pts[i + 1]['t_sec'] - pts[i]['t_sec']
+        if dt == 0:
+            deltas.append(0.0)
+        else:
+            deltas.append((pts[i + 1]['value'] - pts[i]['value']) / dt)
+
+    # 2. 접선 초기화 (끝점은 단측 차분)
+    m = [0.0] * n
+    m[0] = deltas[0]
+    m[n - 1] = deltas[-1]
+    for i in range(1, n - 1):
+        m[i] = (deltas[i - 1] + deltas[i]) / 2.0
+
+    # 3. Fritsch-Carlson 단조성 조건 적용
+    for i in range(n - 1):
+        if abs(deltas[i]) < 1e-12:
+            m[i] = 0.0
+            m[i + 1] = 0.0
+        else:
+            a = m[i]   / deltas[i]
+            b = m[i + 1] / deltas[i]
+            if a < 0 or b < 0:
+                m[i] = 0.0
+                m[i + 1] = 0.0
+            elif a ** 2 + b ** 2 > 9:
+                tau = 3.0 / (a ** 2 + b ** 2) ** 0.5
+                m[i]     = tau * a * deltas[i]
+                m[i + 1] = tau * b * deltas[i]
+
+    # 4. Hermite 기저 함수로 보간
+    i = seg_idx
+    h = pts[i + 1]['t_sec'] - pts[i]['t_sec']
+    y0 = float(pts[i]['value'])
+    y1 = float(pts[i + 1]['value'])
+    m0 = m[i] * h
+    m1 = m[i + 1] * h
+    t = frac
+
+    return (y0 * (2*t**3 - 3*t**2 + 1)
+            + m0 * (t**3 - 2*t**2 + t)
+            + y1 * (-2*t**3 + 3*t**2)
+            + m1 * (t**3 - t**2))
+
+
 def create_method_handler(method, method_data, logger=None):
     """Factory function to create a method handler instance from database method_type.
 

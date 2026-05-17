@@ -9,391 +9,1030 @@
 <script src="/static/js/widget/AoT_facility/three-mesh-bvh.js?v=1"></script>
 <script src="/static/js/widget/AoT_facility/GLTFLoader.js?v=1"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="/static/css/map/map.css" />
 
 <style>
-  .facility-step {
-    background: white;
-    border-radius: 12px;
-    padding: 1rem 1.25rem;
+  /* ── Page title bar ────────────────────────────────────────────────────────── */
+  .fac-page-title {
+    padding: 1.25rem 0 0.75rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  .fac-page-title h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+  .fac-page-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* ── Section group title ───────────────────────────────────────────────────── */
+  .fac-group-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #333;
+    margin: 1.5rem 0 0.3rem 0;
+    padding-left: 4px;
+  }
+  .fac-group-title:first-of-type { margin-top: 0; }
+
+  /* ── Section container ─────────────────────────────────────────────────────── */
+  .fac-section {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 14px;
+    padding: 0 16px;
     margin-bottom: 1rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   }
-  .facility-step h5 {
-    color: #555;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-  }
-  .actuator-row {
+
+  /* ── Option row ────────────────────────────────────────────────────────────── */
+  .fac-row {
     display: flex;
     align-items: center;
-    padding: 0.4rem 0;
-    border-bottom: 1px solid #eef0f2;
+    justify-content: space-between;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid #f0f0f0;
+    gap: 12px;
+    min-height: 2.6rem;
   }
-  .actuator-row:last-child { border-bottom: none; }
-  .actuator-row label {
-    flex: 0 0 220px;
-    margin: 0;
-    font-size: 0.9rem;
-    color: #444;
-  }
-  .actuator-row select { flex: 1; }
+  .fac-row:last-child { border-bottom: none; }
 
+  /* Full-width row variant */
+  .fac-row.fac-row-full {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+    padding: 0.65rem 0;
+  }
+  .fac-row.fac-row-full .fac-label { flex: none; }
+  .fac-row.fac-row-full .fac-body { width: 100%; }
+
+  /* ── Label ─────────────────────────────────────────────────────────────────── */
+  .fac-label {
+    flex: 1 1 auto;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+    line-height: 1.3;
+  }
+  .fac-hint {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: #888;
+    margin-top: 0.15rem;
+  }
+
+  /* ── Control (right side) ──────────────────────────────────────────────────── */
+  .fac-ctrl {
+    flex: 0 0 180px;
+    width: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  .fac-ctrl .fac-input,
+  .fac-ctrl .fac-select { width: 100%; }
+
+  /* ── Input & Select ────────────────────────────────────────────────────────── */
+  .fac-input {
+    box-sizing: border-box;
+    border-radius: 9999px;
+    border: 1px solid #ddd;
+    padding: 0 0.85rem;
+    height: 32px;
+    font-size: 0.875rem;
+    background: #fff;
+    color: #333;
+    width: 100%;
+  }
+  .fac-input:focus { outline: none; border-color: #aaa; }
+
+  .fac-select {
+    box-sizing: border-box;
+    border-radius: 9999px;
+    border: 1px solid #ddd;
+    padding: 0 2rem 0 0.85rem;
+    height: 32px;
+    font-size: 0.875rem;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%23888' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E") no-repeat right 0.75rem center;
+    color: #333;
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+  }
+  .fac-select:focus { outline: none; border-color: #aaa; }
+
+  /* ── Save / actions row ────────────────────────────────────────────────────── */
+  .fac-actions {
+    display: flex;
+    gap: 8px;
+    padding: 0.75rem 0 1.5rem;
+  }
+
+  /* ── Map canvas ────────────────────────────────────────────────────────────── */
   #facility-map-canvas {
     width: 100%;
-    height: 480px;
-    border-radius: 8px;
+    height: 440px;
+    border-radius: 10px;
     background: #eef2f5;
   }
-  .preview-card {
-    background: #f8f9fa;
-    padding: 1rem;
-    border-radius: 8px;
-  }
-  .preview-card .row > div { padding: 0.5rem 0.75rem; }
-  .preview-label { font-size: 0.85rem; color: #666; }
-  .preview-value { font-weight: 600; font-size: 1.1rem; color: #2c3e50; }
-  .preview-disclaimer {
-    color: #999;
-    font-size: 0.8rem;
-    font-style: italic;
-    margin-top: 0.5rem;
+
+  /* ── Facility list ─────────────────────────────────────────────────────────── */
+  #facility-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 0.5rem;
   }
   .facility-list-item {
     cursor: pointer;
-    padding: 0.5rem 0.75rem;
-    border-radius: 6px;
+    padding: 0.45rem 0.75rem;
+    border-radius: 8px;
     transition: background 0.15s;
+    font-size: 0.875rem;
   }
-  .facility-list-item:hover { background: #f0f4f8; }
-  .facility-list-item.active { background: #e3f2fd; font-weight: 600; }
+  .facility-list-item:hover { background: #f4f6f8; }
+  .facility-list-item.active { background: #e0e0e0; font-weight: 600; }
 
-  /* ── 3D Preview panel ─────────────────────────────────────────────────────── */
-  #facility-3d-panel {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.07);
-    overflow: hidden;
-    position: relative;
-    height: 360px;
-    min-height: 180px;
-    width: 100%;
-    margin-bottom: 1rem;
+  /* ── Actuator rows ─────────────────────────────────────────────────────────── */
+  .actuator-row {
+    display: flex;
+    align-items: center;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid #f0f0f0;
+    gap: 12px;
   }
-  #facility-3d-panel canvas {
+  .actuator-row:last-child { border-bottom: none; }
+  .actuator-row label {
+    flex: 0 0 200px;
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+  }
+  .actuator-row select {
+    flex: 1;
+    height: 32px;
+    border-radius: 9999px;
+    border: 1px solid #ddd;
+    padding: 0 0.85rem;
+    font-size: 0.85rem;
+    background: #fff;
+    color: #333;
+  }
+
+  /* ── Capacity preview ──────────────────────────────────────────────────────── */
+  .preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0;
+  }
+  .preview-cell {
+    padding: 0.75rem 0.65rem;
+    border-right: 1px solid #f0f0f0;
+  }
+  .preview-cell:last-child { border-right: none; }
+  .preview-label { font-size: 0.78rem; color: #888; margin-bottom: 0.15rem; }
+  .preview-value { font-size: 1.05rem; font-weight: 700; color: #222; }
+  .preview-disclaimer {
+    font-size: 0.78rem; color: #999; font-style: italic;
+    padding: 0.5rem 0.65rem 0.75rem;
+    border-top: 1px solid #f0f0f0;
+  }
+
+  /* ── IEC 통합 요약 패널 ───────────────────────────────────────────────────── */
+  .integ-meta-strip {
+    display: flex; flex-wrap: wrap; gap: 10px 20px;
+    font-size: 0.82rem; margin-bottom: 0.5rem;
+  }
+  .integ-badge {
+    display: inline-block; padding: 1px 6px; border-radius: 3px;
+    font-size: 0.72rem; font-weight: 600; vertical-align: middle;
+  }
+  .integ-badge-fittings { background: #d4edda; color: #155724; }
+  .integ-badge-envelope  { background: #fff3cd; color: #856404; }
+  .integ-badge-none      { background: #f8d7da; color: #721c24; }
+  .integ-section-label {
+    font-size: 0.78rem; color: #888; font-weight: 600;
+    margin: 0.6rem 0 0.2rem;
+  }
+  .integ-table {
+    width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 0.2rem;
+  }
+  .integ-table th {
+    background: #f5f7fa; color: #666; font-weight: 600;
+    padding: 3px 6px; text-align: left; border-bottom: 1px solid #e8e8e8;
+  }
+  .integ-table td { padding: 3px 6px; border-bottom: 1px solid #f3f3f3; vertical-align: top; }
+  .integ-table tr:last-child td { border-bottom: none; }
+  .integ-slot { color: #999; font-size: 0.76rem; }
+  .integ-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 0.2rem; }
+  .integ-pill {
+    padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;
+    background: #e9f0ff; color: #2c5ab8;
+  }
+  .integ-empty { color: #aaa; font-size: 0.82rem; padding: 0.4rem 0; }
+  .integ-note  { color: #bbb; font-size: 0.74rem; margin-top: 0.5rem; }
+  .integ-loading { color: #aaa; font-size: 0.84rem; }
+  .integ-error   { color: #c00; font-size: 0.82rem; }
+
+  /* ── 3D tool palette (vertical, left side of panel) ───────────────────────── */
+  #facility-3d-tools {
+    position: absolute;
+    top: 8px;
+    left: 6px;
+    z-index: 12;
+    background: rgba(255,255,255,0.95);
+    border-radius: 8px;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+    max-height: calc(100% - 60px);
+    overflow-y: auto;
+    min-width: 92px;
+  }
+  #facility-3d-tools .tool-btn {
+    border: 1px solid rgba(0,0,0,0.12);
+    background: #fff;
+    color: #333;
+    font-size: 0.74rem;
+    font-weight: 600;
+    padding: 5px 6px;
+    cursor: pointer;
+    border-radius: 5px;
+    line-height: 1;
+    text-align: left;
+    min-width: 64px;
+    white-space: nowrap;
+    width: 100%;
+  }
+  #facility-3d-tools .tool-divider {
+    height: 1px;
+    background: rgba(0,0,0,0.08);
+    margin: 2px 2px;
+  }
+  #facility-3d-tools .tool-btn:hover { background: #f0f7ff; border-color: #90caf9; }
+  #facility-3d-tools .tool-btn.active { background: #1976d2; color: #fff; border-color: #1565c0; }
+  #facility-3d-tools .tool-btn:disabled {
+    background: #f5f5f5; color: #aaa; cursor: not-allowed; border-color: rgba(0,0,0,0.06);
+  }
+  /* Accordion group (uses <details>/<summary>) */
+  #facility-3d-tools .tool-group {
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 6px;
+    background: #fafbfc;
+    padding: 0;
+  }
+  #facility-3d-tools .tool-group[open] { background: #fff; }
+  #facility-3d-tools .tool-group > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 5px 7px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #455a64;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 6px;
+    user-select: none;
+  }
+  #facility-3d-tools .tool-group > summary::-webkit-details-marker { display: none; }
+  #facility-3d-tools .tool-group > summary::before {
+    content: '▶';
+    font-size: 0.62rem;
+    color: #90a4ae;
+    transition: transform 0.15s;
+    display: inline-block;
+  }
+  #facility-3d-tools .tool-group[open] > summary::before { transform: rotate(90deg); }
+  #facility-3d-tools .tool-group > summary:hover { background: #f0f7ff; }
+  #facility-3d-tools .tool-group-body {
+    padding: 3px 4px 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  /* ── Right-side fittings list panel ───────────────────────────────────────── */
+  /* Positioned BELOW the view-cube controller (which lives at top:32px and is
+   * ~111px tall: 3x3 of 28px buttons + 2px gaps + 23px projection toggle).
+   * Starting at top:160px leaves a clean ~17px gap so the two never overlap. */
+  #facility-3d-fittings-list {
+    position: absolute;
+    top: 176px;
+    right: 8px;     /* match the view-cube's right offset for visual alignment */
+    bottom: 116px;
+    width: 160px;
+    z-index: 12;
+    background: rgba(255,255,255,0.95);
+    border-radius: 8px;
+    padding: 5px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+    overflow-y: auto;
+    overflow-x: hidden;
+    font-size: 0.78rem;
+  }
+  #facility-3d-fittings-list .fit-list-header {
+    font-weight: 700;
+    color: #555;
+    padding: 2px 4px 4px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 4px;
+    font-size: 0.78rem;
+  }
+  #facility-3d-fittings-list .fit-list-item {
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px 6px;
+    border-radius: 5px;
+    cursor: pointer;
+    color: #333;
+    user-select: none;
+  }
+  #facility-3d-fittings-list .fit-list-item:hover { background: #f0f7ff; }
+  #facility-3d-fittings-list .fit-list-item.selected {
+    background: #e3f2fd; color: #0d47a1; font-weight: 600;
+  }
+  #facility-3d-fittings-list .fit-list-empty {
+    color: #aaa; font-size: 0.74rem; padding: 6px 4px; line-height: 1.3;
+  }
+
+  /* ── Bottom inspector strip ───────────────────────────────────────────────── */
+  #facility-3d-inspector {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 100px;
+    z-index: 12;
+    background: #fafafa;
+    border-top: 1px solid #e0e0e0;
+    padding: 8px 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    box-sizing: border-box;
+  }
+  #facility-3d-inspector .fi-empty {
+    color: #aaa; font-size: 0.82rem; padding: 18px 0; text-align: center;
+  }
+  #facility-3d-inspector .fi-content {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    font-size: 0.78rem; color: #555;
+  }
+  #facility-3d-inspector .fi-content input,
+  #facility-3d-inspector .fi-content select {
+    height: 28px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 0 6px;
+    font-size: 0.8rem;
+    background: #fff;
+  }
+  #facility-3d-inspector .fi-content input[type="number"] { width: 58px; }
+  #facility-3d-inspector .fi-content input[type="text"]   { width: 130px; }
+  #facility-3d-inspector .fi-content select               { width: 110px; }
+  /* Actuator / Input selects need more room to show the linked device label
+   * and the "— 등록된 액추에이터 없음 …" empty-state hint without truncation. */
+  #facility-3d-inspector .fi-content #fi-actuator,
+  #facility-3d-inspector .fi-content #fi-input { width: 220px; }
+  #facility-3d-inspector .fi-content .fi-group {
+    display: flex; align-items: center; gap: 3px;
+    padding: 0 4px; border-left: 1px solid #e0e0e0;
+  }
+  #facility-3d-inspector .fi-content .fi-group:first-of-type { border-left: none; }
+
+  /* ── 3D viewport (the canvas area, surrounded by tools/list/inspector) ────── */
+  #facility-3d-viewport {
+    position: absolute;
+    top: 0;
+    left: 0; right: 0;
+    bottom: 100px;
+  }
+  #facility-3d-viewport canvas {
     display: block;
     width: 100% !important;
     height: 100% !important;
   }
-  #facility-3d-header {
-    position: absolute;
-    top: 0; left: 0; right: 0;
+
+  /* ── Tabs for §2 (Position vs 3D Preview) ────────────────────────────────── */
+  .fac-tabs {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.4rem 0.65rem;
-    background: rgba(255,255,255,0.85);
-    backdrop-filter: blur(4px);
-    z-index: 10;
-    font-size: 0.82rem;
+    gap: 2px;
+    border-bottom: 2px solid #e0e0e0;
+    margin: 0.4rem 0 0.6rem;
+  }
+  .fac-tabs .fac-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 8px 18px;
+    font-size: 0.92rem;
     font-weight: 600;
-    color: #555;
-    border-bottom: 1px solid rgba(0,0,0,0.06);
+    color: #888;
+    cursor: pointer;
+    margin-bottom: -2px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .fac-tabs .fac-tab:hover { color: #1976d2; }
+  .fac-tabs .fac-tab.active {
+    color: #1565c0;
+    border-bottom-color: #1976d2;
+  }
+  .fac-tab-pane { display: none; }
+  .fac-tab-pane.active { display: block; }
+
+  /* ── 3D Preview panel ─────────────────────────────────────────────────────── */
+  #facility-3d-panel {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-top: none;
+    border-radius: 0 0 14px 14px;
+    overflow: hidden;
+    position: relative;
+    height: 540px;
+    min-height: 360px;
+    margin-bottom: 1rem;
   }
   #facility-3d-resize-handle {
     position: absolute;
-    left: 0; right: 0;
-    bottom: 0;
-    height: 8px;
+    left: 0; right: 0; bottom: 0;
+    height: 10px;
     cursor: ns-resize;
-    z-index: 20;
-    background: linear-gradient(to bottom, transparent 40%, #ccc 40%, #ccc 60%, transparent 60%);
+    z-index: 30;     /* above inspector */
+    background: linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.10) 40%, rgba(0,0,0,0.10) 60%, transparent 70%);
+  }
+  #facility-3d-resize-handle:hover {
+    background: linear-gradient(to bottom, transparent 30%, rgba(25,118,210,0.45) 40%, rgba(25,118,210,0.45) 60%, transparent 70%);
+  }
+  #facility-3d-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 0.4rem 0.75rem;
+    background: #fafbfc;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #444;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px 10px 0 0;
+    border-bottom: none;
   }
   #facility-3d-hint {
     position: absolute;
-    bottom: 12px;
-    right: 16px;
+    bottom: 12px; right: 16px;
     font-size: 0.65rem;
-    color: rgba(0,0,0,0.3);
+    color: rgba(0,0,0,0.28);
     pointer-events: none;
     z-index: 10;
-  }
-  #btn-3d-refresh {
-    font-size: 0.72rem;
-    padding: 0.15rem 0.5rem;
-    border-radius: 4px;
   }
 </style>
 {% endblock %}
 
 {% block body %}
-<div class="container-fluid p-3">
+<div class="container py-3">
   {% include 'flash_messages.html' %}
 
   <!-- Title bar -->
-  <div class="mb-3">
-    <h3 class="mb-2">{{ _('Facility Design') }}</h3>
-    <button class="btn btn-outline-secondary aot-pill-btn"
-            onclick="window.location.href='/geo/design'">
-      ← {{ _('Spatial Design Studio') }}
-    </button>
+  <div class="fac-page-title">
+    <h3>{{ _('Facility Design') }}</h3>
+    <div class="fac-page-actions">
+      <a href="/geo/design" class="btn btn-sm btn-outline-secondary">{{ _('Spatial Design Studio') }}</a>
+      <button type="button" class="btn btn-sm btn-primary" id="btn-save-facility">{{ _('Save Facility') }}</button>
+    </div>
   </div>
 
-  <div class="row">
-    <!-- Main editor -->
-    <div class="col-md-12">
+  <!-- ── 1. Map & Site ─────────────────────────────────────────────────────── -->
+  <div class="fac-group-title">1. {{ _('Map & Site') }}</div>
+  <div class="fac-section">
 
-      <!-- Step 1: Map & Site -->
-      <div class="facility-step">
-        <h5>1. {{ _('Map & Site') }}</h5>
-        <div class="form-row">
-          <div class="col-md-6">
-            <label class="small mb-1">{{ _('Map') }}</label>
-            <select id="map-selector" class="form-control">
-              <option value="" disabled selected>{{ _('Select a Map') }}</option>
-              {% for m in map_configs %}
-                <option value="{{ m.unique_id }}"
-                        data-lat="{{ m.latitude or 37.5665 }}"
-                        data-lng="{{ m.longitude or 126.9780 }}"
-                        data-zoom="{{ m.zoom or 13 }}">{{ m.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label class="small mb-1">{{ _('Site') }}</label>
-            <select id="site-selector" class="form-control" disabled>
-              <option value="" disabled selected>{{ _('Select a Map first') }}</option>
-            </select>
-            <small class="text-muted">{{ _('Sites belonging to the selected map') }}</small>
-          </div>
-        </div>
-
-        <!-- Facilities list (moved from sidebar) -->
-        <div class="mt-3">
-          <label class="small mb-1">{{ _('Facilities') }}</label>
-          <div id="facility-list" style="max-height:240px; overflow-y:auto; border:1px solid #e0e0e0; border-radius:4px; padding:6px;">
-            {% for f in facilities %}
-              <div class="facility-list-item"
-                   data-uuid="{{ f.unique_id }}"
-                   onclick="window.location.search='?facility_uuid={{ f.unique_id }}'">
-                <div>{{ f.name }}</div>
-                <small class="text-muted">{{ f.preset }} · {{ f.structure }}{% if f.structure == 'connected' %} (N={{ f.bay_count }}){% endif %}</small>
-              </div>
-            {% else %}
-              <div class="text-muted small">{{ _('No facilities yet.') }}</div>
-            {% endfor %}
-          </div>
-          <button class="btn btn-sm btn-primary mt-2"
-                  onclick="window.location.href='/geo/facility'">
-            + {{ _('New Facility') }}
-          </button>
-        </div>
+    <div class="fac-row">
+      <label class="fac-label">{{ _('Map') }}</label>
+      <div class="fac-ctrl">
+        <select id="map-selector" class="fac-select">
+          <option value="" disabled selected>{{ _('Select a Map') }}</option>
+          {% for m in map_configs %}
+            <option value="{{ m.unique_id }}"
+                    data-lat="{{ m.latitude or 37.5665 }}"
+                    data-lng="{{ m.longitude or 126.9780 }}"
+                    data-zoom="{{ m.zoom or 13 }}">{{ m.name }}</option>
+          {% endfor %}
+        </select>
       </div>
+    </div>
 
-      <!-- Step 2: Position & Orientation -->
-      <div class="facility-step">
-        <h5>2. {{ _('Position & Orientation') }}</h5>
-        <div class="form-row align-items-center mb-2">
-          <div class="col-auto">
-            <label class="font-weight-bold mr-2 mb-0">{{ _('Structure') }}:</label>
-            <div class="btn-group btn-group-sm" role="group">
-              <label class="btn btn-outline-primary active">
-                <input type="radio" name="structure" value="single" checked> {{ _('Single') }}
-              </label>
-              <label class="btn btn-outline-primary">
-                <input type="radio" name="structure" value="connected"> {{ _('Connected') }}
-              </label>
+    <div class="fac-row">
+      <div class="fac-label">
+        {{ _('Site') }}
+        <div class="fac-hint">{{ _('Sites belonging to the selected map') }}</div>
+      </div>
+      <div class="fac-ctrl">
+        <select id="site-selector" class="fac-select" disabled>
+          <option value="" disabled selected>{{ _('Select a Map first') }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="fac-row fac-row-full">
+      <label class="fac-label">{{ _('Saved Facilities') }}</label>
+      <div class="fac-body">
+        <div id="facility-list">
+          {% for f in facilities %}
+            <div class="facility-list-item"
+                 data-uuid="{{ f.unique_id }}"
+                 onclick="window.location.search='?facility_uuid={{ f.unique_id }}'">
+              <div>{{ f.name }}</div>
+              <small class="text-muted">{{ f.preset }} · {{ f.structure }}{% if f.structure == 'connected' %} (N={{ f.bay_count }}){% endif %}</small>
             </div>
-          </div>
-          <div class="col-auto" id="bay-count-container">
-            <label class="mr-2 mb-0">{{ _('Bays') }} (N):</label>
-            <input type="number" id="bay-count" class="form-control form-control-sm d-inline-block"
-                   min="1" max="20" value="1" style="width:80px;">
-          </div>
-          <div class="col-auto" id="spacing-container" style="display:none;">
-            <label class="mr-2 mb-0">{{ _('Spacing (m)') }}:</label>
-            <input type="number" id="spacing-m" class="form-control form-control-sm d-inline-block"
-                   min="0" step="0.1" value="1.0" style="width:80px;">
-          </div>
-          <div class="col-auto ml-auto">
-            <button type="button" class="btn btn-sm btn-primary" id="btn-place-on-map">
-              📍 {{ _('Place on Map') }}
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-clear-shape">
-              🗑 {{ _('Clear') }}
-            </button>
-          </div>
+          {% else %}
+            <div class="text-muted small p-2">{{ _('No facilities yet.') }}</div>
+          {% endfor %}
         </div>
-
-        <div class="form-row align-items-center mb-2">
-          <div class="col-md-9">
-            <label class="small mb-1">
-              {{ _('Rotation') }}: <span id="orientation-value">0</span>°
-            </label>
-            <input type="range" id="orientation-slider"
-                   min="0" max="359" step="1" value="0"
-                   class="form-control-range" style="width:100%;">
-          </div>
-          <div class="col-md-3">
-            <label class="small mb-1">{{ _('Value (0–359)') }}</label>
-            <input type="number" id="orientation-input"
-                   class="form-control form-control-sm"
-                   min="0" max="359" step="1" value="0">
-          </div>
-        </div>
-
-        <div id="facility-map-canvas"></div>
-        <small class="text-muted d-block mt-2">
-          {{ _('Click "Place on Map" then click the facility center on the map. Form dimensions and rotation update the rectangle in real time.') }}
-        </small>
-      </div>
-
-      <!-- 3D Preview (above Spec) -->
-      <div id="facility-3d-panel">
-        <div id="facility-3d-header">
-          <span>§ 3D Preview</span>
-          <div style="display:flex;gap:0.3rem;align-items:center;flex-wrap:wrap;">
-            <span id="facility-3d-asset-badge" style="display:none;font-size:0.75rem;background:#e8f0fe;color:#1565c0;padding:0.2rem 0.55rem;border-radius:10px;"></span>
-            <button id="btn-3d-asset-detach" class="btn btn-sm btn-outline-danger" style="display:none;" onclick="facilityDetachAsset()">✕ 자산 해제</button>
-            <button id="btn-3d-asset-lib" class="btn btn-sm btn-outline-secondary" onclick="facilityOpenAssetLib()">📦 자산 라이브러리</button>
-            <span style="color:#ccc;margin:0 0.1rem;">|</span>
-            <button onclick="facilityExportPNG()" class="btn btn-sm btn-outline-secondary" title="PNG 캡처">🖼</button>
-            <button onclick="facilityExportSpec()" class="btn btn-sm btn-outline-secondary" title="Spec JSON 내보내기">📄 Spec</button>
-            <button id="btn-3d-export-glb" onclick="facilityExportGLB()" class="btn btn-sm btn-outline-secondary" title="GLB 3D 내보내기">📤 GLB</button>
-            <button onclick="document.getElementById('import-spec-input').click()" class="btn btn-sm btn-outline-secondary" title="Spec JSON 불러오기">📥 Spec</button>
-            <button onclick="document.getElementById('import-gltf-input').click()" class="btn btn-sm btn-outline-secondary" title="GLB/GLTF 파일 불러오기">📥 GLB</button>
-            <button id="btn-3d-refresh" class="btn btn-sm btn-outline-primary">↺ {{ _('Refresh') }}</button>
-          </div>
-        </div>
-        <canvas id="facility-3d-canvas"></canvas>
-        <input type="file" id="import-spec-input" accept=".json" style="display:none" onchange="facilityImportSpec(this.files[0]);this.value=''">
-        <input type="file" id="import-gltf-input" accept=".glb,.gltf" style="display:none" onchange="facilityImportGLTF(this.files[0]);this.value=''">
-        <div class="aot-3d-asset-status" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#888;font-size:0.85rem;pointer-events:none;"></div>
-        <div id="facility-3d-hint">우클릭: 회전 · 좌클릭: 팬/선택 · 스크롤: 줌</div>
-        <div id="facility-3d-resize-handle" title="{{ _('Drag to resize') }}"></div>
-      </div>
-
-      <!-- Step 3: Spec -->
-      <div class="facility-step">
-        <h5>3. {{ _('Spec') }}</h5>
-        <div class="form-row mb-3">
-          <div class="col-md-3">
-            <label class="small">{{ _('Name') }}</label>
-            <input type="text" id="facility-name" class="form-control" placeholder="GH-001">
-          </div>
-          <div class="col-md-3">
-            <label class="small">{{ _('Preset') }}</label>
-            <select id="facility-preset" class="form-control">
-              <option value="standard_arch">{{ _('Standard Arch (Vinyl Greenhouse)') }}</option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <label class="small">{{ _('Span (m)') }}</label>
-            <input type="number" id="span-width" class="form-control" value="7" step="0.1">
-          </div>
-          <div class="col-md-2">
-            <label class="small">{{ _('Eave H (m)') }}</label>
-            <input type="number" id="eave-height" class="form-control" value="2" step="0.1">
-          </div>
-          <div class="col-md-2">
-            <label class="small">{{ _('Ridge H (m)') }}</label>
-            <input type="number" id="ridge-height" class="form-control" value="4" step="0.1">
-          </div>
-        </div>
-        <div class="form-row mb-3">
-          <div class="col-md-2">
-            <label class="small">{{ _('Length (m)') }}</label>
-            <input type="number" id="length-m" class="form-control" value="30" step="0.5">
-          </div>
-          <div class="col-md-3">
-            <label class="small">{{ _('Roof type') }}</label>
-            <select id="roof-type" class="form-control">
-              <option value="arch" selected>{{ _('Arch (elliptical)') }}</option>
-              <option value="gable">{{ _('Gable') }}</option>
-              <option value="flat">{{ _('Flat (box)') }}</option>
-            </select>
-          </div>
-        </div>
-
-        <h6 class="mt-3 font-weight-bold">{{ _('Envelope') }}</h6>
-        <div class="form-row mb-2">
-          <div class="col-md-3">
-            <label class="small">{{ _('Layer count') }}</label>
-            <select id="layer-count" class="form-control">
-              <option value="1">1 ({{ _('Single') }})</option>
-              <option value="2">2 ({{ _('Double') }})</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label class="small">{{ _('Outer cover') }}</label>
-            <select id="outer-cover" class="form-control">
-              <option value="vinyl_single">vinyl_single</option>
-              <option value="vinyl_double" selected>vinyl_double</option>
-              <option value="po_film">po_film</option>
-              <option value="polycarbonate">polycarbonate</option>
-              <option value="glass">glass</option>
-            </select>
-          </div>
-          <div class="col-md-3 inner-only" style="display:none;">
-            <label class="small">{{ _('Inner cover') }}</label>
-            <select id="inner-cover" class="form-control">
-              <option value="vinyl_single">vinyl_single</option>
-              <option value="non_woven_fabric" selected>non_woven_fabric</option>
-              <option value="pe_film">pe_film</option>
-              <option value="polycarbonate">polycarbonate</option>
-              <option value="air_cushion">air_cushion</option>
-            </select>
-          </div>
-          <div class="col-md-3 inner-only" style="display:none;">
-            <label class="small">{{ _('Inner control mode') }}</label>
-            <select id="inner-control-mode" class="form-control">
-              <option value="synced">synced</option>
-              <option value="independent">independent</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row mb-2">
-          <div class="col-md-2"><label class="small"><input type="checkbox" id="outer-side-vent"> {{ _('Outer side vent') }}</label></div>
-          <div class="col-md-2"><label class="small"><input type="checkbox" id="outer-roof-vent"> {{ _('Outer roof vent') }}</label></div>
-          <div class="col-md-2 inner-only" style="display:none;"><label class="small"><input type="checkbox" id="inner-side-vent"> {{ _('Inner side vent') }}</label></div>
-          <div class="col-md-2 inner-only" style="display:none;"><label class="small"><input type="checkbox" id="inner-roof-vent"> {{ _('Inner roof vent') }}</label></div>
-          <div class="col-md-2"><label class="small"><input type="checkbox" id="curtain-thermal"> {{ _('Thermal curtain') }}</label></div>
-          <div class="col-md-2"><label class="small"><input type="checkbox" id="curtain-shade"> {{ _('Shade curtain') }}</label></div>
-        </div>
-
-        <h6 class="mt-3 font-weight-bold">{{ _('Actuators (12 slots)') }}</h6>
-        <div id="actuator-list"></div>
-      </div>
-
-      <!-- Step 4: Preview -->
-      <div class="facility-step">
-        <h5>4. {{ _('Capacity Preview') }}</h5>
-        <div class="preview-card">
-          <div class="row">
-            <div class="col-md-3"><div class="preview-label">{{ _('Floor') }}</div><div class="preview-value" id="pv-floor">— m²</div></div>
-            <div class="col-md-3"><div class="preview-label">{{ _('Volume') }}</div><div class="preview-value" id="pv-volume">— m³</div></div>
-            <div class="col-md-3"><div class="preview-label">{{ _('Glazing') }}</div><div class="preview-value" id="pv-glazing">— m²</div></div>
-            <div class="col-md-3"><div class="preview-label">{{ _('Vent open') }}</div><div class="preview-value" id="pv-vent">— m²</div></div>
-            <div class="col-md-3"><div class="preview-label">{{ _('Heating load') }}</div><div class="preview-value" id="pv-heating">— kW</div></div>
-            <div class="col-md-3"><div class="preview-label">{{ _('Cooling load') }}</div><div class="preview-value" id="pv-cooling">— kW</div></div>
-            <div class="col-md-3"><div class="preview-label">{{ _('ACH') }}</div><div class="preview-value" id="pv-ach">— /h</div></div>
-          </div>
-          <div class="preview-disclaimer">
-            ⓘ {{ _('Reference values for mechanical equipment sizing') }} (±5–10%)
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 5: Save -->
-      <div class="d-flex justify-content-end mb-4">
-        <button type="button" class="btn btn-secondary mr-2"
-                onclick="window.location.href='/geo/design'">{{ _('Cancel') }}</button>
-        <button type="button" class="btn btn-primary" id="btn-save-facility">
-          💾 {{ _('Save Facility') }}
-        </button>
+        <button class="btn btn-sm btn-primary"
+                onclick="window.location.href='/geo/facility'">+ {{ _('New Facility') }}</button>
       </div>
     </div>
 
   </div>
+
+  <!-- ── 2. Position & Orientation / 3D Preview (tabs) ─────────────────────── -->
+  <div class="fac-group-title">2. {{ _('Position & 3D Preview') }}</div>
+  <div class="fac-tabs" role="tablist">
+    <button type="button" class="fac-tab active" data-tab="3d"
+            role="tab" aria-selected="true" aria-controls="fac-tab-3d">
+      🧊 시설 3D 미리보기
+    </button>
+    <button type="button" class="fac-tab" data-tab="position"
+            role="tab" aria-selected="false" aria-controls="fac-tab-position">
+      📍 위치 및 방향
+    </button>
+  </div>
+
+  <div id="fac-tab-position" class="fac-tab-pane" role="tabpanel">
+  <div class="fac-section">
+
+    <div class="fac-row">
+      <label class="fac-label">{{ _('Structure') }}</label>
+      <div class="fac-ctrl">
+        <div class="btn-group btn-group-sm" role="group">
+          <label class="btn btn-outline-primary active">
+            <input type="radio" name="structure" value="single" checked> {{ _('Single') }}
+          </label>
+          <label class="btn btn-outline-primary">
+            <input type="radio" name="structure" value="connected"> {{ _('Connected') }}
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="fac-row" id="bay-count-container">
+      <label class="fac-label">{{ _('Bays') }} (N)</label>
+      <div class="fac-ctrl">
+        <input type="number" id="bay-count" class="fac-input" min="1" max="20" value="1">
+      </div>
+    </div>
+
+    <div class="fac-row" id="spacing-container" style="display:none;">
+      <label class="fac-label">{{ _('Spacing (m)') }}</label>
+      <div class="fac-ctrl">
+        <input type="number" id="spacing-m" class="fac-input" min="0" step="0.1" value="1.0">
+      </div>
+    </div>
+
+    <div class="fac-row">
+      <div class="fac-label">
+        {{ _('Rotation') }}: <span id="orientation-value">0</span>°
+        <div class="fac-hint">{{ _('Drag the slider or type a value (0–359°)') }}</div>
+      </div>
+      <div class="fac-ctrl">
+        <input type="number" id="orientation-input" class="fac-input" min="0" max="359" step="1" value="0">
+      </div>
+    </div>
+
+    <div class="fac-row fac-row-full" style="border-bottom:none;">
+      <div class="fac-body">
+        <input type="range" id="orientation-slider" min="0" max="359" step="1" value="0"
+               class="form-control-range mb-3" style="width:100%;">
+        <div class="mb-3" style="display:flex;gap:8px;">
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-clear-shape">{{ _('Clear') }}</button>
+          <button type="button" class="btn btn-sm btn-primary" id="btn-place-on-map">{{ _('Place on Map') }}</button>
+        </div>
+        <div id="facility-map-canvas"></div>
+        <p class="fac-hint mt-2 mb-0">
+          {{ _('Click "Place on Map" then click the facility center on the map. Form dimensions and rotation update the rectangle in real time.') }}
+        </p>
+      </div>
+    </div>
+
+  </div>
+  </div><!-- /#fac-tab-position -->
+
+  <!-- ── 3D Preview (default tab) ─────────────────────────────────────────── -->
+  <div id="fac-tab-3d" class="fac-tab-pane active" role="tabpanel">
+  <!-- Toolbar row sits OUTSIDE the canvas panel so buttons are never overlaid -->
+  <div id="facility-3d-header">
+    <span>§ 3D Preview</span>
+    <div style="display:flex;gap:0.4rem;align-items:center;">
+      <!-- 자산 연결 상태 (JS가 show/hide) -->
+      <span id="facility-3d-asset-badge" style="display:none;font-size:0.75rem;background:#e8f0fe;color:#1565c0;padding:0.15rem 0.5rem;border-radius:10px;font-weight:600;"></span>
+      <button id="btn-3d-asset-detach" class="btn btn-sm btn-outline-danger" style="display:none;" onclick="facilityDetachAsset()">자산 해제</button>
+      <!-- 작업 드롭다운 -->
+      <div class="dropdown">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                id="fac3d-action-menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          도구 &amp; 내보내기
+        </button>
+        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="fac3d-action-menu">
+          <h6 class="dropdown-header">자산</h6>
+          <button id="btn-3d-asset-lib" class="dropdown-item" type="button" onclick="facilityOpenAssetLib()">자산 라이브러리</button>
+          <div class="dropdown-divider"></div>
+          <h6 class="dropdown-header">내보내기</h6>
+          <button class="dropdown-item" type="button" onclick="facilityExportPNG()">PNG 내보내기</button>
+          <button class="dropdown-item" type="button" onclick="facilityExportSpec()">Spec 내보내기</button>
+          <button id="btn-3d-export-glb" class="dropdown-item" type="button" onclick="facilityExportGLB()">GLB 내보내기</button>
+          <div class="dropdown-divider"></div>
+          <h6 class="dropdown-header">불러오기</h6>
+          <button class="dropdown-item" type="button" onclick="document.getElementById('import-spec-input').click()">Spec 불러오기</button>
+          <button class="dropdown-item" type="button" onclick="document.getElementById('import-gltf-input').click()">GLB 불러오기</button>
+          <div class="dropdown-divider"></div>
+          <button id="btn-3d-refresh" class="dropdown-item text-primary font-weight-bold" type="button">{{ _('Refresh') }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="facility-3d-panel">
+    <!-- Vertical tool palette (left): grouped by element category.
+         그룹 1 (창호류): 면적이 변하는 개구부 — 창호/측창/문/커튼
+         그룹 2 (시설물): 고정 크기 — 팬/히터/관수장치/설비
+         그룹 3 (센서류): 위치만 설정 — 센서
+    -->
+    <div id="facility-3d-tools">
+      <button type="button" data-tool=""            data-action="select" class="tool-btn active" title="선택 (Esc)">↖ 선택</button>
+
+      <details class="tool-group" open>
+        <summary>🪟 창호류</summary>
+        <div class="tool-group-body">
+          <button type="button" data-tool="window"      data-action="face" class="tool-btn" title="창호 추가 — 외피 면 클릭">+ 창호</button>
+          <button type="button" data-tool="side_window" data-action="face" class="tool-btn" title="측창 추가 — 측벽 면 클릭">+ 측창</button>
+          <button type="button" data-tool="door"        data-action="face" class="tool-btn" title="출입문 추가 — 외피 면 클릭">+ 출입문</button>
+          <button type="button" data-kind="curtain"     data-action="add"  class="tool-btn" title="커튼 추가 (천정 중앙)">+ 커튼</button>
+        </div>
+      </details>
+
+      <details class="tool-group">
+        <summary>⚙️ 시설물</summary>
+        <div class="tool-group-body">
+          <button type="button" data-tool="fan"     data-action="place" class="tool-btn" title="팬 — 위치 클릭으로 배치">+ 팬</button>
+          <button type="button" data-tool="heater"  data-action="place" class="tool-btn" title="냉난방기 — 위치 클릭으로 배치">+ 냉난방기</button>
+          <button type="button" data-tool="fixture" data-action="place" class="tool-btn" title="설비 — 위치 클릭으로 배치">+ 설비</button>
+          <button type="button" data-action="irrigation" class="tool-btn" disabled title="다음 단계 — geo/design 관수장치 설계 도구 연동 예정">+ 관수장치 (예정)</button>
+        </div>
+      </details>
+
+      <details class="tool-group">
+        <summary>🔬 센서류</summary>
+        <div class="tool-group-body">
+          <button type="button" data-tool="sensor" data-action="place" class="tool-btn" title="센서 — 위치 클릭으로 배치">+ 센서</button>
+        </div>
+      </details>
+
+      <button type="button" data-action="catalog" class="tool-btn" title="geo/design 카탈로그에서 가져오기">📦 카탈로그</button>
+    </div>
+
+    <!-- Right-side fittings list -->
+    <div id="facility-3d-fittings-list">
+      <div class="fit-list-header">Fittings <span id="fit-list-count">(0)</span></div>
+      <div id="fit-list-items"></div>
+    </div>
+
+    <!-- Viewport (canvas wrapper — only this area sizes the WebGL canvas) -->
+    <div id="facility-3d-viewport">
+      <canvas id="facility-3d-canvas"></canvas>
+      <div class="aot-3d-asset-status" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#888;font-size:0.85rem;pointer-events:none;"></div>
+      <div id="facility-3d-hint" style="position:absolute;bottom:8px;right:12px;font-size:0.7rem;color:rgba(0,0,0,0.35);pointer-events:none;">우클릭: 회전 · 좌클릭: 팬/선택 · 스크롤: 줌</div>
+    </div>
+
+    <!-- Bottom inspector (shared property editor) -->
+    <div id="facility-3d-inspector">
+      <div id="fi-empty" class="fi-empty">선택된 fitting 없음 — 좌측 도구로 추가하거나 우측 목록/3D에서 선택하세요.</div>
+      <div id="fi-content" class="fi-content" style="display:none;">
+        <span id="fi-icon" style="font-size:1.1rem;"></span>
+        <div class="fi-group">
+          <input id="fi-name" type="text" placeholder="이름">
+          <select id="fi-kind">
+            <option value="window">창호</option>
+            <option value="door">출입문</option>
+            <option value="side_window">측창</option>
+            <option value="curtain">커튼</option>
+            <option value="fan">팬</option>
+            <option value="heater">히터</option>
+            <option value="sensor">센서</option>
+            <option value="fixture">설비</option>
+          </select>
+        </div>
+        <div class="fi-group">
+          <span style="font-weight:600;">위치</span>
+          x<input id="fi-x" type="number" step="0.1">
+          y<input id="fi-y" type="number" step="0.1" min="0">
+          z<input id="fi-z" type="number" step="0.1">
+        </div>
+        <div class="fi-group">
+          <span style="font-weight:600;">크기</span>
+          w<input id="fi-w" type="number" step="0.1" min="0.05">
+          h<input id="fi-h" type="number" step="0.1" min="0.05">
+          d<input id="fi-d" type="number" step="0.05" min="0.02">
+        </div>
+        <div class="fi-group">
+          <span style="font-weight:600;">회전</span>
+          <input id="fi-rot" type="number" step="5">°
+        </div>
+        <div class="fi-group" id="fi-group-actuator">
+          <span style="font-weight:600;">🔌 액추에이터</span>
+          <select id="fi-actuator" title="이 fitting을 작동시킬 액추에이터 (1개가 여러 fitting 가능)">
+            <option value="">— 없음 —</option>
+          </select>
+        </div>
+        <div class="fi-group" id="fi-group-input" style="display:none;">
+          <span style="font-weight:600;">📡 Input</span>
+          <select id="fi-input" title="이 센서가 가져올 측정 입력 (Input 디바이스)">
+            <option value="">— 없음 —</option>
+          </select>
+        </div>
+        <div class="fi-group">
+          <button id="fi-delete" class="btn btn-sm btn-outline-danger" type="button" style="padding:2px 9px;">✕ 삭제</button>
+        </div>
+      </div>
+    </div>
+
+    <input type="file" id="import-spec-input" accept=".json" style="display:none" onchange="facilityImportSpec(this.files[0]);this.value=''">
+    <input type="file" id="import-gltf-input" accept=".glb,.gltf" style="display:none" onchange="facilityImportGLTF(this.files[0]);this.value=''">
+
+    <!-- Drag handle at the bottom edge to resize the 3D panel vertically -->
+    <div id="facility-3d-resize-handle" title="드래그하여 높이 조절"></div>
+  </div>
+  </div><!-- /#fac-tab-3d -->
+
+  <!-- (Fittings UI is now embedded inside the 3D preview panel above —
+       see vertical tool palette, right-side list, and bottom inspector strip.) -->
+
+  <!-- ── 3. Spec ───────────────────────────────────────────────────────────── -->
+  <div class="fac-group-title">3. {{ _('Spec') }}</div>
+  <div class="fac-section">
+
+    <div class="fac-row">
+      <label class="fac-label">{{ _('Name') }}</label>
+      <div class="fac-ctrl">
+        <input type="text" id="facility-name" class="fac-input" placeholder="GH-001">
+      </div>
+    </div>
+
+    <div class="fac-row">
+      <label class="fac-label">{{ _('Preset') }}</label>
+      <div class="fac-ctrl">
+        <select id="facility-preset" class="fac-select">
+          <option value="standard_arch">{{ _('Standard Arch') }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="fac-row">
+      <label class="fac-label">{{ _('Span (m)') }}</label>
+      <div class="fac-ctrl">
+        <input type="number" id="span-width" class="fac-input" value="7" step="0.1">
+      </div>
+    </div>
+
+    <div class="fac-row">
+      <label class="fac-label">{{ _('Eave Height (m)') }}</label>
+      <div class="fac-ctrl">
+        <input type="number" id="eave-height" class="fac-input" value="2" step="0.1">
+      </div>
+    </div>
+
+    <div class="fac-row">
+      <label class="fac-label">{{ _('Ridge Height (m)') }}</label>
+      <div class="fac-ctrl">
+        <input type="number" id="ridge-height" class="fac-input" value="4" step="0.1">
+      </div>
+    </div>
+
+    <div class="fac-row">
+      <label class="fac-label">{{ _('Length (m)') }}</label>
+      <div class="fac-ctrl">
+        <input type="number" id="length-m" class="fac-input" value="30" step="0.5">
+      </div>
+    </div>
+
+    <div class="fac-row">
+      <label class="fac-label">{{ _('Roof Type') }}</label>
+      <div class="fac-ctrl">
+        <select id="roof-type" class="fac-select">
+          <option value="arch" selected>{{ _('Arch') }}</option>
+          <option value="gable">{{ _('Gable') }}</option>
+          <option value="flat">{{ _('Flat') }}</option>
+        </select>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Envelope sub-section -->
+  <div class="fac-group-title">{{ _('Envelope') }}</div>
+  <div class="fac-section">
+
+    <!-- ① 피복 레이어 목록 -->
+    <div class="fac-row">
+      <div class="fac-label">{{ _('Cover layers') }}
+        <div class="fac-hint">{{ _('Outer cover is always required. Add wall reinforcement or inner cover as needed.') }}</div>
+      </div>
+    </div>
+    <div id="envelope-layers-list" style="padding:0 0 0.25rem;"></div>
+    <div style="display:flex;gap:8px;padding:0.4rem 0 0.75rem;flex-wrap:wrap;border-bottom:1px solid #f0f0f0;">
+      <button class="btn btn-sm btn-outline-secondary" onclick="EnvelopeUI.addSideOnlyLayer()">+ {{ _('Wall reinforcement') }}</button>
+      <button class="btn btn-sm btn-outline-secondary" id="btn-add-inner-layer" onclick="EnvelopeUI.addInnerLayer()">+ {{ _('Inner cover') }}</button>
+    </div>
+
+    <!-- ② 측창 (외피) -->
+    <div class="fac-row">
+      <div class="fac-label">{{ _('Outer side vent') }}
+        <div class="fac-hint">{{ _('Can be split into 2 stages for tall side walls') }}</div>
+      </div>
+      <div class="fac-ctrl">
+        <label class="btn-toggle mb-0">
+          <input type="checkbox" class="btn-toggle-input" id="outer-side-vent" onchange="EnvelopeUI.onVentToggle()">
+          <span class="btn-toggle-slider"><span class="btn-toggle-thumb"></span></span>
+        </label>
+      </div>
+    </div>
+    <div id="outer-side-vent-detail" style="display:none;padding:0 0 0.25rem 0.5rem;border-bottom:1px solid #f0f0f0;">
+      <div class="fac-row" style="border-bottom:none;padding-bottom:0;">
+        <div class="fac-label" style="font-size:0.83rem;">{{ _('Stages') }}</div>
+        <div class="fac-ctrl">
+          <div class="btn-group btn-group-sm">
+            <label class="btn btn-outline-primary active">
+              <input type="radio" name="vent-stages" value="1" checked> {{ _('1 stage') }}
+            </label>
+            <label class="btn btn-outline-primary">
+              <input type="radio" name="vent-stages" value="2"> {{ _('2 stages') }}
+            </label>
+          </div>
+        </div>
+      </div>
+      <div id="vent-stage-rows"></div>
+    </div>
+
+    <!-- ③ 지붕창 (외피) -->
+    <div class="fac-row">
+      <span class="fac-label">{{ _('Outer roof vent') }}</span>
+      <div class="fac-ctrl">
+        <label class="btn-toggle mb-0">
+          <input type="checkbox" class="btn-toggle-input" id="outer-roof-vent">
+          <span class="btn-toggle-slider"><span class="btn-toggle-thumb"></span></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- ④ 보온/차광 커튼 -->
+    <div class="fac-row fac-row-full" style="border-bottom:none;">
+      <div class="fac-label" style="margin-bottom:0.5rem;">{{ _('Curtains') }}</div>
+      <div class="fac-body" style="display:flex;flex-direction:column;gap:0.45rem;">
+
+        <!-- 천정 보온커튼 -->
+        <div style="border:1px solid #e8e8e8;border-radius:10px;padding:0.5rem 0.75rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:0.85rem;font-weight:600;">{{ _('Ceiling thermal curtain') }}</span>
+            <label class="btn-toggle mb-0">
+              <input type="checkbox" class="btn-toggle-input" id="curtain-thermal-ceiling"
+                     onchange="EnvelopeUI.onCurtainCeilingToggle()">
+              <span class="btn-toggle-slider"><span class="btn-toggle-thumb"></span></span>
+            </label>
+          </div>
+          <div id="curtain-ceiling-detail" style="display:none;margin-top:0.4rem;">
+            <div style="display:flex;align-items:center;gap:8px;font-size:0.82rem;color:#555;">
+              {{ _('Layers') }}:
+              <div class="btn-group btn-group-sm">
+                <label class="btn btn-outline-secondary active">
+                  <input type="radio" name="curtain-ceiling-layers" value="1" checked> 1중
+                </label>
+                <label class="btn btn-outline-secondary">
+                  <input type="radio" name="curtain-ceiling-layers" value="2"> 2중
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 벽 보온커튼 -->
+        <div style="border:1px solid #e8e8e8;border-radius:10px;padding:0.5rem 0.75rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:0.85rem;font-weight:600;">{{ _('Wall thermal curtain') }}</span>
+            <label class="btn-toggle mb-0">
+              <input type="checkbox" class="btn-toggle-input" id="curtain-thermal-wall"
+                     onchange="EnvelopeUI.onCurtainWallToggle()">
+              <span class="btn-toggle-slider"><span class="btn-toggle-thumb"></span></span>
+            </label>
+          </div>
+          <div id="curtain-wall-detail" style="display:none;margin-top:0.4rem;">
+            <div style="font-size:0.82rem;color:#555;margin-bottom:0.25rem;">{{ _('Apply to faces') }}:</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <label style="font-size:0.82rem;cursor:pointer;display:flex;align-items:center;gap:3px;">
+                <input type="checkbox" class="curtain-wall-side" value="north"> {{ _('N') }}</label>
+              <label style="font-size:0.82rem;cursor:pointer;display:flex;align-items:center;gap:3px;">
+                <input type="checkbox" class="curtain-wall-side" value="south"> {{ _('S') }}</label>
+              <label style="font-size:0.82rem;cursor:pointer;display:flex;align-items:center;gap:3px;">
+                <input type="checkbox" class="curtain-wall-side" value="east"> {{ _('E') }}</label>
+              <label style="font-size:0.82rem;cursor:pointer;display:flex;align-items:center;gap:3px;">
+                <input type="checkbox" class="curtain-wall-side" value="west"> {{ _('W') }}</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 차광 커튼 -->
+        <div style="border:1px solid #e8e8e8;border-radius:10px;padding:0.5rem 0.75rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:0.85rem;font-weight:600;">{{ _('Shade curtain') }}</span>
+            <label class="btn-toggle mb-0">
+              <input type="checkbox" class="btn-toggle-input" id="curtain-shade">
+              <span class="btn-toggle-slider"><span class="btn-toggle-thumb"></span></span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Actuators sub-section -->
+  <div class="fac-group-title">{{ _('Actuators') }}</div>
+  <div class="fac-section" style="padding:0 16px 0.5rem;">
+    <div id="actuator-list" style="margin-bottom:0.5rem;"></div>
+    <div style="display:flex;gap:8px;padding:0.5rem 0;flex-wrap:wrap;border-top:1px dashed #e8e8e8;">
+      <button class="btn btn-sm btn-outline-secondary" onclick="ActuatorUI.add('side_window_motor')">+ {{ _('Side vent motor') }}</button>
+      <button class="btn btn-sm btn-outline-secondary" onclick="ActuatorUI.add('roof_vent_motor')">+ {{ _('Roof vent motor') }}</button>
+      <button class="btn btn-sm btn-outline-secondary" onclick="ActuatorUI.add('thermal_curtain_motor')">+ {{ _('Curtain motor') }}</button>
+      <button class="btn btn-sm btn-outline-secondary" onclick="ActuatorUI.add('exhaust_fan')">+ {{ _('Exhaust fan') }}</button>
+      <button class="btn btn-sm btn-outline-secondary" onclick="ActuatorUI.add('circulation_fan')">+ {{ _('Circulation fan') }}</button>
+      <button class="btn btn-sm btn-outline-secondary" onclick="ActuatorUI.add('heater')">+ {{ _('Heater') }}</button>
+      <button class="btn btn-sm btn-outline-secondary" onclick="ActuatorUI.add('cooler')">+ {{ _('Cooler') }}</button>
+      <button class="btn btn-sm btn-outline-secondary" onclick="ActuatorUI.add('irrigation_valve')">+ {{ _('Irrigation valve') }}</button>
+    </div>
+  </div>
+
+  <!-- ── 4. Capacity Preview ───────────────────────────────────────────────── -->
+  <div class="fac-group-title">4. {{ _('Capacity Preview') }}</div>
+  <div class="fac-section" style="padding:0;">
+    <div class="preview-grid">
+      <div class="preview-cell"><div class="preview-label">{{ _('Floor') }}</div><div class="preview-value" id="pv-floor">— m²</div></div>
+      <div class="preview-cell"><div class="preview-label">{{ _('Volume') }}</div><div class="preview-value" id="pv-volume">— m³</div></div>
+      <div class="preview-cell"><div class="preview-label">{{ _('Glazing') }}</div><div class="preview-value" id="pv-glazing">— m²</div></div>
+      <div class="preview-cell"><div class="preview-label">{{ _('Vent open') }}</div><div class="preview-value" id="pv-vent">— m²</div></div>
+      <div class="preview-cell"><div class="preview-label">{{ _('Heating') }}</div><div class="preview-value" id="pv-heating">— kW</div></div>
+      <div class="preview-cell"><div class="preview-label">{{ _('Cooling') }}</div><div class="preview-value" id="pv-cooling">— kW</div></div>
+      <div class="preview-cell"><div class="preview-label">{{ _('ACH') }}</div><div class="preview-value" id="pv-ach">— /h</div></div>
+    </div>
+    <div id="pv-summary" style="padding:0.5rem 0.75rem;border-top:1px solid #f0f0f0;font-size:0.82rem;color:#555;"></div>
+    <div class="preview-disclaimer">
+      ⓘ {{ _('Reference values for mechanical equipment sizing') }} (±5–10%).
+      {{ _('Hover heating/cooling for nameplate vs theoretical comparison.') }}
+    </div>
+  </div>
+
+  <!-- ── 5. IEC 통합 요약 ─────────────────────────────────────────────────── -->
+  <div id="integ-panel" style="display:none;">
+    <div class="fac-group-title" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>5. IEC 통합 요약</span>
+      <button type="button" id="btn-integ-refresh"
+              class="btn btn-sm btn-outline-secondary"
+              style="font-size:0.75rem;padding:1px 8px;margin:0;">새로고침</button>
+    </div>
+    <div class="fac-section" style="padding:0.6rem 0.75rem;">
+      <div id="integ-body">
+        <span class="integ-loading">통합 데이터 로드 중…</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Save actions ──────────────────────────────────────────────────────── -->
+  <div class="fac-actions">
+    <button type="button" class="btn btn-sm btn-outline-secondary"
+            onclick="window.location.href='/geo/design'">{{ _('Cancel') }}</button>
+    <button type="button" class="btn btn-sm btn-primary" id="btn-save-facility-bottom">{{ _('Save Facility') }}</button>
+  </div>
+
 </div>
 
 <script type="application/json" id="facility-page-vars">
@@ -412,11 +1051,11 @@ window.AOT_GEO_CONFIG = {{ geo_config | tojson | safe }};
 <script src="/static/js/widget/AoT_facility/core/parametric.js?v=1"></script>
 <script src="/static/js/widget/AoT_facility/assets/gltf_loader.js?v=1"></script>
 <script src="/static/js/widget/AoT_facility/ui/asset_library.js?v=1"></script>
-<script src="/static/js/widget/AoT_facility/aot-facility-3d.js?v=7"></script>
+<script src="/static/js/widget/AoT_facility/aot-facility-3d.js?v=9"></script>
 <script src="/static/js/geo/aot-facility-map-3d.js?v=11"></script>
 
 <script src="/static/js/geo/aot-facility-layer-panel.js?v=20260508b"></script>
-<script src="/static/js/geo/aot-facility-design.js?v=20260509b"></script>
+<script src="/static/js/geo/aot-facility-design.js?v=20260517a"></script>
 
 <script>
 (function () {
@@ -428,7 +1067,6 @@ window.AOT_GEO_CONFIG = {{ geo_config | tojson | safe }};
   // ── Read current form values into a facility-like object ─────────────────────
   function _formFacility() {
     var structure = (document.querySelector('input[name="structure"]:checked') || {}).value || 'single';
-    var layerCount = parseInt((document.getElementById('layer-count') || {}).value || '1', 10);
     return {
       unique_id:  'preview',
       name:       (document.getElementById('facility-name') || {}).value || 'Preview',
@@ -444,30 +1082,9 @@ window.AOT_GEO_CONFIG = {{ geo_config | tojson | safe }};
         roof_type:       (document.getElementById('roof-type') || {}).value || 'arch',
         orientation_deg: parseInt((document.getElementById('orientation-input') || {}).value || '0', 10),
       },
-      envelope: {
-        layer_count: layerCount,
-        outer: {
-          cover_material: (document.getElementById('outer-cover') || {}).value || 'vinyl_double',
-          side_vent: { enabled: !!(document.getElementById('outer-side-vent') || {}).checked },
-          roof_vent: { enabled: !!(document.getElementById('outer-roof-vent') || {}).checked },
-        },
-        inner: layerCount === 2 ? {
-          cover_material: (document.getElementById('inner-cover') || {}).value || 'non_woven_fabric',
-          side_vent: {
-            enabled: !!(document.getElementById('inner-side-vent') || {}).checked,
-            control_mode: (document.getElementById('inner-control-mode') || {}).value || 'synced',
-          },
-          roof_vent: {
-            enabled: !!(document.getElementById('inner-roof-vent') || {}).checked,
-            control_mode: (document.getElementById('inner-control-mode') || {}).value || 'synced',
-          },
-        } : {},
-        curtain: {
-          thermal: !!(document.getElementById('curtain-thermal') || {}).checked,
-          shade:   !!(document.getElementById('curtain-shade')   || {}).checked,
-        },
-      },
-      actuators: {},
+      envelope: window.EnvelopeUI ? EnvelopeUI.read() : {},
+      actuators: window.ActuatorUI ? ActuatorUI.read() : [],
+      fittings:  window.FittingsUI ? FittingsUI.read() : [],
       computed:  null,
       bays:      [],
     };
@@ -478,8 +1095,59 @@ window.AOT_GEO_CONFIG = {{ geo_config | tojson | safe }};
     if (!window.AoTFacility3D) return;
     var canvas = document.getElementById('facility-3d-canvas');
     if (!canvas) return;
+
+    // Preserve active tool + camera state across rebuilds so the user doesn't
+    // lose their viewing angle every time a fitting is added or selected.
+    var activeTool = (document.querySelector('#facility-3d-tools .tool-btn.active') || {}).dataset || {};
+    var keepTool = activeTool.tool || '';
+
+    var camState = null;
+    if (_ctx && _ctx.camera && _ctx.controls) {
+      camState = {
+        position: _ctx.camera.position.clone(),
+        target:   _ctx.controls.target.clone(),
+        fov:      _ctx.camera.fov,
+        zoom:     _ctx.camera.zoom
+      };
+    }
+
     if (_ctx) { _ctx.dispose(); _ctx = null; }
-    _ctx = window.AoTFacility3D.buildScene(canvas, _formFacility(), null);
+    var newCtx = null;
+    try {
+      newCtx = window.AoTFacility3D.buildScene(canvas, _formFacility(), null);
+    } catch (err) {
+      console.error('[facility] buildScene failed:', err);
+      // Retry once after a tick — usually a transient (e.g. WebGL context not yet released)
+      setTimeout(function () {
+        try {
+          _ctx = window.AoTFacility3D.buildScene(canvas, _formFacility(), null);
+          if (camState && _ctx && _ctx.camera && _ctx.controls) {
+            _ctx.camera.position.copy(camState.position);
+            _ctx.controls.target.copy(camState.target);
+            _ctx.camera.updateProjectionMatrix();
+            _ctx.controls.update();
+          }
+          if (keepTool && _ctx && _ctx.setTool) _ctx.setTool(keepTool);
+        } catch (e2) {
+          console.error('[facility] buildScene retry failed:', e2);
+        }
+      }, 50);
+      return;
+    }
+    _ctx = newCtx;
+
+    if (camState && _ctx && _ctx.camera && _ctx.controls) {
+      _ctx.camera.position.copy(camState.position);
+      _ctx.controls.target.copy(camState.target);
+      if (camState.fov)  _ctx.camera.fov  = camState.fov;
+      if (camState.zoom) _ctx.camera.zoom = camState.zoom;
+      _ctx.camera.updateProjectionMatrix();
+      _ctx.controls.update();
+    }
+
+    if (keepTool && _ctx && typeof _ctx.setTool === 'function') {
+      _ctx.setTool(keepTool);
+    }
   }
 
   // ── Debounced rebuild (300 ms after last input) ───────────────────────────────
@@ -529,26 +1197,66 @@ window.AOT_GEO_CONFIG = {{ geo_config | tojson | safe }};
   function wireInputs() {
     var ids = [
       'span-width', 'eave-height', 'ridge-height', 'length-m',
-      'spacing-m', 'bay-count', 'roof-type', 'layer-count',
-      'outer-cover', 'orientation-input', 'orientation-slider',
+      'spacing-m', 'bay-count', 'roof-type',
+      'orientation-input', 'orientation-slider',
     ];
     ids.forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.addEventListener('input', scheduleRebuild);
     });
-    var checks = [
-      'outer-side-vent', 'outer-roof-vent',
-      'inner-side-vent', 'inner-roof-vent',
-      'curtain-thermal', 'curtain-shade',
-    ];
-    checks.forEach(function (id) {
+    // EnvelopeUI / ActuatorUI cause full geometry/material rebuilds.
+    // FittingsUI uses incremental add/remove (see fitting-added/removed below)
+    // instead of full rebuild. Triggering scheduleRebuild on every fitting
+    // placement was disposing and recreating the WebGL context, which sometimes
+    // left the canvas blank and risked the browser's WebGL context limit.
+    // envelope-data-changed (vent stage count/heights) does NOT affect 3D geometry
+    // and must NOT trigger a rebuild — only compute runs for that event.
+    document.addEventListener('envelope-changed',  scheduleRebuild);
+    document.addEventListener('actuator-changed',  scheduleRebuild);
+    document.addEventListener('facility-loaded',   rebuild);
+
+    document.addEventListener('fitting-added', function (e) {
+      if (_ctx && typeof _ctx.addFittingMesh === 'function' && e.detail && e.detail.fitting) {
+        _ctx.addFittingMesh(e.detail.fitting);
+        // Refresh selection visuals so the newly added (auto-selected) fitting
+        // glows and any previously-selected one releases.
+        if (typeof _ctx.updateFittingSelection === 'function' && window.FittingsUI) {
+          _ctx.updateFittingSelection(FittingsUI.getSelectedId());
+        }
+      }
+    });
+    document.addEventListener('fitting-removed', function (e) {
+      if (_ctx && typeof _ctx.removeFittingMesh === 'function' && e.detail && e.detail.id) {
+        _ctx.removeFittingMesh(e.detail.id);
+      }
+    });
+
+    // Selection is a visual-only change → update materials in place, NO rebuild.
+    document.addEventListener('fitting-selection-changed', function (e) {
+      if (_ctx && typeof _ctx.updateFittingSelection === 'function') {
+        _ctx.updateFittingSelection(e.detail && e.detail.id);
+      }
+    });
+
+    // Inspector edits — in-place updates, no scene rebuild.
+    document.addEventListener('aot-fitting-transform', function (e) {
+      var d = e.detail; if (!d) return;
+      if (_ctx && typeof _ctx.updateFittingTransform === 'function') {
+        _ctx.updateFittingTransform(d.id, d.position, d.rotation_deg);
+      }
+    });
+    document.addEventListener('aot-fitting-geometry', function (e) {
+      var d = e.detail; if (!d) return;
+      if (_ctx && typeof _ctx.updateFittingGeometry === 'function') {
+        _ctx.updateFittingGeometry(d.id, d.size);
+      }
+    });
+    // Data-only change (name, etc.) — no 3D effect, no rebuild
+    document.addEventListener('fittings-data-changed', function () { /* compute happens via fittings-changed only */ });
+    // Toggles still on the main form (roof-vent, shade managed outside EnvelopeUI _notify)
+    ['outer-roof-vent', 'curtain-shade'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.addEventListener('change', scheduleRebuild);
-    });
-    // inner-cover and inner-control-mode also affect 3D
-    ['inner-cover', 'inner-control-mode'].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) el.addEventListener('input', scheduleRebuild);
     });
     document.querySelectorAll('input[name="structure"]').forEach(function (r) {
       r.addEventListener('change', scheduleRebuild);
@@ -556,6 +1264,13 @@ window.AOT_GEO_CONFIG = {{ geo_config | tojson | safe }};
 
     var btn = document.getElementById('btn-3d-refresh');
     if (btn) btn.addEventListener('click', rebuild);
+
+    // Bottom save button mirrors top button
+    var saveBottom = document.getElementById('btn-save-facility-bottom');
+    var saveTop    = document.getElementById('btn-save-facility');
+    if (saveBottom && saveTop) {
+      saveBottom.addEventListener('click', function () { saveTop.click(); });
+    }
   }
 
   // ── Asset library integration ─────────────────────────────────────────────────
@@ -699,20 +1414,9 @@ window.AOT_GEO_CONFIG = {{ geo_config | tojson | safe }};
           var r = document.querySelector('input[name="structure"][value="' + spec.structure + '"]');
           if (r) r.checked = true;
         }
-        var env = spec.envelope || {};
-        setVal('layer-count', env.layer_count);
-        var outer = env.outer || {};
-        setVal('outer-cover', outer.cover_material);
-        setChk('outer-side-vent', outer.side_vent && outer.side_vent.enabled);
-        setChk('outer-roof-vent', outer.roof_vent && outer.roof_vent.enabled);
-        var inner = env.inner || {};
-        setVal('inner-cover',        inner.cover_material);
-        setVal('inner-control-mode', inner.side_vent && inner.side_vent.control_mode);
-        setChk('inner-side-vent', inner.side_vent && inner.side_vent.enabled);
-        setChk('inner-roof-vent', inner.roof_vent && inner.roof_vent.enabled);
-        var curtain = env.curtain || {};
-        setChk('curtain-thermal', curtain.thermal);
-        setChk('curtain-shade',   curtain.shade);
+        if (window.EnvelopeUI) EnvelopeUI.fill(spec.envelope || {});
+        if (window.ActuatorUI) ActuatorUI.fill(spec.actuators || []);
+        if (window.FittingsUI) FittingsUI.fill(spec.fittings  || []);
         rebuild();
       } catch (err) {
         alert('Spec JSON 파싱 오류: ' + err);
@@ -824,10 +1528,96 @@ window.AOT_GEO_CONFIG = {{ geo_config | tojson | safe }};
     };
   };
 
+  // ── Tool palette wiring ─────────────────────────────────────────────────────
+  // Three action types per button (via data-action attribute):
+  //   "select"  → Select tool (deactivate face-pick)
+  //   "face"    → Face-pick tool (window/door/side_window) — activate _ctx.setTool
+  //   "add"     → Immediate add (curtain/fan/heater/sensor/fixture) — FittingsUI.add
+  //   "catalog" → Open catalog import modal
+  function _setToolBtnActive(toolName) {
+    document.querySelectorAll(
+      '#facility-3d-tools .tool-btn[data-action="select"],' +
+      '#facility-3d-tools .tool-btn[data-action="face"],' +
+      '#facility-3d-tools .tool-btn[data-action="place"]'
+    ).forEach(function (b) {
+      b.classList.toggle('active', (b.dataset.tool || '') === (toolName || ''));
+    });
+  }
+
+  function _applyFaceTool(toolName) {
+    if (_ctx && typeof _ctx.setTool === 'function') {
+      _ctx.setTool(toolName || null);
+    }
+    _setToolBtnActive(toolName);
+  }
+
+  function wireTools() {
+    document.querySelectorAll('#facility-3d-tools .tool-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var action = btn.dataset.action;
+        if (action === 'select') {
+          _applyFaceTool('');
+        } else if (action === 'face' || action === 'place') {
+          // face → outer cover only (wall fittings)
+          // place → outer cover + floor (device drag-place)
+          _applyFaceTool(btn.dataset.tool || '');
+        } else if (action === 'add') {
+          // Immediate add — deactivate face-pick first so cursor returns to normal
+          _applyFaceTool('');
+          if (window.FittingsUI) FittingsUI.add(btn.dataset.kind);
+        } else if (action === 'catalog') {
+          _applyFaceTool('');
+          var geoId = (document.getElementById('map-selector') || {}).value || '';
+          // Ask aot-facility-design.js for the facility center/orientation.
+          document.dispatchEvent(new CustomEvent('aot-facility-need-center', {
+            detail: { cb: function (center, orient) {
+              if (window.FittingsUI) FittingsUI.importFromCatalog(geoId, center, orient || 0);
+            }}
+          }));
+        }
+      });
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') _applyFaceTool('');
+    });
+  }
+
+  // ── Tab switching (Position ↔ 3D Preview) ────────────────────────────────────
+  function wireTabs() {
+    var tabs  = document.querySelectorAll('.fac-tabs .fac-tab');
+    var panes = document.querySelectorAll('.fac-tab-pane');
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        var target = tab.dataset.tab;
+        tabs.forEach(function (t) {
+          var on = (t.dataset.tab === target);
+          t.classList.toggle('active', on);
+          t.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        panes.forEach(function (p) {
+          p.classList.toggle('active', p.id === 'fac-tab-' + target);
+        });
+        // Containers were display:none — child canvases now need to resize.
+        if (target === 'position') {
+          // maplibre map needs explicit resize after becoming visible
+          if (window.State && State.map && typeof State.map.resize === 'function') {
+            setTimeout(function () { State.map.resize(); }, 30);
+          }
+        } else if (target === '3d') {
+          // Three.js ResizeObserver picks this up, but trigger window resize
+          // to make sure the canvas re-fits immediately.
+          setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 30);
+        }
+      });
+    });
+  }
+
   // ── Init ─────────────────────────────────────────────────────────────────────
   function init() {
     initResizeHandle();
     wireInputs();
+    wireTools();
+    wireTabs();
 
     if (window.AoTFacility3D) {
       rebuild();

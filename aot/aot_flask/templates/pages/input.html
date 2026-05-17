@@ -86,45 +86,22 @@
 
 <script>
   function initGrid() {
-    let targetColumn = (window.innerWidth <= 768) ? 1 : 24;
-    
-    // Performance: Only update if column count has changed or grid is not initialized
-    if (window.grid) {
-      if (window.grid.getColumn() === targetColumn) return;
-      
-      window.grid.batchUpdate(true);
-      window.grid.column(targetColumn, 'list');
-      
-      if (targetColumn === 24) {
-        window.grid.engine.nodes.forEach(node => {
-          window.grid.update(node.el, { w: 24, x: 0 });
-        });
-      }
-      
-      window.grid.batchUpdate(false);
-    } else {
-      // Reverted to 48: Fixed cellHeight to prevent multiplying gaps in multi-channel items
-      // Phase 9-1: Fixed cellHeight
-      window.grid = GridStack.init({
-        animate: true,
-        cellHeight: 52,
-        column: targetColumn,
-        margin: 2,
-        handle: '.aot-entry-drag-handle',
-        resizable: { autoHide: true }, // Standard GridStack way but resizable property is better
-        float: false,
-        disableOneColumnMode: true,
-        alwaysShowResizeHandle: false,
-        resizable: false
-      });
-    }
+    if (window.grid) return; // Already initialized; CSS handles mobile layout.
 
-    // Save only on user-initiated drag completion. 'change' fires during
-    // column transitions / programmatic updates (e.g. window resize) and
-    // would otherwise overwrite the saved order with transient layouts.
-    window.grid.off('dragstop');
+    window.grid = GridStack.init({
+      animate: true,
+      cellHeight: 52,
+      column: 24,
+      margin: 2,
+      handle: '.aot-entry-drag-handle',
+      float: false,
+      disableOneColumnMode: true,
+      alwaysShowResizeHandle: false,
+      resizable: false
+    });
+
     window.grid.on('dragstop', function (event, el) {
-      if (window.grid.getColumn() === 1) return;
+      if (window.innerWidth <= 768) return; // No save on mobile viewport.
 
       let serializedFull = window.grid.save(false);
       $.ajax({
@@ -144,9 +121,7 @@
   $(window).on('resize', function() {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(function() {
-      initGrid();
-      console.log("[AoT Debug] v8 loaded");
-      if (window.grid && typeof window.grid.onParentResize === 'function') window.grid.onParentResize(); // Force immediate calculation
+      if (window.grid && typeof window.grid.onParentResize === 'function') window.grid.onParentResize();
     }, 50);
   });
 

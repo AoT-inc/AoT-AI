@@ -13815,3 +13815,186 @@ msgstr "1달"
 
 msgid "1y"
 msgstr "1년"
+
+msgid "Actuator Kind"
+msgstr "액추에이터 종류"
+
+msgid "Ball Valve"
+msgstr "볼 밸브"
+
+msgid "Calibration Direction"
+msgstr "캘리브레이션 방향"
+
+msgid "Drives the actuator in the selected direction. Click Stop when done."
+msgstr "선택한 방향으로 액추에이터를 구동합니다. 완료되면 정지를 클릭하세요."
+
+msgid "Full Travel Time (s)"
+msgstr "전체 이동 시간 (초)"
+
+msgid "Last Position (%)"
+msgstr "마지막 위치 (%)"
+
+msgid "Min Command Interval (s)"
+msgstr "최소 명령 간격 (초)"
+
+msgid "Output: Close"
+msgstr "출력: 닫기"
+
+msgid "Output: Open"
+msgstr "출력: 열기"
+
+msgid "Reverse Pause (s)"
+msgstr "역방향 일시정지 (초)"
+
+msgid "Roof Vent"
+msgstr "지붕 환기창"
+
+msgid "Shade Curtain"
+msgstr "차광 커튼"
+
+msgid "Side Vent"
+msgstr "측면 환기창"
+
+msgid "Stops the actuator and saves elapsed time as Full Travel Time."
+msgstr "액추에이터를 정지하고 경과 시간을 전체 이동 시간으로 저장합니다."
+
+msgid "Thermal Curtain"
+msgstr "보온 커튼"
+
+msgid "Type of actuator being controlled."
+msgstr "제어 중인 액추에이터 유형."
+
+msgid "on/off Output channel connected to the CLOSE relay."
+msgstr "닫기 릴레이에 연결된 on/off 출력 채널."
+
+msgid "on/off Output channel connected to the OPEN relay."
+msgstr "열기 릴레이에 연결된 on/off 출력 채널."
+
+msgid "■ Stop & Save"
+msgstr "■ 정지 및 저장"
+
+msgid "▶ Start Calibration"
+msgstr "▶ 캘리브레이션 시작"
+
+msgid "Channel Name"
+msgstr "채널 이름"
+
+msgid "Control Topic"
+msgstr "제어 토픽"
+
+msgid "Off Payload (Control)"
+msgstr "Off 페이로드 (제어)"
+
+msgid "Off Payload (Status)"
+msgstr "Off 페이로드 (상태)"
+
+msgid "On Payload (Control)"
+msgstr "On 페이로드 (제어)"
+
+msgid "On Payload (Status)"
+msgstr "On 페이로드 (상태)"
+
+msgid "Status Topic"
+msgstr "상태 토픽"
+
+msgid "Toggle Payload"
+msgstr "토글 페이로드"
+
+msgid "Saved Facilities"
+msgstr "저장된 시설"
+
+msgid "Bays (N)"
+msgstr "베이 수 (N)"
+
+msgid "Drag the slider or type a value (0–359°)"
+msgstr "슬라이더를 드래그하거나 값을 직접 입력하세요 (0–359°)"
+
+msgid "Click \"Place on Map\" then click the facility center on the map. Form dimensions and rotation update the rectangle in real time."
+msgstr "\"지도에 배치\"를 클릭한 후 지도에서 시설 중심을 클릭하세요. 양식의 크기와 회전값이 실시간으로 사각형에 반영됩니다."
+
+msgid "Standard Arch"
+msgstr "표준 아치형"
+
+msgid "Eave Height (m)"
+msgstr "처마 높이 (m)"
+
+msgid "Ridge Height (m)"
+msgstr "용마루 높이 (m)"
+
+msgid "Roof Type"
+msgstr "지붕 유형"
+
+msgid "Arch"
+msgstr "아치형"
+
+msgid "Flat"
+msgstr "평지붕"
+
+msgid "Actuators"
+msgstr "액추에이터"
+
+msgid "Heating"
+msgstr "난방"
+
+msgid "Cooling"
+msgstr "냉방"
+
+msgid "Reference values for mechanical equipment sizing (±5–10%)"
+msgstr "기계 장비 사이징을 위한 참고값 (±5–10%)"
+
+msgid "Facility 3D View"
+msgstr "시설 3D 뷰"
+
+msgid "connected"
+msgstr "연동"
+
+msgid "double layer"
+msgstr "이중 피복"
+
+msgid "Environment"
+msgstr "환경"
+
+msgid "Indoor temp"
+msgstr "실내 온도"
+
+msgid "Indoor humidity"
+msgstr "실내 습도"
+
+msgid "CO₂"
+msgstr "CO₂"
+
+msgid "Outdoor temp"
+msgstr "실외 온도"
+
+msgid "AI Advice"
+msgstr "AI 권고"
+
+msgid "Loading…"
+msgstr "로딩 중…"
+
+msgid "No facility selected. Register one at"
+msgstr "시설이 선택되지 않았습니다. 다음에서 등록하세요:"
+
+msgid "No facilities — register one in /geo/facility"
+msgstr "등록된 시설 없음 — /geo/facility에서 등록하세요"
+
+msgid "AoT Facility"
+msgstr "AoT 시설"
+
+msgid "Facility cross-section mimic, environment summary, and AI advice — supports single/connected and single/double envelope."
+msgstr "시설 단면 모사, 환경 요약 및 AI 권고 — 단동/연동, 단층/이중 피복 지원."
+
+msgid "Refresh interval. 0 to disable."
+msgstr "새로고침 간격. 0은 비활성화."
+
+msgid "Facility UUID"
+msgstr "시설 UUID"
+
+msgid "unique_id of the selected facility (set via dropdown)."
+msgstr "선택된 시설의 고유 ID (드롭다운으로 설정)."
+
+msgid "Show AI Advice"
+msgstr "AI 권고 표시"
+
+msgid "Display AI recommendation cards (now / 1h / 6h)."
+msgstr "AI 권고 카드 표시 (현재 / 1시간 / 6시간)."

@@ -27,7 +27,9 @@ from .log_channels import (
     ch_coord_cmd, ch_coord_reason, ch_integral,
     REASON_IDLE, REASON_PRIMARY, REASON_SECONDARY,
     REASON_WRONG_DIRECTION, REASON_SIDE_EFFECT, REASON_MANUAL_OVERRIDE,
+    REASON_NO_GRADIENT,
 )
+from .authority import is_natural_var
 from .types import ActuatorProfile, SituationReport
 
 logger = logging.getLogger(__name__)
@@ -118,6 +120,13 @@ def coordinate(
     # ── 2. 변수 우선순위 정렬 (native deviation / tolerance × priority) ────────
     sorted_vars = _sort_vars(situation)
 
+    # ── P5-2: NATURAL 변수 적분 freeze (Anti-Windup 보강) ─────────────────────
+    authority = getattr(situation, 'authority', {})
+    if authority:
+        for var in list(situation.deviation_native.keys()):
+            if is_natural_var(authority, var):
+                new_state.integral[var] = 0.0
+
     # ── 3. 변수별 순회 ────────────────────────────────────────────────────────
     for var in sorted_vars:
         if var not in situation.deviation_native:
@@ -165,6 +174,14 @@ def coordinate(
         for p in helpers:
             if abs(residual) < tol * 0.5:
                 break
+
+            # 구동력(gradient) 검사 — 효과 없으면 동작 금지
+            if not _has_gradient(p, var, needed_dir, situation):
+                _log_cmd(unique_id, p.actuator_id, a_idx, 0.0, REASON_NO_GRADIENT)
+                logger.debug(
+                    'coordinator: %s — gradient 없음 (%s %s 제어 불가), skip',
+                    p.actuator_id, var, needed_dir)
+                continue
 
             # 부작용 충돌 검사 (C4) ───────────────────────────────────────────
             if _creates_conflict(p, situation, accumulated, var):
@@ -267,6 +284,67 @@ def _creates_conflict(
             return True
 
     return False
+
+
+def _has_gradient(
+    p: ActuatorProfile,
+    var: str,
+    needed_dir: str,
+    situation: SituationReport,
+    min_delta: float = 2.0,
+) -> bool:
+    """환기 계열 PASSIVE 액추에이터가 실제로 효과를 낼 수 있는지 확인한다.
+
+    원칙: '구동력(gradient)'이 없으면 동작시키지 않는다.
+
+    - 환기로 온도 낮춤(↓): T_ext < T_int - min_delta  이어야 효과
+    - 환기로 온도 높임(↑): T_ext > T_int + min_delta  이어야 효과
+    - 환기로 습도 낮춤(↓): RH_ext < RH_int - min_delta 이어야 효과
+    - 환기로 습도 높임(↑): RH_ext > RH_int + min_delta 이어야 효과
+
+    ACTIVE 액추에이터(에어컨, 히터, 제습기 등)는 gradient 무관 — 항상 True.
+    gradient 정보(internal/external)가 없으면 True(보수적 허용).
+    """
+    # ACTIVE 액추에이터는 자체 동력 → 검사 불필요
+    _ACTIVE_KINDS = {
+        'heater', 'cooler', 'ac', 'dehumidifier', 'humidifier',
+        'co2_injector', 'co2_scrubber', 'supplemental_light',
+    }
+    if getattr(p, 'kind', '') in _ACTIVE_KINDS:
+        return True
+
+    # 환기·차광 계열만 gradient 검사
+    _PASSIVE_KINDS = {
+        'vent', 'shade', 'curtain', 'fan', 'circulation_fan',
+        'roof_vent', 'side_vent', 'window',
+    }
+    if getattr(p, 'kind', '') not in _PASSIVE_KINDS:
+        return True   # 알 수 없는 kind → 허용
+
+    ctx = situation.context or {}
+    T_int  = ctx.get('T_int')
+    T_ext  = ctx.get('T_ext')
+    RH_int = ctx.get('RH_int')
+    RH_ext = ctx.get('RH_ext')
+
+    # 해당 변수의 gradient 검사
+    if var == 'temperature':
+        if T_int is None or T_ext is None:
+            return True
+        if needed_dir == '↓':   # 환기로 냉방: 외부가 내부보다 충분히 낮아야
+            return T_ext < T_int - min_delta
+        if needed_dir == '↑':   # 환기로 가온: 외부가 내부보다 충분히 높아야
+            return T_ext > T_int + min_delta
+
+    if var == 'humidity':
+        if RH_int is None or RH_ext is None:
+            return True
+        if needed_dir == '↓':   # 환기로 제습: 외부가 내부보다 충분히 건조해야
+            return RH_ext < RH_int - min_delta
+        if needed_dir == '↑':   # 환기로 가습: 외부가 내부보다 충분히 습해야
+            return RH_ext > RH_int + min_delta
+
+    return True
 
 
 def _clamp(val: float, lo: float, hi: float) -> float:

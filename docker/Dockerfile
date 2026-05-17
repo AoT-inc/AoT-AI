@@ -1,6 +1,9 @@
 # Base image
 FROM python:3.11-slim
 
+# 설치 대상 명시 (detect_platform.sh의 자동 감지보다 우선)
+ENV INSTALL_TARGET=docker
+
 # Set working directory
 WORKDIR /app
 

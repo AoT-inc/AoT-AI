@@ -185,6 +185,127 @@ def effective_transmittance(layer_count, outer_material, inner_material=None):
 # ----------------------------------------------------------------
 # Main entry
 # ----------------------------------------------------------------
+def _normalize_envelope(envelope):
+    """Return a view of envelope normalized to the new layers/stages schema.
+
+    Accepts:
+      - New format: {layers: [...], side_vent: {outer: {enabled, stages: [...]}}, roof_vent, curtain}
+      - Old format: {layer_count, outer: {...}, inner: {...}, curtain: {thermal, shade}}
+
+    Returns dict with keys:
+      outer_cover, inner_cover (or None), layer_count,
+      side_vent_enabled, side_vent_stages (list of {height_m, from_floor_m}),
+      roof_vent_enabled,
+      curtain_ceiling_enabled, curtain_ceiling_layers,
+      curtain_wall_enabled, curtain_wall_sides,
+      curtain_shade_enabled
+    """
+    if envelope.get('layers') is not None:
+        layers = envelope.get('layers') or []
+        outer_cover = DEFAULT_MATERIAL
+        inner_cover = None
+        for L in layers:
+            role = (L.get('role') or '')
+            if role == 'outer':
+                outer_cover = L.get('cover') or outer_cover
+            elif role == 'inner':
+                inner_cover = L.get('cover') or inner_cover
+        sv = ((envelope.get('side_vent') or {}).get('outer') or {})
+        rv = ((envelope.get('roof_vent') or {}).get('outer') or {})
+        cu = envelope.get('curtain') or {}
+        tc = cu.get('thermal_ceiling') or {}
+        tw = cu.get('thermal_wall') or {}
+        sh = cu.get('shade') or {}
+        return {
+            'outer_cover': outer_cover,
+            'inner_cover': inner_cover,
+            'layer_count': 2 if inner_cover else 1,
+            'side_vent_enabled': bool(sv.get('enabled')),
+            'side_vent_stages': sv.get('stages') or [{'height_m': ASSUMPTIONS['vent_height_m'], 'from_floor_m': 0.3}],
+            'roof_vent_enabled': bool(rv.get('enabled')),
+            'curtain_ceiling_enabled': bool(tc.get('enabled')),
+            'curtain_ceiling_layers': int(tc.get('layers') or 1),
+            'curtain_wall_enabled': bool(tw.get('enabled')),
+            'curtain_wall_sides': tw.get('sides') or [],
+            'curtain_shade_enabled': bool(sh.get('enabled')),
+        }
+    # Legacy format
+    outer = envelope.get('outer') or {}
+    inner = envelope.get('inner') or {}
+    o_side = outer.get('side_vent') or {}
+    o_roof = outer.get('roof_vent') or {}
+    i_side = inner.get('side_vent') or {}
+    i_roof = inner.get('roof_vent') or {}
+    curtain = envelope.get('curtain') or {}
+    layer_count = int(envelope.get('layer_count') or 1)
+    # 이중 외피 시 내피 환기가 independent면 추가 개구면적 산입
+    inner_side_independent = (
+        layer_count == 2
+        and bool(i_side.get('enabled'))
+        and i_side.get('control_mode') == 'independent'
+    )
+    inner_roof_independent = (
+        layer_count == 2
+        and bool(i_roof.get('enabled'))
+        and i_roof.get('control_mode') == 'independent'
+    )
+    return {
+        'outer_cover': outer.get('cover_material') or DEFAULT_MATERIAL,
+        'inner_cover': inner.get('cover_material') if layer_count == 2 else None,
+        'layer_count': layer_count,
+        'side_vent_enabled': bool(o_side.get('enabled')),
+        'side_vent_stages': [{'height_m': ASSUMPTIONS['vent_height_m'], 'from_floor_m': 0.3}],
+        'roof_vent_enabled': bool(o_roof.get('enabled')),
+        'inner_side_vent_independent': inner_side_independent,
+        'inner_roof_vent_independent': inner_roof_independent,
+        'curtain_ceiling_enabled': bool(curtain.get('thermal')),
+        'curtain_ceiling_layers': 1,
+        'curtain_wall_enabled': False,
+        'curtain_wall_sides': [],
+        'curtain_shade_enabled': bool(curtain.get('shade')),
+    }
+
+
+def _aggregate_actuators(actuators):
+    """Return totals from new-format list or legacy dict.
+
+    Returns:
+      exhaust_cmh, circulation_cmh: total airflow (m³/h)
+      heating_kw, cooling_kw: total nameplate capacity
+      counts: per-kind dict
+    """
+    out = {
+        'exhaust_cmh': 0.0,
+        'circulation_cmh': 0.0,
+        'heating_kw': 0.0,
+        'cooling_kw': 0.0,
+        'counts': {},
+    }
+    if isinstance(actuators, list):
+        for a in actuators:
+            kind = a.get('kind')
+            specs = a.get('specs') or {}
+            out['counts'][kind] = out['counts'].get(kind, 0) + 1
+            if kind == 'exhaust_fan':
+                out['exhaust_cmh'] += float(specs.get('airflow_cmh') or ASSUMPTIONS['fan_default_m3h'])
+            elif kind == 'circulation_fan':
+                out['circulation_cmh'] += float(specs.get('airflow_cmh') or ASSUMPTIONS['fan_default_m3h'])
+            elif kind == 'heater':
+                out['heating_kw'] += float(specs.get('capacity_kw') or 0)
+            elif kind in ('cooler', 'heat_pump'):
+                out['cooling_kw'] += float(specs.get('capacity_kw') or 0)
+        return out
+    # Legacy dict {slot_key: device_uuid}
+    if isinstance(actuators, dict):
+        for slot, uuid in (actuators or {}).items():
+            if not uuid:
+                continue
+            out['counts'][slot] = out['counts'].get(slot, 0) + 1
+            if slot in ('exhaust_fan', 'circulation_fan'):
+                out['exhaust_cmh' if slot == 'exhaust_fan' else 'circulation_cmh'] += ASSUMPTIONS['fan_default_m3h']
+    return out
+
+
 def compute_capacity(spec):
     """Compute reference capacity from a facility spec dict.
 
@@ -192,8 +313,11 @@ def compute_capacity(spec):
     Falls back to dimensional estimate if outer_geometry missing.
     """
     geom_3d = spec.get('geometry_3d') or {}
-    envelope = spec.get('envelope') or {}
-    actuators = spec.get('actuators') or {}
+    envelope_raw = spec.get('envelope') or {}
+    envelope = _normalize_envelope(envelope_raw)
+    actuators_raw = spec.get('actuators')
+    act_totals = _aggregate_actuators(actuators_raw)
+    fittings = spec.get('fittings') or []
     bay_count = max(int(spec.get('bay_count') or 1), 1)
     structure = spec.get('structure') or 'single'
 
@@ -249,55 +373,105 @@ def compute_capacity(spec):
     volume_m3 = floor_m2 * eave_h + roof_vol_per_bay * roof_runs
 
     # ---- 4. U_eff & transmittance ----
-    layer_count = int(envelope.get('layer_count') or 1)
-    outer = envelope.get('outer') or {}
-    inner = envelope.get('inner') or {}
-    outer_mat = outer.get('cover_material') or DEFAULT_MATERIAL
-    inner_mat = inner.get('cover_material')
-    air_gap   = inner.get('air_gap_m')
+    layer_count = envelope['layer_count']
+    outer_mat = envelope['outer_cover']
+    inner_mat = envelope['inner_cover']
 
     u_eff = effective_u(layer_count, outer_mat, inner_mat, r_airgap=None)
     t_eff = effective_transmittance(layer_count, outer_mat, inner_mat)
 
-    # ---- 5. Vent open area ----
+    # ---- 5. Envelope-derived vent area (fallback only) ----
+    # G1 policy: when any fittings are present, the 3D-placed fittings are the
+    # authoritative source of vent area and orientation. Envelope-level vent
+    # config (side_vent/roof_vent toggles + stage heights) is used ONLY when
+    # no fittings have been placed yet — i.e. legacy/incomplete facilities.
     side_len = max(length, 0.0)
-    vent_open_m2 = 0.0
-    o_side = (outer.get('side_vent') or {})
-    o_roof = (outer.get('roof_vent') or {})
-    if o_side.get('enabled'):
-        vent_open_m2 += 2 * side_len * ASSUMPTIONS['vent_height_m'] * ASSUMPTIONS['vent_length_ratio']
-    if o_roof.get('enabled'):
-        vent_open_m2 += side_len * ASSUMPTIONS['roof_vent_width_m'] * bay_mul
-
-    if layer_count == 2:
-        i_side = (inner.get('side_vent') or {})
-        i_roof = (inner.get('roof_vent') or {})
-        # independent inner vents add additional opening; synced share outer's
-        if i_side.get('enabled') and i_side.get('control_mode') == 'independent':
-            vent_open_m2 += 2 * side_len * ASSUMPTIONS['vent_height_m'] * ASSUMPTIONS['vent_length_ratio']
-        if i_roof.get('enabled') and i_roof.get('control_mode') == 'independent':
-            vent_open_m2 += side_len * ASSUMPTIONS['roof_vent_width_m'] * bay_mul
+    envelope_vent_m2 = 0.0
+    if envelope['side_vent_enabled']:
+        stage_total_h = sum(float(s.get('height_m') or 0) for s in envelope['side_vent_stages'])
+        envelope_vent_m2 += 2 * side_len * stage_total_h * ASSUMPTIONS['vent_length_ratio']
+    if envelope['roof_vent_enabled']:
+        envelope_vent_m2 += side_len * ASSUMPTIONS['roof_vent_width_m'] * bay_mul
+    if envelope.get('inner_side_vent_independent'):
+        inner_stage_h = ASSUMPTIONS['vent_height_m']
+        envelope_vent_m2 += 2 * side_len * inner_stage_h * ASSUMPTIONS['vent_length_ratio']
+    if envelope.get('inner_roof_vent_independent'):
+        envelope_vent_m2 += side_len * ASSUMPTIONS['roof_vent_width_m'] * bay_mul
 
     # ---- 6. Glazing — assume transparent envelope (greenhouse PoC) ----
     glazing_m2 = envelope_m2
 
     # ---- 7. Heating load (kW) ----
-    heating_kw = envelope_m2 * u_eff * ASSUMPTIONS['delta_T_heating_K'] / 1000.0
+    # Effective U reduced when ceiling thermal curtain is deployed (static estimate)
+    u_for_heating = u_eff
+    if envelope['curtain_ceiling_enabled']:
+        # Each layer of ceiling curtain reduces U by ~25% (static rule of thumb)
+        u_for_heating *= max(1.0 - 0.25 * envelope['curtain_ceiling_layers'], 0.4)
+    heating_kw = envelope_m2 * u_for_heating * ASSUMPTIONS['delta_T_heating_K'] / 1000.0
 
     # ---- 8. Cooling load (kW) ----
-    cooling_W = (roof_m2 * ASSUMPTIONS['solar_radiation_W_m2'] * t_eff
+    t_for_cooling = t_eff
+    if envelope['curtain_shade_enabled']:
+        t_for_cooling *= 0.50  # 50% shade reduction assumption
+    cooling_W = (roof_m2 * ASSUMPTIONS['solar_radiation_W_m2'] * t_for_cooling
                  + floor_m2 * ASSUMPTIONS['transpiration_W_m2'])
     cooling_kw = cooling_W / 1000.0
 
-    # ---- 9. ACH ----
+    # ---- 9. Nameplate capacities from actuators (override defaults if present) ----
+    nameplate_heating_kw = act_totals['heating_kw']
+    nameplate_cooling_kw = act_totals['cooling_kw']
+
+    # ---- 10. Fittings aggregation (G1: fittings authoritative for vent area) ----
+    # Ventilating fitting kinds — their opening area (w×h) is the per-fitting
+    # contribution to natural ventilation. Each entry retains face/normal so
+    # downstream airflow simulation can resolve wind-direction interaction.
+    VENT_KINDS = {'window', 'side_window', 'door', 'fan'}
+    fittings_by_kind = {}
+    fittings_total_area = 0.0
+    fittings_vent_m2 = 0.0           # sum from fittings only (independent of envelope)
+    vent_openings = []               # per-opening descriptor for IEC / airflow sim
+    for f in fittings:
+        kind = f.get('kind') or 'fixture'
+        sz = f.get('size') or {}
+        w = float(sz.get('w') or 0)
+        h = float(sz.get('h') or 0)
+        if kind in ('window', 'side_window', 'door', 'fan', 'curtain'):
+            area = w * h
+        else:
+            area = w * float(sz.get('d') or 0)
+        fittings_by_kind[kind] = fittings_by_kind.get(kind, 0) + 1
+        fittings_total_area += area
+
+        if kind in VENT_KINDS:
+            fittings_vent_m2 += area
+            # face inferred from replica_info, normal & position kept verbatim
+            replica = f.get('replica_info') or {}
+            vent_openings.append({
+                'id':              f.get('id'),
+                'kind':            kind,
+                'area_m2':         round(area, 3),
+                'position':        f.get('position'),
+                'surface_normal':  f.get('surface_normal'),  # outward face normal
+                'face':            replica.get('face'),       # 'roof'|'east'|'west'|'south'|'north'
+                'actuator_id':     f.get('actuator_id'),      # Output uuid driving this opening
+                'link_group':      f.get('link_group'),
+            })
+
+    # G1 policy resolution: fittings WIN when any vent fittings exist.
+    has_vent_fittings = fittings_vent_m2 > 0
+    if has_vent_fittings:
+        vent_open_m2  = fittings_vent_m2
+        vent_open_src = 'fittings'   # 3D placements are truth
+    else:
+        vent_open_m2  = envelope_vent_m2
+        vent_open_src = 'envelope' if envelope_vent_m2 > 0 else 'none'
+
+    # ---- 11. ACH (uses resolved vent_open_m2) ----
     ach_natural = 0.0
     if volume_m3 > 0 and vent_open_m2 > 0:
         ach_natural = (vent_open_m2 * ASSUMPTIONS['wind_factor_m_s'] / volume_m3) * 3600.0
 
-    forced_m3h = 0.0
-    for fan_key in ('circulation_fan', 'exhaust_fan'):
-        if actuators.get(fan_key):
-            forced_m3h += ASSUMPTIONS['fan_default_m3h']
+    forced_m3h = act_totals['exhaust_cmh'] + act_totals['circulation_cmh']
     ach_forced = (forced_m3h / volume_m3) if volume_m3 > 0 else 0.0
     ach_total = ach_natural + ach_forced
 
@@ -310,14 +484,24 @@ def compute_capacity(spec):
         'volume_m3':      round(volume_m3, 2),
         'glazing_m2':     round(glazing_m2, 2),
         'vent_open_m2':   round(vent_open_m2, 2),
+        'vent_open_source':   vent_open_src,          # 'fittings' | 'envelope' | 'none'
+        'vent_open_envelope_m2': round(envelope_vent_m2, 2),  # envelope-derived (reference)
+        'vent_open_fittings_m2': round(fittings_vent_m2, 2),  # fittings-derived (authoritative)
+        'vent_openings':  vent_openings,              # per-opening face/normal/area/actuator
         'u_effective':    round(u_eff, 3),
         'transmittance':  round(t_eff, 3),
-        'heating_kw':     round(heating_kw, 2),
-        'cooling_kw':     round(cooling_kw, 2),
+        'heating_kw':         round(heating_kw, 2),
+        'cooling_kw':         round(cooling_kw, 2),
+        'nameplate_heating_kw': round(nameplate_heating_kw, 2),
+        'nameplate_cooling_kw': round(nameplate_cooling_kw, 2),
         'ach_natural':    round(ach_natural, 2),
         'ach_forced':     round(ach_forced, 2),
         'ach_total':      round(ach_total, 2),
         'ach_m3h':        round(ach_total * volume_m3, 0) if volume_m3 else 0,
+        'fittings_count': sum(fittings_by_kind.values()),
+        'fittings_by_kind': fittings_by_kind,
+        'fittings_total_area_m2': round(fittings_total_area, 2),
+        'actuator_counts': act_totals['counts'],
         '_note':          '1차 산정 참고치 (±5~10%)',
     }
 

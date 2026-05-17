@@ -19,6 +19,8 @@ write_decision_log() 헬퍼를 제공한다.
 참조: docs/dev/integrated_env_control_design.md §10
 """
 
+from typing import Dict, Optional
+
 from aot.utils.influx import write_influxdb_value
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -43,6 +45,8 @@ CH_COORD_CMD_BASE        = 40   # + actuator_idx × 2
 CH_COORD_REASON_BASE     = 41   # + actuator_idx × 2
 CH_INTEGRAL_BASE         = 60   # + VAR_INDEX[var]
 CH_SAFETY_GATE           = 70
+CH_DISPATCH_FAIL         = 71   # 한 사이클에서 dispatch 실패한 액추에이터 수
+CH_RUNTIME_STATE_FAIL    = 72   # runtime state DB 저장 실패 누적 카운트
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 근거 코드 (§10.1)
@@ -55,6 +59,7 @@ REASON_SIDE_EFFECT      = 11   # 부작용 충돌 — 제외
 REASON_SAFETY_PRE_GATE  = 12   # 안전 Pre-Gate 강제 명령
 REASON_UNAVAILABLE      = 13   # Output unavailable (통신 실패)
 REASON_SAFETY_POST_GATE = 14   # 안전 Post-Gate 보정
+REASON_NO_GRADIENT      = 15   # 구동력 없음 — 내외부 차이 부족으로 효과 없음
 REASON_MANUAL_OVERRIDE  = 20   # 수동 오버라이드 — 락 활성
 
 # 안전 게이트 비트마스크 (CH_SAFETY_GATE)
@@ -126,3 +131,91 @@ def write_decision_log(unique_id: str, measurement: str, channel: int, value: fl
         value:       기록할 값
     """
     write_influxdb_value(unique_id, measurement, value=value, channel=channel)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# P1-3: 사이클 메트릭 일괄 기록 (설계 §3.3)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# InfluxDB measurement 이름 (태그: function_id, facility_id)
+_MEASUREMENT_ENV = 'env_control'
+
+
+def write_cycle_metrics(
+    unique_id: str,
+    ctx: Dict,
+    target: Dict,
+    deviation: Dict,
+    commands: Dict,
+    limiting_factor: Optional[str],
+    modes: list,
+    facility_id: Optional[str] = None,
+):
+    """
+    매 사이클 종료 시 환경 제어 메트릭을 InfluxDB 에 일괄 기록한다. (P1-3)
+
+    저장 채널 규약 (설계 §3.3):
+      CH 0~5   : 내부 센서 실측 (T, RH, VPD, CO2, Light, —)
+      CH 10~14 : 외부 환경 (T_ext, RH_ext, wind, wind_dir, rain)
+      CH 20~24 : 목표값 (VPD, T_aux, RH_aux, CO2, Light)
+      CH 30~33 : 편차 residual (temperature, humidity, co2, vpd_diag)
+      CH 40+   : 액추에이터 명령 (기존 ch_coord_cmd 채널과 동일)
+      CH 70    : 제한 인자 코드 (기존 CH_SAFETY_GATE 와 별도)
+      CH 71    : 운전 모드 코드 (첫 번째 모드)
+
+    Args:
+        unique_id:       Function unique_id (InfluxDB tag)
+        ctx:             EnvContext (내부+외부 센서)
+        target:          EnvTarget (VPD 분해 후 working_target)
+        deviation:       deviation_native dict
+        commands:        CoordResult {actuator_id: ActuatorCommand}
+        limiting_factor: 제한 인자 문자열 또는 None
+        modes:           운전 모드 리스트
+        facility_id:     GeoFacility unique_id (extra tag, 선택적)
+    """
+    extra = {'facility_id': facility_id} if facility_id else None
+
+    def _w(channel: int, value: float):
+        write_influxdb_value(
+            unique_id, _MEASUREMENT_ENV,
+            value=value, channel=channel,
+            extra_tags=extra,
+        )
+
+    # ── 내부 센서 실측 ─────────────────────────────────────────────────────
+    _w(0, ctx.get('T_int',   0.0))
+    _w(1, ctx.get('RH_int',  0.0))
+    _w(2, ctx.get('VPD_int', 0.0))
+    _w(3, ctx.get('CO2_int', 0.0))
+
+    # ── 외부 환경 ─────────────────────────────────────────────────────────
+    _w(10, ctx.get('T_ext',    0.0))
+    _w(11, ctx.get('RH_ext',   0.0))
+    _w(12, ctx.get('wind',     0.0))
+    _w(13, ctx.get('wind_dir', 0.0))
+    _w(14, ctx.get('rain',     0.0))
+
+    # ── 목표값 ────────────────────────────────────────────────────────────
+    vpd_diag = target.get('_vpd_diag')
+    _w(20, vpd_diag.value if vpd_diag else 0.0)
+    t_tv = target.get('temperature')
+    _w(21, t_tv.value if t_tv else 0.0)
+    rh_tv = target.get('humidity')
+    _w(22, rh_tv.value if rh_tv else 0.0)
+    co2_tv = target.get('co2')
+    _w(23, co2_tv.value if co2_tv else 0.0)
+
+    # ── 편차 ──────────────────────────────────────────────────────────────
+    _w(30, deviation.get('temperature', 0.0))
+    _w(31, deviation.get('humidity',    0.0))
+    _w(32, deviation.get('co2',         0.0))
+
+    # ── 액추에이터 명령 (순서 보장을 위해 정렬) ───────────────────────────
+    for idx, (aid, cmd) in enumerate(sorted(commands.items())):
+        _w(ch_coord_cmd(idx),    cmd.value)
+        _w(ch_coord_reason(idx), float(cmd.reason))
+
+    # ── 제한 인자 + 운전 모드 ────────────────────────────────────────────
+    _w(71, float(LIMIT_CODES.get(limiting_factor, 0)))
+    primary_mode = modes[0] if modes else 'conservation'
+    _w(72, float(MODE_CODES.get(primary_mode, 0)))

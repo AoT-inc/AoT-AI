@@ -72,6 +72,8 @@ class VirtualToolResolver(BaseActionResolver):
             'create_function': AoTDataToolService.create_function_tool,
             'modify_function_options': AoTDataToolService.modify_function_options,
             'get_device_measurements': AoTDataToolService.get_device_measurements,
+            # @ANCHOR: CUMULATIVE_TRACKER_TOOL
+            'get_cumulative_status': AoTDataToolService.get_cumulative_status,
         }
         handler = tool_map.get(tool_name)
         if not handler:

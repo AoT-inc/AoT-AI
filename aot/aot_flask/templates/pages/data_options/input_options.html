@@ -365,6 +365,7 @@
         <div class="aot-modal-option-control">
           <div class="aot-action-group">
             <select class="form-control aot-modern-select selectpicker aot-standard-select" data-style="btn-white" data-live-search="true"
+              data-container="body"
               title="{{_('Select')}}" id="action_type_{{each_input.unique_id}}"
               name="action_type" data-selected-text-format="static">
               {% for value, name in choices_actions %}
@@ -392,11 +393,11 @@
 
   <div class="grid-stack" id="mod_function_actions_{{each_input.unique_id}}">
     {% for each_action in action|sort(attribute='position') if each_action.function_id == each_input.unique_id %}
-    {% call gridstack_action_item(each_action, each_input, is_sequence=False, gs_h=2) %}{% endcall %}
+    {% call gridstack_action_item(each_action, each_input, is_sequence=False) %}{% endcall %}
     {% endfor %}
   </div>
 
-  {{ init_gridstack_actions(each_input.unique_id, cell_height=48) }}
+  {{ init_gridstack_actions(each_input.unique_id) }}
 
   <script>
     if (typeof jQuery !== 'undefined') {

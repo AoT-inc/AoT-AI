@@ -9,6 +9,19 @@ from sqlalchemy import JSON
 from aot.databases import CRUDMixin, set_uuid
 from aot.aot_flask.extensions import db
 
+
+def _flatten_coords(coords):
+    """GeoJSON coordinates (any nesting depth) → list of [lng, lat] pairs."""
+    if not coords:
+        return []
+    if isinstance(coords[0], (int, float)):
+        return [coords]
+    result = []
+    for item in coords:
+        result.extend(_flatten_coords(item))
+    return result
+
+
 # ------------------------------------------------------------------------------
 # GeoMap (Previously MapConfig)
 # Represents a saved map view/instance.
@@ -294,6 +307,21 @@ class GeoFacility(CRUDMixin, db.Model):
     bays = db.Column(JSON, nullable=True)
     computed = db.Column(JSON, nullable=True)
 
+    # Fittings registry — per-fitting placements in 3D (windows, doors, fans,
+    # heaters, sensors, fixtures). Each entry carries position, size,
+    # surface_normal, link_group, and one of {actuator_id (Output uuid) for
+    # actuating kinds, input_id (Input uuid) for sensors}.
+    # G1 policy: when fittings exist, they are the authoritative source of
+    # vent opening area and orientation (not envelope.side_vent.stages).
+    fittings = db.Column(JSON, nullable=True)
+
+    # Sensor registry — list of sensor bindings for this facility.
+    # Schema: [{role, device_id, measurement_id, name, weight}]
+    # role: 'indoor_temp' | 'indoor_humidity' | 'indoor_co2'
+    #       'outdoor_temp' | 'outdoor_humidity' | 'outdoor_wind' | 'outdoor_wind_dir' | 'outdoor_solar'
+    # Multiple entries per role → weighted-average aggregation in runtime endpoint.
+    sensors = db.Column(JSON, nullable=True)
+
     sort_order = db.Column(db.Integer, default=0)
     notes = db.Column(db.Text, default='')
 
@@ -301,6 +329,10 @@ class GeoFacility(CRUDMixin, db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = db.Column(db.String(36), default='')
+
+    # Timezone (IANA string, e.g. 'Asia/Seoul'). Auto-derived from GeoShape centroid
+    # via timezonefinder when None. Set explicitly to override auto-detection.
+    timezone = db.Column(db.String(64), nullable=True, default=None)
 
     # 3D asset override (render_mode='asset' → parametric builder skipped)
     model_asset_uuid = db.Column(db.String(36), nullable=True, index=True)
@@ -313,6 +345,159 @@ class GeoFacility(CRUDMixin, db.Model):
         primaryjoin="foreign(GeoFacility.shape_uuid) == GeoShape.unique_id",
         backref=db.backref("facility", uselist=False)
     )
+
+    def resolve_timezone(self):
+        """Return pytz/zoneinfo timezone object for this facility.
+
+        Priority:
+          1. self.timezone (explicit IANA string)
+          2. centroid of linked GeoShape → timezonefinder lookup
+          3. None (caller must handle UTC fallback)
+        """
+        import pytz
+
+        tz_name = self.timezone
+        if not tz_name and self.shape is not None:
+            feat = self.shape.feature or {}
+            geom = feat.get('geometry') or {}
+            coords = geom.get('coordinates')
+            if coords:
+                try:
+                    from timezonefinder import TimezoneFinder
+                    flat = _flatten_coords(coords)
+                    if flat:
+                        avg_lng = sum(c[0] for c in flat) / len(flat)
+                        avg_lat = sum(c[1] for c in flat) / len(flat)
+                        tz_name = TimezoneFinder().timezone_at(lat=avg_lat, lng=avg_lng)
+                except Exception:
+                    pass
+
+        if tz_name:
+            try:
+                return pytz.timezone(tz_name)
+            except Exception:
+                pass
+        return None
+
+    def compute_geo_helpers(self):
+        """GeoShape 폴리곤으로부터 azimuth_deg·area_m2를 계산해 geometry_3d에 캐시한다.
+
+        Returns dict {'azimuth_deg': float, 'area_m2': float} or {}.
+        좌표가 없거나 계산 불가 시 빈 dict 반환.
+
+        azimuth_deg: 최소 외접 사각형(MBR)의 장축 방위각 (북쪽 기준, 시계 방향, 0~180°).
+        area_m2: Shoelace + 위도 보정으로 근사한 포지션 면적(㎡).
+        """
+        import math
+
+        if self.shape is None:
+            return {}
+
+        feat = self.shape.feature or {}
+        geom = feat.get('geometry') or {}
+        coords_raw = geom.get('coordinates')
+        if not coords_raw:
+            return {}
+
+        pts = _flatten_coords(coords_raw)
+        if len(pts) < 3:
+            return {}
+
+        # ── 위도 보정 계수 ──────────────────────────────────────────────
+        lats = [p[1] for p in pts]
+        lngs = [p[0] for p in pts]
+        lat_c = sum(lats) / len(lats)
+        lng_c = sum(lngs) / len(lngs)
+
+        # 1° 위도 ≈ 111_320 m, 1° 경도 ≈ 111_320 × cos(lat) m
+        _M_PER_DEG_LAT = 111_320.0
+        cos_lat = math.cos(math.radians(lat_c))
+        _M_PER_DEG_LNG = _M_PER_DEG_LAT * cos_lat
+
+        # lng/lat → 로컬 평면 좌표 (m)
+        def _to_xy(p):
+            return ((p[0] - lng_c) * _M_PER_DEG_LNG,
+                    (p[1] - lat_c) * _M_PER_DEG_LAT)
+
+        xy = [_to_xy(p) for p in pts]
+
+        # ── Shoelace 면적 ───────────────────────────────────────────────
+        n = len(xy)
+        area_2 = 0.0
+        for i in range(n):
+            j = (i + 1) % n
+            area_2 += xy[i][0] * xy[j][1]
+            area_2 -= xy[j][0] * xy[i][1]
+        area_m2 = abs(area_2) / 2.0
+
+        # ── 최소 외접 사각형(rotating calipers, convex hull 생략판) ─────
+        # 단순화: 엣지 방향별 회전 후 bbox 면적 최소화
+        def _convex_hull_2d(points):
+            pts_s = sorted(set(points))
+            if len(pts_s) < 3:
+                return pts_s
+            lower, upper = [], []
+            for p in pts_s:
+                while len(lower) >= 2 and (
+                    (lower[-1][0] - lower[-2][0]) * (p[1] - lower[-2][1]) -
+                    (lower[-1][1] - lower[-2][1]) * (p[0] - lower[-2][0]) <= 0
+                ):
+                    lower.pop()
+                lower.append(p)
+            for p in reversed(pts_s):
+                while len(upper) >= 2 and (
+                    (upper[-1][0] - upper[-2][0]) * (p[1] - upper[-2][1]) -
+                    (upper[-1][1] - upper[-2][1]) * (p[0] - upper[-2][0]) <= 0
+                ):
+                    upper.pop()
+                upper.append(p)
+            return lower[:-1] + upper[:-1]
+
+        hull = _convex_hull_2d(xy)
+        if len(hull) < 2:
+            azimuth_deg = 0.0
+        else:
+            best_angle = 0.0
+            best_w, best_h = 1.0, 1.0
+            min_box_area = float('inf')
+            hn = len(hull)
+            for i in range(hn):
+                j = (i + 1) % hn
+                dx, dy = hull[j][0] - hull[i][0], hull[j][1] - hull[i][1]
+                edge_angle = math.atan2(dy, dx)
+                ca, sa = math.cos(-edge_angle), math.sin(-edge_angle)
+                rxs = [ca * p[0] - sa * p[1] for p in hull]
+                rys = [sa * p[0] + ca * p[1] for p in hull]
+                w = max(rxs) - min(rxs)
+                h = max(rys) - min(rys)
+                if w * h < min_box_area:
+                    min_box_area = w * h
+                    best_angle = edge_angle
+                    best_w, best_h = w, h
+
+            # best_w: 엣지 방향 길이, best_h: 수직 방향 길이
+            # 장축 방향 = w >= h → 엣지 방향, w < h → 수직 방향
+            if best_h > best_w:
+                long_axis_angle = best_angle + math.pi / 2
+            else:
+                long_axis_angle = best_angle
+            # math각(동=0,반시계) → compass 방위각(북=0,시계, 0~180°)
+            azimuth_deg = (90.0 - math.degrees(long_axis_angle)) % 180.0
+
+        result = {
+            'azimuth_deg': round(azimuth_deg, 1),
+            'area_m2':     round(area_m2, 1),
+        }
+
+        # geometry_3d에 캐시
+        try:
+            g3d = dict(self.geometry_3d or {})
+            g3d.update(result)
+            self.geometry_3d = g3d
+        except Exception:
+            pass
+
+        return result
 
     def __repr__(self):
         return "<GeoFacility(id={0}, name='{1}', shape_uuid='{2}')>".format(
