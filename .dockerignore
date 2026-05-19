@@ -1,0 +1,64 @@
+# --- VCS ---
+.git
+.gitignore
+.gitattributes
+
+# --- Python ---
+__pycache__
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info
+.eggs
+.Python
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.tox
+.coverage
+.coverage.*
+htmlcov
+.venv
+venv
+env
+
+# --- IDE / OS ---
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Docker ---
+docker-compose.override.yml
+docker/.env
+
+# --- Project-specific runtime / data ---
+logs
+*.log
+influxdb_data
+influxdb_config/data
+aot/databases/*.db
+aot/databases/*.sqlite*
+statistics.id
+
+# --- Node (MCP servers may create these locally) ---
+node_modules
+npm-debug.log*
+yarn-error.log*
+
+# --- Docs build artifacts ---
+site
+docs/_build
+
+# --- Tests / CI ---
+.github
+.circleci
+
+# --- Local-only / large files ---
+*.zip
+*.tar
+*.tar.gz
+*.7z

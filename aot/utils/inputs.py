@@ -194,6 +194,7 @@ def list_analog_to_digital_converters():
 
 from functools import lru_cache
 
+@lru_cache(maxsize=4)
 def parse_input_information(exclude_custom=False):
     """Parse input module information and return a dictionary of input IDs and metadata.
 

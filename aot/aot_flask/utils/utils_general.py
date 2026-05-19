@@ -11,7 +11,7 @@ from werkzeug.datastructures import MultiDict
 
 import flask_login
 import sqlalchemy
-from flask import flash, redirect, request
+from flask import flash, redirect, request, g, has_request_context
 from flask_babel import gettext
 from importlib_metadata import version
 from sqlalchemy import and_
@@ -1605,14 +1605,28 @@ def user_has_permission(permission, silent=False):
     """
     Determine if the currently-logged-in user has permission to perform a
     specific action.
+
+    The role lookup is memoised on flask.g for the lifetime of the current
+    request so repeated calls inside one render (e.g. context processors
+    fan-out, template helpers) collapse to a single pair of DB queries.
     """
     if not flask_login.current_user.is_authenticated:
         if not silent:
             flash(gettext("Insufficient permission: %(permission)s", permission=permission), "error")
         return False
 
-    user = User.query.filter(User.name == flask_login.current_user.name).first()
-    role = Role.query.filter(Role.id == user.role_id).first()
+    role = None
+    if has_request_context():
+        role = getattr(g, '_aot_role_cache', None)
+    if role is None:
+        user = User.query.filter(User.name == flask_login.current_user.name).first()
+        role = Role.query.filter(Role.id == user.role_id).first() if user else None
+        if has_request_context():
+            g._aot_role_cache = role
+    if role is None:
+        if not silent:
+            flash(gettext("Insufficient permission: %(permission)s", permission=permission), "error")
+        return False
     if ((permission == 'edit_settings' and role.edit_settings) or
             (permission == 'edit_controllers' and role.edit_controllers) or
             (permission == 'edit_users' and role.edit_users) or

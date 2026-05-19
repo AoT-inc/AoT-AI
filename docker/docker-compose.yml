@@ -1,33 +1,71 @@
 name: aot_local
 
 services:
-  aot-app:
+  aot_init:
     image: aot_ai
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    command: gunicorn --bind 0.0.0.0:80 --workers 2 --threads 2 --timeout 120 --worker-class=sync aot.start_flask_ui:app
-    ports:
-      - "8084:80"
+    working_dir: /app
+    # Run the app factory once: create_all() + alembic upgrade + populate_db + seed glossary/MCP.
+    # Exits 0 when done. aot-app and aot_daemon wait for this.
+    command: >
+      python -c "import sys; from aot.aot_flask.app import create_app; create_app(); print('[init] DB initialization complete'); sys.exit(0)"
     volumes:
       - ../:/app
       - ../logs:/var/log/aot
       - ../aot/databases:/app/aot/databases
     environment:
-      - FLASK_ENV=development
       - PYTHONPATH=/app
       - DOCKER_CONTAINER=TRUE
-      - HARDWARE_PROFILE=LOW
+      - HARDWARE_PROFILE=${HARDWARE_PROFILE:-LOW}
+    networks:
+      - aot_net
+    restart: "no"
+
+  aot-app:
+    image: aot_ai
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: gunicorn --bind 0.0.0.0:80 --workers 2 --threads 2 --timeout 120 --worker-class=sync --preload aot.start_flask_ui:app
+    ports:
+      - "${AOT_APP_PORT:-8084}:80"
+    volumes:
+      - ../:/app
+      - ../logs:/var/log/aot
+      - ../aot/databases:/app/aot/databases
+    environment:
+      - FLASK_ENV=${FLASK_ENV:-development}
+      - PYTHONPATH=/app
+      - DOCKER_CONTAINER=TRUE
+      - HARDWARE_PROFILE=${HARDWARE_PROFILE:-LOW}
+      - INFLUXDB_HOST=influxdb
+      - INFLUXDB_PORT=8086
+      - INFLUXDB_ORG=${INFLUXDB_ORG:-aot}
+      - INFLUXDB_BUCKET=${INFLUXDB_BUCKET:-aot_db}
+      - INFLUXDB_TOKEN=${INFLUXDB_ADMIN_TOKEN:-mmdu77sj3nIoiajjs}
+      - PYOPENGL_PLATFORM=osmesa
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:80/', timeout=3)\" || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     deploy:
       resources:
         limits:
           cpus: '2.0'
           memory: 1G
     depends_on:
-      - aot_daemon
-      - influxdb
+      aot_init:
+        condition: service_completed_successfully
+      influxdb:
+        condition: service_healthy
+    networks:
+      - aot_net
     restart: always
 
   aot_daemon:
@@ -43,7 +81,13 @@ services:
     environment:
       - PYTHONPATH=/app
       - DOCKER_CONTAINER=TRUE
-      - HARDWARE_PROFILE=LOW
+      - HARDWARE_PROFILE=${HARDWARE_PROFILE:-LOW}
+      - INFLUXDB_HOST=influxdb
+      - INFLUXDB_PORT=8086
+      - INFLUXDB_ORG=${INFLUXDB_ORG:-aot}
+      - INFLUXDB_BUCKET=${INFLUXDB_BUCKET:-aot_db}
+      - INFLUXDB_TOKEN=${INFLUXDB_ADMIN_TOKEN:-mmdu77sj3nIoiajjs}
+      - PYOPENGL_PLATFORM=osmesa
     extra_hosts:
       - "host.docker.internal:host-gateway"
     deploy:
@@ -52,27 +96,77 @@ services:
           cpus: '1.0'
           memory: 1024M
     depends_on:
-      - influxdb
+      aot_init:
+        condition: service_completed_successfully
+      influxdb:
+        condition: service_healthy
+    networks:
+      - aot_net
     restart: always
 
   influxdb:
     image: influxdb:2.7
     ports:
-      - "8087:8086"
+      - "${INFLUXDB_PORT:-8087}:8086"
     volumes:
-      - ../influxdb_data:/var/lib/influxdb2
-      - ../influxdb_config:/etc/influxdb2
+      - influxdb_data:/var/lib/influxdb2
+      - influxdb_config:/etc/influxdb2
     environment:
       - DOCKER_INFLUXDB_INIT_MODE=setup
-      - DOCKER_INFLUXDB_INIT_USERNAME=aot
-      - DOCKER_INFLUXDB_INIT_PASSWORD=mmdu77sj3nIoiajjs
-      - DOCKER_INFLUXDB_INIT_ORG=aot
-      - DOCKER_INFLUXDB_INIT_BUCKET=aot_db
-      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=mmdu77sj3nIoiajjs
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_USERNAME:-aot}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_PASSWORD:-mmdu77sj3nIoiajjs}
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUXDB_ORG:-aot}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_BUCKET:-aot_db}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_ADMIN_TOKEN:-mmdu77sj3nIoiajjs}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8086/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     deploy:
       resources:
         limits:
           cpus: '0.5'
           memory: 512M
+    networks:
+      - aot_net
     restart: always
 
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    ports:
+      - "${MQTT_PORT:-1883}:1883"
+      - "${MQTT_WS_PORT:-9001}:9001"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h 127.0.0.1 -p 1883 -t '$$SYS/#' -C 1 -W 3 >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 128M
+    networks:
+      - aot_net
+    restart: always
+
+networks:
+  aot_net:
+    driver: bridge
+
+volumes:
+  influxdb_data:
+    driver: local
+  influxdb_config:
+    driver: local
+  mosquitto_data:
+    driver: local
+  mosquitto_log:
+    driver: local

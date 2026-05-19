@@ -196,7 +196,7 @@
                 type: "GET",
                 url: '/input?input_type=entry&input_id=' + data.data.input_id,
                 success: function (new_entry) {
-                  if (data.data.messages.success.length !== 0) {
+                  if (data.data && data.data.messages && data.data.messages.success.length !== 0) {
                     window.grid.addWidget('<div class="grid-stack-item" id="gridstack_input_' + data.data.input_id + '" gs-id="' + data.data.input_id + '">' + new_entry + '</div>', {
                       w: 24,
                       h: 1
@@ -235,6 +235,11 @@
             $('#modal_config_dependency_install').modal('show');
           }
 
+          if (!data || !data.data || !data.data.messages) {
+            console.error("[AoT] Unexpected response — no data.data.messages:", data);
+            window.showToast('Error: Unexpected server response. Check console.', 'error');
+            return;
+          }
           if (data.data.messages.error.length === 0) {
             console.log("[DEBUG] Success response for action:", action);
             console.log("[DEBUG] data.data:", data.data);

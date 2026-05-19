@@ -220,7 +220,7 @@ class CustomModule(AbstractFunction):
         )
         self.logger.debug("Temp: {}".format(last_measurement_temp))
 
-        if last_measurement_temp:
+        if last_measurement_temp and last_measurement_temp[1] is not None:
             device_measurement = get_measurement(
                 self.select_measurement_temperature_c_measurement_id
             )
@@ -243,7 +243,7 @@ class CustomModule(AbstractFunction):
         )
         self.logger.debug("Hum: {}".format(last_measurement_hum))
 
-        if last_measurement_hum:
+        if last_measurement_hum and last_measurement_hum[1] is not None:
             device_measurement = get_measurement(
                 self.select_measurement_humidity_measurement_id
             )

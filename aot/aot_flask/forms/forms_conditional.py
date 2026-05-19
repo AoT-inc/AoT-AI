@@ -48,6 +48,14 @@ class Conditional(FlaskForm):
         lazy_gettext('Condition Type'),
         choices=[('', lazy_gettext('Please select'))] + CONDITIONAL_CONDITIONS)
     add_condition = SubmitField(lazy_gettext('Add'))
+    latitude = DecimalField(
+        lazy_gettext('Latitude'),
+        places=6,
+        widget=NumberInput(step='any'))
+    longitude = DecimalField(
+        lazy_gettext('Longitude'),
+        places=6,
+        widget=NumberInput(step='any'))
 
 
 class ConditionalConditions(FlaskForm):

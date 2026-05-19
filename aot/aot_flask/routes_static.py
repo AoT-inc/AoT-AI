@@ -11,8 +11,9 @@ from io import BytesIO
 import flask_login
 from flask import (current_app, redirect, render_template, request,
                    send_from_directory, url_for)
-from flask import send_file
+from flask import jsonify, send_file
 from flask.blueprints import Blueprint
+from flask_wtf.csrf import CSRFError
 
 from aot.config import (ALEMBIC_VERSION, INSTALL_DIRECTORY, LANGUAGES,
                            AOT_VERSION, THEMES, THEMES_DARK)
@@ -31,6 +32,15 @@ blueprint = Blueprint('routes_static',
                       template_folder='../templates')
 
 logger = logging.getLogger(__name__)
+
+
+@blueprint.app_errorhandler(CSRFError)
+def handle_csrf_error(e):
+    """Return JSON for AJAX requests; redirect to page reload for browser navigation."""
+    if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+        return jsonify({'error': 'csrf', 'message': 'Session expired. Please reload the page.'}), 400
+    # For regular navigation, redirect back so the user gets a fresh CSRF token.
+    return redirect(request.referrer or '/'), 302
 
 _daemon_status_cache = {'value': '0', 'ts': 0.0}
 _DAEMON_STATUS_TTL = 30.0
@@ -138,19 +148,14 @@ def inject_variables():
     dashboards = _cached_dashboards()
     misc = _cached_misc()
 
+    # Daemon status is fetched asynchronously by layout.html via /daemonactive.
+    # Doing a synchronous Pyro5 RPC here can block the request for up to
+    # pyro_timeout seconds when the daemon is unreachable, which dominates
+    # TTFB. Return the last-known cached value (or '0' if never populated)
+    # and let the JS poll update the indicator after the page paints.
     try:
-        if not current_app.config['TESTING']:
-            now = time.time()
-            if now - _daemon_status_cache['ts'] > _DAEMON_STATUS_TTL:
-                control = DaemonControl()
-                _daemon_status_cache['value'] = control.daemon_status()
-                _daemon_status_cache['ts'] = now
-            daemon_status = _daemon_status_cache['value']
-        else:
-            daemon_status = '0'
-    except Exception as e:
-        logger.debug("URL for 'inject_variables' raised and error: "
-                     "{err}".format(err=e))
+        daemon_status = _daemon_status_cache.get('value') or '0'
+    except Exception:
         daemon_status = '0'
 
     languages_sorted = sorted(LANGUAGES.items(), key=operator.itemgetter(1))

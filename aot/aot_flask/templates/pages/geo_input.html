@@ -221,6 +221,14 @@
                 popup_response(data);
             },
             error: function (xhr) {
+                try {
+                    var resp = JSON.parse(xhr.responseText);
+                    if (resp && resp.error === 'csrf') {
+                        window.showToast('Session expired — reloading page…', 'warning');
+                        setTimeout(function () { location.reload(); }, 1500);
+                        return;
+                    }
+                } catch (ignore) {}
                 window.showToast('Server Error: ' + xhr.statusText, 'error');
             }
         });

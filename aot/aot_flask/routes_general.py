@@ -89,8 +89,10 @@ def custom_css():
     """Load custom CSS and custom UI theme"""
     css_content = ""
     try:
-        from aot.aot_flask.extensions import db as _db
-        _db.session.expire_all()
+        # NOTE: do not call db.session.expire_all() here. This endpoint is
+        # fetched on every page load via <link href="/custom.css">; expiring
+        # the entire ORM identity map across active requests adds latency
+        # to other queries. A plain query keeps DB I/O minimal.
         settings = Misc.query.first()
         if settings and settings.custom_css:
             css_content += settings.custom_css + "\n"
@@ -148,8 +150,9 @@ def custom_css():
         logger.error(f"Error serving custom.css: {e}")
         
     response = Response(css_content, mimetype='text/css')
-    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
-    response.headers['Pragma'] = 'no-cache'
+    # Short private cache: avoid the round trip on every navigation while
+    # still letting theme edits propagate within ~1 minute.
+    response.headers['Cache-Control'] = 'private, max-age=60'
     return response
 
 
@@ -922,12 +925,29 @@ def async_usage_data(device_id, unit, channel, start_seconds, end_seconds):
 @blueprint.route('/daemonactive')
 @flask_login.login_required
 def daemon_active():
-    """Return 'alive' if the daemon is running."""
+    """Return 'alive' if the daemon is running.
+
+    Also primes the shared daemon_status cache that inject_variables reads,
+    so subsequent page renders can stay fully async with respect to the daemon.
+    """
+    import time as _time
+    try:
+        from aot.aot_flask.routes_static import _daemon_status_cache
+    except Exception:
+        _daemon_status_cache = None
     try:
         control = DaemonControl()
-        return control.daemon_status()
+        status = control.daemon_status()
+        if _daemon_status_cache is not None:
+            _daemon_status_cache['value'] = status
+            _daemon_status_cache['ts'] = _time.time()
+        return status
     except Exception as err:
         logger.error(f"URL for 'daemon_active' raised and error: {err}")
+        if _daemon_status_cache is not None:
+            # Stamp ts even on failure so other callers don't pile up retries
+            _daemon_status_cache['value'] = '0'
+            _daemon_status_cache['ts'] = _time.time()
         return '0'
 
 

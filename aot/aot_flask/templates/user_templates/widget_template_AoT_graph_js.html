@@ -1,17 +1,23 @@
 
-  Highcharts.setOptions({
-    global: {
-      useUTC: false
-    }
-  });
+  if (typeof window._aot_graph_initialized === 'undefined') {
+    window._aot_graph_initialized = true;
 
-  // Change opacity of all chart colors
-  Highcharts.getOptions().colors = Highcharts.map(Highcharts.getOptions().colors, function (color) {
-    return Highcharts.Color(color).setOpacity(0.6).get('rgba');
-  });
+    Highcharts.setOptions({
+      global: {
+        useUTC: false
+      }
+    });
 
-  let note_timestamps = {};
-  let last_output_time_mil = {};  // Store the time (epoch) of the last data point received
+    // Change opacity of all chart colors
+    Highcharts.getOptions().colors = Highcharts.map(Highcharts.getOptions().colors, function (color) {
+      return Highcharts.Color(color).setOpacity(0.6).get('rgba');
+    });
+  }
+
+  if (typeof window.note_timestamps === 'undefined') window.note_timestamps = {};
+  if (typeof window.last_output_time_mil === 'undefined') window.last_output_time_mil = {};
+  var note_timestamps = window.note_timestamps;
+  var last_output_time_mil = window.last_output_time_mil;
 
   function graphMenuFunction(widget_id) {
     var x = document.getElementById("widget-graph-responsive-controls-" + widget_id);

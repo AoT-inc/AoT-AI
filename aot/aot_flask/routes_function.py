@@ -689,7 +689,7 @@ def page_function():
 
     custom_commands = {}
     for choice_function in function:
-        if 'custom_commands' in dict_controllers[choice_function.device]:
+        if choice_function.device in dict_controllers and 'custom_commands' in dict_controllers[choice_function.device]:
             custom_commands[choice_function.device] = True
 
     # Generate Action dropdown for use with Inputs
